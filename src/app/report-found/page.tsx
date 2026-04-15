@@ -3,7 +3,7 @@
 
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { foundItemAIDetails, type FoundItemAIDetailsOutput } from "@/ai/flows/found-item-ai-details-flow"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
 import { collection } from "firebase/firestore"
 
@@ -29,6 +29,9 @@ export default function ReportFound() {
   const [aiData, setAiData] = useState<FoundItemAIDetailsOutput | null>(null)
   const [step, setStep] = useState(1)
   
+  const [itemName, setItemName] = useState("")
+  const [category, setCategory] = useState("")
+  const [description, setDescription] = useState("")
   const [location, setLocation] = useState("")
   const [guardName, setGuardName] = useState("")
   const [badgeNumber, setBadgeNumber] = useState("")
@@ -49,9 +52,14 @@ export default function ReportFound() {
       try {
         const result = await foundItemAIDetails({ photoDataUri: dataUri })
         setAiData(result)
+        // Auto-populate if empty to help the student/guard
+        if (!itemName) setItemName(result.itemName)
+        if (!category) setCategory(result.category)
+        if (!description) setDescription(result.attributes.join(", "))
+        
         toast({
           title: "AI Analysis Complete",
-          description: "Item details identified automatically.",
+          description: "Details identified automatically.",
         })
       } catch (error) {
         toast({
@@ -75,9 +83,9 @@ export default function ReportFound() {
     const itemsRef = collection(db, "items")
     const itemData = {
       ownerId: user.uid,
-      name: aiData?.itemName || "Found Item",
-      category: aiData?.category || "Other",
-      description: aiData?.attributes?.join(", ") || "",
+      name: itemName || aiData?.itemName || "Found Item",
+      category: category || aiData?.category || "Other",
+      description: description || aiData?.attributes?.join(", ") || "",
       locationDescription: location,
       eventDate: new Date().toISOString(),
       type: "found",
@@ -97,7 +105,7 @@ export default function ReportFound() {
           title: "Report Submitted!",
           description: "The handover has been logged securely.",
         })
-        setTimeout(() => router.push("/dashboard"), 3000)
+        setTimeout(() => router.push("/dashboard"), 2500)
       })
       .finally(() => {
         setIsSubmitting(false)
@@ -132,7 +140,7 @@ export default function ReportFound() {
         <Alert className="bg-white/95 border-secondary/20 rounded-2xl shadow-lg py-3">
           <Info className="h-4 w-4 text-secondary" />
           <AlertDescription className="text-[10px] text-muted-foreground font-medium">
-            Hand over to campus security and log the receipt details below.
+            Hand over to campus security and log the receipt details below. AI will help with descriptions.
           </AlertDescription>
         </Alert>
 
@@ -140,7 +148,7 @@ export default function ReportFound() {
           <Card className="rounded-[28px] overflow-hidden shadow-xl border-none">
             <CardHeader className="pb-0 pt-6 px-6">
               <CardTitle className="text-sm font-headline font-bold flex items-center gap-2">
-                <Camera className="h-4 w-4 text-secondary" /> 1. Item Photo
+                <Camera className="h-4 w-4 text-secondary" /> 1. Item Details
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -152,9 +160,9 @@ export default function ReportFound() {
                   <>
                     <Image src={previewImage} alt="Found item" fill className="object-cover" />
                     {isScanning && (
-                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white z-10">
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center text-white z-10">
                         <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                        <p className="font-headline font-bold text-xs">GenAI Scanning...</p>
+                        <p className="font-headline font-bold text-[10px] uppercase tracking-widest">Scanning in background...</p>
                       </div>
                     )}
                   </>
@@ -169,31 +177,49 @@ export default function ReportFound() {
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
               </div>
 
-              {aiData && (
-                <div className="bg-secondary/5 border border-secondary/10 p-3 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-3 w-3 text-secondary" />
-                    <span className="text-[8px] font-bold text-secondary uppercase tracking-tighter">AI Identified</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Badge variant="outline" className="bg-white dark:bg-card text-[9px] border-secondary/20">{aiData.itemName}</Badge>
-                    <Badge variant="outline" className="bg-white dark:bg-card text-[9px] border-secondary/20">{aiData.category}</Badge>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="itemName" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Item Name</Label>
+                  <div className="relative">
+                    <Input 
+                      id="itemName" 
+                      placeholder={isScanning ? "AI is identifying..." : "e.g. Blue Umbrella"} 
+                      className="rounded-xl h-11 pl-9 text-sm" 
+                      value={itemName}
+                      onChange={(e) => setItemName(e.target.value)}
+                      required 
+                    />
+                    <Sparkles className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${isScanning ? 'text-secondary animate-pulse' : 'text-muted-foreground'}`} />
                   </div>
                 </div>
-              )}
 
-              <div className="space-y-1.5">
-                <Label htmlFor="foundLocation" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Discovery Spot</Label>
-                <div className="relative">
-                  <Input 
-                    id="foundLocation" 
-                    placeholder="e.g. Library Hall" 
-                    className="rounded-xl h-11 pl-9 text-sm" 
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    required 
-                  />
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Physical Description</Label>
+                  <div className="relative">
+                    <Textarea 
+                      id="description" 
+                      placeholder="Add identifying marks, brand, or color..." 
+                      className="rounded-xl min-h-[80px] pl-9 text-sm resize-none"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                    <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="foundLocation" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Found At</Label>
+                  <div className="relative">
+                    <Input 
+                      id="foundLocation" 
+                      placeholder="e.g. Block 34 Canteen" 
+                      className="rounded-xl h-11 pl-9 text-sm" 
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      required 
+                    />
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -210,22 +236,24 @@ export default function ReportFound() {
                 <div className="space-y-1.5">
                   <Label htmlFor="guardName" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Guard Name</Label>
                   <div className="relative">
-                    <Input id="guardName" placeholder="Full name" className="rounded-xl h-11 pl-9 text-sm" value={guardName} onChange={(e) => setGuardName(e.target.value)} required />
+                    <Input id="guardName" placeholder="Full name of guard" className="rounded-xl h-11 pl-9 text-sm" value={guardName} onChange={(e) => setGuardName(e.target.value)} required />
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="guardId" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Badge ID</Label>
-                  <div className="relative">
-                    <Input id="guardId" placeholder="SEC-0000" className="rounded-xl h-11 pl-9 text-sm" value={badgeNumber} onChange={(e) => setBadgeNumber(e.target.value)} required />
-                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="guardId" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Badge ID</Label>
+                    <div className="relative">
+                      <Input id="guardId" placeholder="SEC-0000" className="rounded-xl h-11 pl-9 text-xs" value={badgeNumber} onChange={(e) => setBadgeNumber(e.target.value)} required />
+                      <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="guardPost" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Security Post</Label>
-                  <div className="relative">
-                    <Input id="guardPost" placeholder="e.g. Main Gate" className="rounded-xl h-11 pl-9 text-sm" value={securityPost} onChange={(e) => setSecurityPost(e.target.value)} required />
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="guardPost" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Post Location</Label>
+                    <div className="relative">
+                      <Input id="guardPost" placeholder="e.g. Main Gate" className="rounded-xl h-11 pl-9 text-xs" value={securityPost} onChange={(e) => setSecurityPost(e.target.value)} required />
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -235,17 +263,22 @@ export default function ReportFound() {
           <Button 
             type="submit" 
             size="lg" 
-            disabled={isSubmitting || isScanning} 
+            disabled={isSubmitting} 
             className="w-full rounded-2xl gradient-success h-14 text-sm font-headline font-bold shadow-xl flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <>
-                <Send className="h-4 w-4" /> Log Handover
+                <Send className="h-4 w-4" /> Log Secure Handover
               </>
             )}
           </Button>
+
+          <div className="pt-8 pb-4 text-center space-y-1 opacity-40">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
+            <p className="text-[9px] font-medium">Powered by Igloo Enterprises</p>
+          </div>
         </form>
       </main>
     </div>
