@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -100,7 +101,7 @@ export default function MapScreen() {
       ))}
 
       {/* Bottom Sheet Detail */}
-      <div className={`absolute bottom-0 left-0 right-0 p-6 transition-transform duration-500 z-30 ${selectedItem ? 'translate-y-0' : 'translate-y-full'}`}>
+      <div className={`absolute bottom-0 left-0 right-0 p-6 transition-transform duration-500 z-30 ${selectedItem ? 'translate-y-[-100px]' : 'translate-y-full'}`}>
         <Card className="max-w-xl mx-auto rounded-[32px] shadow-2xl overflow-hidden border-none">
           <div className="p-6">
             <div className="flex items-start gap-4">
@@ -137,14 +138,6 @@ export default function MapScreen() {
           </div>
         </Card>
       </div>
-
-      {/* Floating Action Button */}
-      <button 
-        onClick={() => router.push('/report-found')}
-        className="absolute bottom-10 right-10 z-20 w-16 h-16 rounded-full gradient-success shadow-2xl flex items-center justify-center text-white hover:scale-110 transition-transform"
-      >
-        <MapPin className="h-8 w-8" />
-      </button>
     </div>
   )
 }
