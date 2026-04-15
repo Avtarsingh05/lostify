@@ -1,45 +1,111 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, User, Mail, Phone, Save, Loader2 } from "lucide-react"
+import { ArrowLeft, User, Mail, Phone, Save, Loader2, Camera, UserCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { useUser, useAuth } from "@/firebase"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
 import { updateProfile } from "firebase/auth"
+import { doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 
 export default function ProfileSettings() {
   const router = useRouter()
   const { user } = useUser()
   const auth = useAuth()
+  const db = useFirestore()
   const { toast } = useToast()
   
-  const [nickname, setNickname] = useState(user?.displayName || "")
+  const [nickname, setNickname] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch current user data from Firestore
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+
+  const { data: userData, isLoading: isDocLoading } = useDoc(userDocRef)
+
+  useEffect(() => {
+    if (user) {
+      setNickname(user.displayName || "")
+      setPreviewUrl(user.photoURL || "")
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (userData) {
+      setPhoneNumber(userData.phoneNumber || "")
+    }
+  }, [userData])
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImageFile(file)
+      setPreviewUrl(URL.createObjectURL(file))
+    }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!auth.currentUser) return
+    if (!auth.currentUser || !db) return
 
     setIsLoading(true)
     try {
+      let photoURL = auth.currentUser.photoURL || ""
+
+      // Upload to Cloudinary if a new image is selected
+      if (imageFile) {
+        const formData = new FormData()
+        formData.append("file", imageFile)
+        formData.append("upload_preset", "admin_banner_upload")
+        
+        const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, {
+          method: "POST",
+          body: formData,
+        })
+        
+        if (!res.ok) throw new Error("Image upload failed")
+        const data = await res.json()
+        photoURL = data.secure_url
+      }
+
+      // 1. Update Firebase Auth Profile
       await updateProfile(auth.currentUser, {
-        displayName: nickname
+        displayName: nickname,
+        photoURL: photoURL
       })
+
+      // 2. Update Firestore User Document
+      const userRef = doc(db, "users", auth.currentUser.uid)
+      updateDocumentNonBlocking(userRef, {
+        username: nickname,
+        phoneNumber: phoneNumber,
+        photoURL: photoURL,
+        updatedAt: new Date().toISOString()
+      })
+
       toast({
         title: "Profile Updated",
-        description: "Your nickname has been successfully changed.",
+        description: "Your changes have been saved successfully.",
       })
       router.back()
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Update Failed",
-        description: "Could not update your profile. Please try again.",
+        description: error.message || "Could not update your profile.",
       })
     } finally {
       setIsLoading(false)
@@ -48,12 +114,35 @@ export default function ProfileSettings() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="gradient-header pt-10 pb-20 px-4 rounded-b-[40px] shadow-2xl text-white">
-        <div className="max-w-md mx-auto flex items-center gap-3">
+      <div className="gradient-header pt-10 pb-20 px-4 rounded-b-[40px] shadow-2xl text-white text-center">
+        <div className="max-w-md mx-auto flex items-center justify-between mb-6">
           <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-2xl font-headline font-bold">Profile</h1>
+          <h1 className="text-2xl font-headline font-bold">Edit Profile</h1>
+          <div className="w-9" /> {/* Spacer */}
+        </div>
+
+        <div className="relative inline-block">
+          <Avatar className="h-24 w-24 border-4 border-white/20 shadow-xl">
+            <AvatarImage src={previewUrl} />
+            <AvatarFallback className="bg-primary text-white text-2xl">
+              {nickname?.charAt(0).toUpperCase() || <UserCircle className="h-12 w-12" />}
+            </AvatarFallback>
+          </Avatar>
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute bottom-0 right-0 bg-white text-primary p-2 rounded-full shadow-lg border-2 border-white hover:scale-110 transition-transform"
+          >
+            <Camera className="h-4 w-4" />
+          </button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={handleImageChange} 
+          />
         </div>
       </div>
 
@@ -78,8 +167,22 @@ export default function ProfileSettings() {
                 />
               </div>
 
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Phone Number</Label>
+                <div className="relative">
+                  <Input 
+                    id="phone" 
+                    value={phoneNumber} 
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+91 9876543210"
+                    className="rounded-xl h-12 pl-10"
+                  />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+
               <div className="space-y-1.5 opacity-60">
-                <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Email (Immutable)</Label>
+                <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Email (Official)</Label>
                 <div className="relative">
                   <Input 
                     id="email" 
@@ -90,29 +193,16 @@ export default function ProfileSettings() {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
-
-              <div className="space-y-1.5 opacity-60">
-                <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Recovery Phone</Label>
-                <div className="relative">
-                  <Input 
-                    id="phone" 
-                    value={user?.phoneNumber || "Not set"} 
-                    disabled 
-                    className="rounded-xl h-12 pl-10 bg-muted/30"
-                  />
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                </div>
-              </div>
             </CardContent>
           </Card>
 
           <Button 
             type="submit" 
-            disabled={isLoading || nickname === user?.displayName}
+            disabled={isLoading || isDocLoading}
             className="w-full h-14 rounded-2xl gradient-header font-bold text-md shadow-xl flex items-center justify-center gap-2"
           >
             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-            Save Changes
+            Save Profile
           </Button>
         </form>
       </main>
