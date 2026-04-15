@@ -112,6 +112,19 @@
         "details": { "type": "string" }
       },
       "required": ["id", "adminUserId", "action", "targetEntity", "targetEntityId", "timestamp"]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "message", "createdAt"]
     }
   },
   "auth": {
@@ -150,6 +163,10 @@
       {
         "path": "/adminActivityLogs/{logId}",
         "definition": { "entityName": "AdminActivityLog", "schema": { "$ref": "#/backend/entities/AdminActivityLog" }, "description": "Admin activity logs." }
+      },
+      {
+        "path": "/notifications/{notificationId}",
+        "definition": { "entityName": "Notification", "schema": { "$ref": "#/backend/entities/Notification" }, "description": "System notifications." }
       }
     ]
   }

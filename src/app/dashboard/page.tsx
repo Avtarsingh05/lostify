@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { 
   Search, 
   PlusCircle, 
@@ -19,7 +19,7 @@ import {
   Loader2
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
-import { useAuth, useUser } from "@/firebase"
+import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
+import { collection, query, where, orderBy, limit } from "firebase/firestore"
 
 const menuItems = [
   {
@@ -79,8 +80,22 @@ const menuItems = [
 export default function Dashboard() {
   const { user, isUserLoading } = useUser()
   const auth = useAuth()
+  const db = useFirestore()
   const router = useRouter()
   const { toast } = useToast()
+
+  // Real-time notifications listener
+  const notifQuery = useMemoFirebase(() => {
+    if (!db) return null
+    return query(
+      collection(db, "notifications"),
+      where("userId", "in", ["all", user?.uid || ""]),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    )
+  }, [db, user])
+
+  const { data: notifications } = useCollection(notifQuery)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -94,10 +109,18 @@ export default function Dashboard() {
   }
 
   const handleNotificationClick = () => {
-    toast({
-      title: "Notifications",
-      description: "You are all caught up! No new alerts.",
-    })
+    if (notifications && notifications.length > 0) {
+      const latest = notifications[0]
+      toast({
+        title: latest.title,
+        description: latest.message,
+      })
+    } else {
+      toast({
+        title: "Notifications",
+        description: "You are all caught up! No new alerts.",
+      })
+    }
   }
 
   if (isUserLoading || !user) {
@@ -127,7 +150,9 @@ export default function Dashboard() {
                 className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-colors relative"
               >
                 <Bell className="text-white h-5 w-5" />
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-accent rounded-full border-2 border-primary" />
+                {notifications && notifications.length > 0 && (
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-accent rounded-full border-2 border-primary animate-pulse" />
+                )}
               </button>
               
               <DropdownMenu>
@@ -173,14 +198,16 @@ export default function Dashboard() {
           
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-3">
             <div className="bg-white rounded-lg px-2 py-1 text-primary text-xs font-bold shadow-sm">
-              3
+              {notifications?.length || 0}
             </div>
-            <p className="text-white text-xs font-medium">New matches discovered in your area!</p>
+            <p className="text-white text-xs font-medium truncate">
+              {notifications?.[0]?.title || "Stay alert for campus item matches!"}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Grid - Refined Container Size */}
+      {/* Grid - Refined Compact Layout */}
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
         <div className="grid grid-cols-2 gap-4">
           {menuItems.map((item, index) => (

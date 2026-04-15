@@ -5,13 +5,7 @@ service cloud.firestore {
 
     /**
      * LOSTIFY SECURITY RULES
-     * 
-     * Core Philosophy:
-     * This ruleset enforces a strict identity-based access model.
-     * Deployment triggered to fix chat list permissions.
      */
-
-    // --- Helper Functions ---
 
     function isSignedIn() {
       return request.auth != null;
@@ -29,11 +23,6 @@ service cloud.firestore {
       return isSignedIn() && (request.auth.uid in participants);
     }
 
-    // --- Collection Rules ---
-
-    /**
-     * @description Rules for the User collection.
-     */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
@@ -42,17 +31,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Look-up collection for administrative privileges.
-     */
     match /roles_admin/{adminId} {
       allow get: if isSignedIn();
       allow list, create, update, delete: if false; 
     }
 
-    /**
-     * @description Items (Lost/Found).
-     */
     match /items/{itemId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn();
@@ -60,10 +43,6 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
-    /**
-     * @description Private chats.
-     * Rule updated to match query filters for participants.
-     */
     match /chats/{chatId} {
       allow get, list: if isParticipant(resource.data.participantIds) || isAdmin();
       allow create: if isSignedIn();
@@ -77,9 +56,6 @@ service cloud.firestore {
       }
     }
 
-    /**
-     * @description Public auction listings.
-     */
     match /auctions/{auctionId} {
       allow read: if true;
       allow create: if isSignedIn();
@@ -92,17 +68,17 @@ service cloud.firestore {
       }
     }
 
-    /**
-     * @description Audit logs.
-     */
     match /adminActivityLogs/{logId} {
       allow get, list, create: if isAdmin();
       allow update, delete: if false;
     }
 
-    /**
-     * @description Application Settings.
-     */
+    match /notifications/{notificationId} {
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all');
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all');
+      allow write: if isAdmin();
+    }
+
     match /appSettings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
