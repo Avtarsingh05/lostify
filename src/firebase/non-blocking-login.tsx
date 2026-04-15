@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 
 /** Initiate anonymous sign-in (non-blocking). */
@@ -15,13 +16,30 @@ export function initiateAnonymousSignIn(authInstance: Auth): void {
   });
 }
 
-/** Initiate email/password sign-up (non-blocking) with optional display name. */
+/** Initiate email/password sign-up (non-blocking) with optional display name and Firestore sync. */
 export function initiateEmailSignUp(authInstance: Auth, email: string, password: string, displayName?: string): void {
   createUserWithEmailAndPassword(authInstance, email, password)
     .then(async (userCredential) => {
+      const user = userCredential.user;
+      
+      // 1. Update Auth Profile
       if (displayName) {
-        await updateProfile(userCredential.user, { displayName });
+        await updateProfile(user, { displayName });
       }
+
+      // 2. Sync to Firestore 'users' collection so Admin can see them
+      const db = getFirestore(user.app);
+      setDoc(doc(db, "users", user.uid), {
+        id: user.uid,
+        username: displayName || email.split('@')[0],
+        email: email,
+        role: "USER",
+        photoURL: user.photoURL || "",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch((e) => {
+        console.error("Firestore sync error during signup:", e);
+      });
     })
     .catch((error) => {
       errorEmitter.emit('auth-error', error);

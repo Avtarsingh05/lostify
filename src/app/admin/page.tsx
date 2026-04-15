@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -16,7 +15,10 @@ import {
   ShieldCheck,
   User as UserIcon,
   Search,
-  MoreVertical
+  MoreVertical,
+  Calendar,
+  Mail,
+  ShieldAlert
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -42,6 +44,7 @@ import {
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { format } from "date-fns"
 
 const trafficData = [
   { name: "M", lost: 40, found: 24 },
@@ -81,8 +84,9 @@ export default function AdminDashboard() {
   const auctionsQuery = useMemoFirebase(() => collection(db, "auctions"), [db])
   const { data: allAuctions } = useCollection(auctionsQuery)
 
-  const usersQuery = useMemoFirebase(() => collection(db, "users"), [db])
-  const { data: allUsers } = useCollection(usersQuery)
+  const usersQuery = useMemoFirebase(() => 
+    query(collection(db, "users"), orderBy("createdAt", "desc")), [db])
+  const { data: allUsers, isLoading: isUsersLoading } = useCollection(usersQuery)
 
   const recentActivityQuery = useMemoFirebase(() => 
     query(collection(db, "items"), orderBy("reportedAt", "desc"), limit(4)), [db])
@@ -142,7 +146,7 @@ export default function AdminDashboard() {
     { label: "Lost Items", value: lostCount.toString(), icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
     { label: "Found Items", value: foundCount.toString(), icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
     { label: "Total Reports", value: totalCount.toString(), icon: Users, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Active Auctions", value: allAuctions?.length.toString() || "0", icon: BarChart3, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { label: "Total Students", value: allUsers?.length.toString() || "0", icon: ShieldCheck, color: "text-purple-500", bg: "bg-purple-500/10" },
   ]
 
   return (
@@ -250,47 +254,77 @@ export default function AdminDashboard() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search users by name or email..." 
+                placeholder="Search students by name or email..." 
                 className="pl-9 rounded-2xl h-12 border-none shadow-lg bg-white dark:bg-card"
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
               />
             </div>
 
-            <div className="space-y-3">
-              {filteredUsers?.map((u) => (
-                <Card key={u.id} className="border-none shadow-md rounded-[24px] overflow-hidden bg-white/80 dark:bg-card/80 backdrop-blur-sm">
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <Avatar className="h-10 w-10 border border-primary/10">
-                      <AvatarImage src={u.photoURL || `https://picsum.photos/seed/${u.id}/200/200`} />
-                      <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xs font-bold truncate">{u.username}</h3>
-                        {u.role === "GUARD" && <Badge className="bg-secondary text-[8px] h-3.5 px-1.5 uppercase tracking-tighter">Guard</Badge>}
-                        {u.role === "ADMIN" && <Badge className="bg-primary text-[8px] h-3.5 px-1.5 uppercase tracking-tighter">Admin</Badge>}
+            <div className="space-y-4 pb-12">
+              {isUsersLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary opacity-30" />
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Loading Database...</p>
+                </div>
+              ) : filteredUsers?.map((u) => (
+                <Card key={u.id} className="border-none shadow-md rounded-[28px] overflow-hidden bg-white/80 dark:bg-card/80 backdrop-blur-sm border border-white/20">
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 border-2 border-primary/10">
+                        <AvatarImage src={u.photoURL || `https://picsum.photos/seed/${u.id}/200/200`} />
+                        <AvatarFallback><UserIcon className="h-6 w-6" /></AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="text-sm font-bold truncate">{u.username}</h3>
+                          {u.role === "GUARD" && <Badge className="bg-secondary text-[8px] h-3.5 px-1.5 uppercase tracking-tighter">Guard</Badge>}
+                          {u.role === "ADMIN" && <Badge className="bg-primary text-[8px] h-3.5 px-1.5 uppercase tracking-tighter">Admin</Badge>}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                          <Mail className="h-3 w-3" /> {u.email}
+                        </p>
                       </div>
-                      <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/5 dark:border-white/5">
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Calendar className="h-2.5 w-2.5" /> Joined
+                        </p>
+                        <p className="text-[10px] font-medium">
+                          {u.createdAt ? format(new Date(u.createdAt), "MMM d, yyyy") : "Unknown"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <ShieldAlert className="h-2.5 w-2.5" /> Role
+                        </p>
+                        <p className="text-[10px] font-medium capitalize">
+                          {u.role?.toLowerCase() || "User"}
+                        </p>
+                      </div>
+                    </div>
+
                     {u.role !== "ADMIN" && (
                       <Button 
                         variant={u.role === "GUARD" ? "outline" : "default"}
                         size="sm" 
                         onClick={() => handleToggleRole(u.id, u.role || "USER")}
-                        className={`h-8 rounded-xl text-[9px] font-bold uppercase tracking-widest px-3 ${u.role === 'GUARD' ? 'border-secondary text-secondary hover:bg-secondary/10' : 'bg-secondary text-white shadow-lg'}`}
+                        className={`w-full h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest ${u.role === 'GUARD' ? 'border-secondary text-secondary hover:bg-secondary/10' : 'bg-secondary text-white shadow-lg'}`}
                       >
-                        {u.role === "GUARD" ? "Remove Guard" : "Make Guard"}
+                        {u.role === "GUARD" ? "Remove Guard Access" : "Promote to Guard"}
                       </Button>
                     )}
                   </CardContent>
                 </Card>
               ))}
               
-              {filteredUsers?.length === 0 && (
-                <div className="text-center py-12 opacity-40">
-                  <Users className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em]">No users found</p>
+              {filteredUsers?.length === 0 && !isUsersLoading && (
+                <div className="text-center py-20 opacity-40">
+                  <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em]">No students found</p>
+                  <p className="text-[10px] mt-1">Try a different search term</p>
                 </div>
               )}
             </div>
