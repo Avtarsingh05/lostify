@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -32,13 +33,6 @@ export default function SettingsPage() {
         description: "Failed to sign out. Please try again.",
       })
     }
-  }
-
-  const handleComingSoon = (feature: string) => {
-    toast({
-      title: "Coming Soon",
-      description: `${feature} will be available in the next update.`,
-    })
   }
 
   const SettingItem = ({ icon: Icon, label, description, rightElement, onClick }: any) => (
@@ -168,6 +162,12 @@ export default function SettingsPage() {
             <Card className="border-none shadow-lg rounded-[28px] overflow-hidden">
               <CardContent className="p-1">
                 <SettingItem 
+                  icon={HelpCircle} 
+                  label="Help Center" 
+                  description="Contact support & documentation" 
+                  onClick={() => router.push('/help')}
+                />
+                <SettingItem 
                   icon={FileText} 
                   label="Terms of Service" 
                   description="Platform usage rules" 
@@ -178,12 +178,6 @@ export default function SettingsPage() {
                   label="Privacy Policy" 
                   description="Data handling practices" 
                   onClick={() => router.push('/privacy')}
-                />
-                <SettingItem 
-                  icon={HelpCircle} 
-                  label="Help Center" 
-                  description="FAQs and documentation" 
-                  onClick={() => handleComingSoon("Help Center")}
                 />
               </CardContent>
             </Card>

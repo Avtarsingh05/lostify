@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useRouter } from "next/navigation"
@@ -126,7 +127,7 @@ export default function TermsPage() {
               <section>
                 <h3 className="text-foreground font-bold font-headline mb-2 uppercase text-xs tracking-wider">14. Contact Information</h3>
                 <p>
-                  For legal inquiries or reporting violations, please contact the administrative team at: help@lostify.campus.edu
+                  For legal inquiries or reporting violations, please contact the administrative team at: <strong>forigloohelp@gmail.com</strong> or via WhatsApp at <strong>+91 9013618694</strong>.
                 </p>
               </section>
             </div>

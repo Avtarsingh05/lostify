@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useRouter } from "next/navigation"
@@ -145,7 +146,7 @@ export default function PrivacyPolicyPage() {
               <section>
                 <h3 className="text-foreground font-bold font-headline mb-2 uppercase text-xs tracking-wider">12. Contact Information</h3>
                 <p>
-                  If you have any questions or concerns regarding this Privacy Policy or our data practices, please contact our privacy officer at: privacy@lostify.campus.edu
+                  If you have any questions or concerns regarding this Privacy Policy or our data practices, please contact our privacy officer at: <strong>forigloohelp@gmail.com</strong> or via WhatsApp at <strong>+91 9013618694</strong>.
                 </p>
               </section>
             </div>
