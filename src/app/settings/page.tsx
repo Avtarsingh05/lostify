@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Bell, Shield, User, LogOut, ChevronRight, Moon, Globe, HelpCircle, FileText } from "lucide-react"
+import { ArrowLeft, Bell, Shield, User, LogOut, ChevronRight, Moon, Globe, HelpCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { useAuth, useUser } from "@/firebase"
@@ -166,12 +166,6 @@ export default function SettingsPage() {
                   label="Help Center" 
                   description="Contact support & documentation" 
                   onClick={() => router.push('/help')}
-                />
-                <SettingItem 
-                  icon={FileText} 
-                  label="Terms of Service" 
-                  description="Platform usage rules" 
-                  onClick={() => router.push('/terms')}
                 />
               </CardContent>
             </Card>
