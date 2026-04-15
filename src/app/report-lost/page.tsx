@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Camera, MapPin, Calendar, Clock, Tag, Send } from "lucide-react"
+import { ArrowLeft, Camera, MapPin, Calendar, Clock, Tag, Send, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
