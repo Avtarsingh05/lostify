@@ -24,27 +24,31 @@ service cloud.firestore {
       );
     }
 
+    function isGuard() {
+      return isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "GUARD");
+    }
+
     function isParticipant(participants) {
       return isSignedIn() && (request.auth.uid in participants);
     }
 
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
+      allow get: if isOwner(userId) || isAdmin() || isGuard();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 
     match /roles_admin/{adminId} {
       allow get: if isSignedIn();
-      allow list, create, update, delete: if false; 
+      allow list, create, update, delete: if isAdmin(); 
     }
 
     match /items/{itemId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isGuard());
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
@@ -79,7 +83,6 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      // Allow users to see notifications directed at 'all' or their specific UID
       allow list, get: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
