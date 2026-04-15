@@ -1,500 +1,170 @@
+
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the Lostify application, managing their profile and interactions. Authentication details like passwords are handled by an external system.",
+      "description": "Represents a user of the Lostify application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "A unique, publicly displayed username for the user."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's primary email address.",
-          "format": "email"
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The user's primary phone number."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the user account was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the user's profile was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phoneNumber": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "username",
-        "email",
-        "createdAt"
-      ]
+      "required": ["id", "username", "email", "createdAt"]
     },
     "Item": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Item",
       "type": "object",
-      "description": "Represents a lost or found item reported by a user, including its details, location, and status.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Item entity."
-        },
-        "ownerId": {
-          "type": "string",
-          "description": "Reference to the User who reported this item. (Relationship: User 1:N Item)"
-        },
-        "name": {
-          "type": "string",
-          "description": "The name or title of the item, potentially auto-filled by AI."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the item, including distinguishing features."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL to an image of the item.",
-          "format": "uri"
-        },
-        "category": {
-          "type": "string",
-          "description": "The category the item belongs to (e.g., Electronics, Documents, Jewelry)."
-        },
-        "type": {
-          "type": "string",
-          "description": "Indicates whether the item was reported as 'lost' or 'found'."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the item (e.g., 'Active', 'Pending Claim', 'Claimed', 'Returned', 'Archived')."
-        },
-        "latitude": {
-          "type": "number",
-          "description": "The latitude coordinate of where the item was last seen (for lost items) or found (for found items)."
-        },
-        "longitude": {
-          "type": "number",
-          "description": "The longitude coordinate of where the item was last seen (for lost items) or found (for found items)."
-        },
-        "locationDescription": {
-          "type": "string",
-          "description": "A human-readable description of the item's location."
-        },
-        "eventDate": {
-          "type": "string",
-          "description": "The date and time when the item was lost or found.",
-          "format": "date-time"
-        },
-        "storageInfo": {
-          "type": "string",
-          "description": "Details about where the found item is being stored (e.g., 'At front desk', 'My apartment closet'). Applicable only to found items."
-        },
-        "reportedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the item was first reported.",
-          "format": "date-time"
-        },
-        "lastUpdatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the item's details were last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "category": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "locationDescription": { "type": "string" },
+        "eventDate": { "type": "string", "format": "date-time" },
+        "storageInfo": { "type": "string" },
+        "reportedAt": { "type": "string", "format": "date-time" },
+        "lastUpdatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "ownerId",
-        "name",
-        "imageUrl",
-        "category",
-        "type",
-        "status",
-        "latitude",
-        "longitude",
-        "eventDate",
-        "reportedAt"
-      ]
+      "required": ["id", "ownerId", "name", "imageUrl", "category", "type", "status", "reportedAt"]
+    },
+    "AppSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AppSettings",
+      "type": "object",
+      "description": "Global application configuration settings.",
+      "properties": {
+        "bannerUrl": { "type": "string", "format": "uri" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     },
     "Chat": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Chat",
       "type": "object",
-      "description": "Represents a private conversation between users regarding a specific item.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Chat entity."
-        },
-        "itemId": {
-          "type": "string",
-          "description": "Reference to the Item that this chat conversation is primarily about. (Relationship: Item 1:N Chat)"
-        },
-        "participantIds": {
-          "type": "array",
-          "description": "An array of User IDs participating in this chat. (Relationship: User N:N Chat)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the chat conversation was initiated.",
-          "format": "date-time"
-        },
-        "lastMessageAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the last message was sent in this chat.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "participantIds": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastMessageAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "itemId",
-        "participantIds",
-        "createdAt"
-      ]
+      "required": ["id", "itemId", "participantIds", "createdAt"]
     },
     "Message": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Message",
       "type": "object",
-      "description": "Represents an individual message sent within a chat conversation.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Message entity."
-        },
-        "chatId": {
-          "type": "string",
-          "description": "Reference to the Chat conversation this message belongs to. (Relationship: Chat 1:N Message)"
-        },
-        "senderId": {
-          "type": "string",
-          "description": "Reference to the User who sent this message. (Relationship: User 1:N Message)"
-        },
-        "content": {
-          "type": "string",
-          "description": "The textual content of the message."
-        },
-        "sentAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the message was sent.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "content": { "type": "string" },
+        "sentAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "chatId",
-        "senderId",
-        "content",
-        "sentAt"
-      ]
+      "required": ["id", "chatId", "senderId", "content", "sentAt"]
     },
     "Auction": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Auction",
       "type": "object",
-      "description": "Represents an auction listing for a specific item, allowing users to place bids.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Auction entity."
-        },
-        "itemId": {
-          "type": "string",
-          "description": "Reference to the Item being auctioned. (Relationship: Item 1:N Auction)"
-        },
-        "sellerId": {
-          "type": "string",
-          "description": "Reference to the User who initiated this auction. (Relationship: User 1:N Auction)"
-        },
-        "startPrice": {
-          "type": "number",
-          "description": "The initial bidding price for the item."
-        },
-        "currentBid": {
-          "type": "number",
-          "description": "The current highest bid amount in the auction."
-        },
-        "highestBidderId": {
-          "type": "string",
-          "description": "Reference to the User who currently holds the highest bid in the auction. (Relationship: User 1:N Auction)"
-        },
-        "startTime": {
-          "type": "string",
-          "description": "Timestamp indicating when the auction started.",
-          "format": "date-time"
-        },
-        "endTime": {
-          "type": "string",
-          "description": "Timestamp indicating when the auction is scheduled to end.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the auction (e.g., 'Active', 'Ended', 'Cancelled')."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the auction record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the auction record was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "startPrice": { "type": "number" },
+        "currentBid": { "type": "number" },
+        "highestBidderId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "itemId",
-        "sellerId",
-        "startPrice",
-        "currentBid",
-        "startTime",
-        "endTime",
-        "status",
-        "createdAt"
-      ]
+      "required": ["id", "itemId", "sellerId", "startPrice", "currentBid", "startTime", "endTime", "status", "createdAt"]
     },
     "Bid": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Bid",
       "type": "object",
-      "description": "Represents an individual bid placed by a user on an auction.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Bid entity."
-        },
-        "auctionId": {
-          "type": "string",
-          "description": "Reference to the Auction this bid belongs to. (Relationship: Auction 1:N Bid)"
-        },
-        "bidderId": {
-          "type": "string",
-          "description": "Reference to the User who placed this bid. (Relationship: User 1:N Bid)"
-        },
-        "amount": {
-          "type": "number",
-          "description": "The monetary amount of the bid."
-        },
-        "bidAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the bid was placed.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "auctionId": { "type": "string" },
+        "bidderId": { "type": "string" },
+        "amount": { "type": "number" },
+        "bidAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "auctionId",
-        "bidderId",
-        "amount",
-        "bidAt"
-      ]
+      "required": ["id", "auctionId", "bidderId", "amount", "bidAt"]
     },
     "AdminActivityLog": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "AdminActivityLog",
       "type": "object",
-      "description": "Records significant actions performed by administrators for auditing and overview purposes.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the AdminActivityLog entity."
-        },
-        "adminUserId": {
-          "type": "string",
-          "description": "Reference to the User (acting as an admin) who performed the action. (Relationship: User 1:N AdminActivityLog)"
-        },
-        "action": {
-          "type": "string",
-          "description": "A description of the action performed (e.g., 'Archived Item', 'Updated User Profile')."
-        },
-        "targetEntity": {
-          "type": "string",
-          "description": "The type of entity that was affected by the action (e.g., 'Item', 'User', 'Auction')."
-        },
-        "targetEntityId": {
-          "type": "string",
-          "description": "The ID of the specific entity instance that was affected."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Timestamp indicating when the admin action occurred.",
-          "format": "date-time"
-        },
-        "details": {
-          "type": "string",
-          "description": "Optional: Additional verbose details or context about the action."
-        }
+        "id": { "type": "string" },
+        "adminUserId": { "type": "string" },
+        "action": { "type": "string" },
+        "targetEntity": { "type": "string" },
+        "targetEntityId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "details": { "type": "string" }
       },
-      "required": [
-        "id",
-        "adminUserId",
-        "action",
-        "targetEntity",
-        "targetEntityId",
-        "timestamp"
-      ]
+      "required": ["id", "adminUserId", "action", "targetEntity", "targetEntityId", "timestamp"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
       {
         "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles. Access is restricted to the authenticated user matching {userId} for reads and writes. 'email' and 'phoneNumber' fields are present for login.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user."
-            }
-          ]
-        }
+        "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "Stores user profiles." }
       },
       {
         "path": "/roles_admin/{adminId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Dedicated collection to store admin roles. The existence of a document at this path indicates the user is an administrator, enabling DBAC (Database Access Control) via simple 'exists()' checks in security rules.",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "The unique ID of the user designated as an admin."
-            }
-          ]
-        }
+        "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "Admin roles." }
       },
       {
         "path": "/items/{itemId}",
-        "definition": {
-          "entityName": "Item",
-          "schema": {
-            "$ref": "#/backend/entities/Item"
-          },
-          "description": "Stores reported lost or found items. Items are publicly readable for discovery (map, browsing) but only the 'ownerId' can modify or delete their reported item. 'ownerId' is explicitly included for authorization independence.",
-          "params": [
-            {
-              "name": "itemId",
-              "description": "The unique ID of the item."
-            }
-          ]
-        }
+        "definition": { "entityName": "Item", "schema": { "$ref": "#/backend/entities/Item" }, "description": "Reported items." }
+      },
+      {
+        "path": "/appSettings/{settingId}",
+        "definition": { "entityName": "AppSettings", "schema": { "$ref": "#/backend/entities/AppSettings" }, "description": "Global settings like banners." }
       },
       {
         "path": "/chats/{chatId}",
-        "definition": {
-          "entityName": "Chat",
-          "schema": {
-            "$ref": "#/backend/entities/Chat"
-          },
-          "description": "Manages private conversations related to items. Includes 'participantIds' (an array of user UIDs) denormalized for direct authorization checks and 'itemOwnerId' (owner of the item this chat is about) for authorization independence without needing 'get()' calls. Only participants can read or write.",
-          "params": [
-            {
-              "name": "chatId",
-              "description": "The unique ID of the chat conversation."
-            }
-          ]
-        }
+        "definition": { "entityName": "Chat", "schema": { "$ref": "#/backend/entities/Chat" }, "description": "Private conversations." }
       },
       {
         "path": "/chats/{chatId}/messages/{messageId}",
-        "definition": {
-          "entityName": "Message",
-          "schema": {
-            "$ref": "#/backend/entities/Message"
-          },
-          "description": "Individual messages within a chat. Critically, includes 'participantIds' denormalized from the parent chat for authorization independence, allowing secure list/read operations without fetching the parent chat document. Only participants can read messages, and only the 'senderId' can write their own messages.",
-          "params": [
-            {
-              "name": "chatId",
-              "description": "The unique ID of the parent chat conversation."
-            },
-            {
-              "name": "messageId",
-              "description": "The unique ID of the message."
-            }
-          ]
-        }
+        "definition": { "entityName": "Message", "schema": { "$ref": "#/backend/entities/Message" }, "description": "Chat messages." }
       },
       {
         "path": "/auctions/{auctionId}",
-        "definition": {
-          "entityName": "Auction",
-          "schema": {
-            "$ref": "#/backend/entities/Auction"
-          },
-          "description": "Stores auction listings for items. Auctions are publicly readable for browsing, but only the 'sellerId' can modify or delete their auction. 'sellerId' and 'itemOwnerId' are denormalized for authorization independence.",
-          "params": [
-            {
-              "name": "auctionId",
-              "description": "The unique ID of the auction."
-            }
-          ]
-        }
+        "definition": { "entityName": "Auction", "schema": { "$ref": "#/backend/entities/Auction" }, "description": "Auction listings." }
       },
       {
         "path": "/auctions/{auctionId}/bids/{bidId}",
-        "definition": {
-          "entityName": "Bid",
-          "schema": {
-            "$ref": "#/backend/entities/Bid"
-          },
-          "description": "Records individual bids placed on an auction. Includes 'bidderId', 'auctionSellerId', and 'auctionItemId' denormalized from the parent auction for authorization independence, allowing rules to directly verify bid ownership and related auction parties without a 'get()' call. Only the 'bidderId' can modify their own bid, and only the 'bidderId' or 'auctionSellerId' can read the bid.",
-          "params": [
-            {
-              "name": "auctionId",
-              "description": "The unique ID of the parent auction."
-            },
-            {
-              "name": "bidId",
-              "description": "The unique ID of the bid."
-            }
-          ]
-        }
+        "definition": { "entityName": "Bid", "schema": { "$ref": "#/backend/entities/Bid" }, "description": "Individual bids." }
       },
       {
         "path": "/adminActivityLogs/{logId}",
-        "definition": {
-          "entityName": "AdminActivityLog",
-          "schema": {
-            "$ref": "#/backend/entities/AdminActivityLog"
-          },
-          "description": "Logs significant administrative actions for auditing purposes. Access is restricted to users with an 'admin' role. 'adminUserId' is included for authorization.",
-          "params": [
-            {
-              "name": "logId",
-              "description": "The unique ID of the activity log entry."
-            }
-          ]
-        }
+        "definition": { "entityName": "AdminActivityLog", "schema": { "$ref": "#/backend/entities/AdminActivityLog" }, "description": "Admin activity logs." }
       }
-    ],
-    "reasoning": "The Firestore structure is designed following the CORE DESIGN PRINCIPLES and DESIGN STRATEGY MANDATES to ensure a secure, scalable, and easily debuggable database for the Lostify application.Authorization Independence is achieved primarily through strategic denormalization. For collaborative data like Chats, the 'participantIds' array is stored directly within each Chat document. Crucially, for subcollections like Messages, the 'participantIds' from the parent Chat are denormalized into every Message document. This eliminates the need for expensive and rule-breaking 'get()' operations to check parent document permissions when authorizing access to messages, enabling atomic write operations and simplifying security rules. Similarly, for Auctions and Bids, key ownership information such as 'itemOwnerId' and 'auctionSellerId' are denormalized into the respective documents (Chat, Auction, Bid) to ensure that security rules for these documents and their subcollections can operate independently without fetching parent data.\n\nStructural Segregation is applied by defining distinct collections based on access patterns. For instance, 'users' is a private collection, while 'items' and 'auctions' are broadly readable but with restricted write access to the respective owners/sellers. This approach ensures that all documents within a given collection adhere to a homogeneous security posture, making security rules much simpler and more robust. For example, all documents in '/items' are public-read, owner-write. An 'admin' role is managed via a separate, explicit collection '/roles_admin/{uid}', allowing for simple existence checks in rules without affecting the 'User' profile's security posture.\n\nQAPs (Queries as Authorization Primitives) are supported by ensuring that 'list' operations can be secured efficiently without relying on server-side filtering. By denormalizing authorization-critical fields (e.g., 'participantIds' into 'Message' documents), a user can query for messages within a chat using a rule like 'request.auth.uid in resource.data.participantIds' directly on the 'messages' collection, without needing a 'get()' call on the parent 'chat' document. This allows for efficient and secure 'list' operations across all data that users are authorized to view or interact with, based on their explicit role or participation status stored within the document itself. Paths like '/users/{userId}' provide direct path-based ownership for private user data, inherently supporting QAPs for personal items."
+    ]
   }
 }

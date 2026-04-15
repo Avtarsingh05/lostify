@@ -18,11 +18,12 @@ import {
   Settings,
   LogOut,
   CreditCard,
-  Loader2
+  Loader2,
+  Sparkles
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { Badge } from "@/components/ui/badge"
-import { useAuth, useUser } from "@/firebase"
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Image from "next/image"
+import { doc } from "firebase/firestore"
 
 const menuItems = [
   {
@@ -81,7 +84,16 @@ const menuItems = [
 export default function Dashboard() {
   const { user, isUserLoading } = useUser()
   const auth = useAuth()
+  const db = useFirestore()
   const router = useRouter()
+
+  // Fetch Banner from App Settings
+  const bannerDocRef = useMemoFirebase(() => {
+    if (!db) return null
+    return doc(db, "appSettings", "banner")
+  }, [db])
+
+  const { data: bannerData } = useDoc(bannerDocRef)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -124,7 +136,7 @@ export default function Dashboard() {
                 <DropdownMenuTrigger asChild>
                   <button className="bg-white/20 p-0.5 rounded-full hover:bg-white/30 transition-colors">
                     <Avatar className="h-8 w-8 border-2 border-white/20">
-                      <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/200/200`} />
+                      <AvatarImage src={user?.photoURL || `https://picsum.photos/seed/${user?.uid}/200/200`} />
                       <AvatarFallback className="bg-primary text-white text-[10px]">
                         {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || <User className="h-3 w-3" />}
                       </AvatarFallback>
@@ -166,7 +178,27 @@ export default function Dashboard() {
       </div>
 
       {/* Grid */}
-      <main className="max-w-md mx-auto px-4 -mt-8 w-full space-y-3">
+      <main className="max-w-md mx-auto px-4 -mt-8 w-full space-y-4">
+        
+        {/* Dynamic Admin Banner */}
+        {bannerData?.bannerUrl && (
+          <div className="relative w-full aspect-[21/9] rounded-[24px] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Image 
+              src={bannerData.bannerUrl} 
+              alt="Promotion" 
+              fill 
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-accent animate-pulse" />
+                <span className="text-white text-xs font-headline font-bold uppercase tracking-widest">Campus Highlights</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block">

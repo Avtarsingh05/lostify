@@ -1,15 +1,20 @@
+
 "use client"
 
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
   Users, 
   BarChart3, 
-  TrendingUp, 
   AlertTriangle, 
   CheckCircle,
-  FileText,
-  Settings
+  Settings,
+  Image as ImageIcon,
+  Upload,
+  Loader2,
+  Trash2,
+  Sparkles
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -20,12 +25,16 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { ChartTooltipContent } from "@/components/ui/chart"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
+import { doc } from "firebase/firestore"
+import { useToast } from "@/hooks/use-toast"
+import Image from "next/image"
 
-const data = [
+const trafficData = [
   { name: "M", lost: 40, found: 24 },
   { name: "T", lost: 30, found: 13 },
   { name: "W", lost: 20, found: 98 },
@@ -44,13 +53,74 @@ const stats = [
 
 export default function AdminDashboard() {
   const router = useRouter()
+  const db = useFirestore()
+  const { toast } = useToast()
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch current banner
+  const bannerDocRef = useMemoFirebase(() => {
+    if (!db) return null
+    return doc(db, "appSettings", "banner")
+  }, [db])
+
+  const { data: bannerData, isLoading: isBannerLoading } = useDoc(bannerDocRef)
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !db) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("upload_preset", "admin_banner_upload")
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      
+      if (!res.ok) throw new Error("Upload failed")
+      const data = await res.json()
+      
+      const bannerRef = doc(db, "appSettings", "banner")
+      setDocumentNonBlocking(bannerRef, {
+        bannerUrl: data.secure_url,
+        updatedAt: new Date().toISOString()
+      }, { merge: true })
+
+      toast({
+        title: "Banner Updated",
+        description: "New promotional banner is now live on the dashboard.",
+      })
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload Error",
+        description: err.message || "Could not update banner.",
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleRemoveBanner = () => {
+    if (!db) return
+    const bannerRef = doc(db, "appSettings", "banner")
+    deleteDocumentNonBlocking(bannerRef)
+    toast({
+      title: "Banner Removed",
+      description: "The dashboard banner has been deactivated.",
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="gradient-header pt-10 pb-20 px-4 rounded-b-[40px] shadow-2xl text-white">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full">
+            <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
               <ArrowLeft className="h-5 w-5" />
             </button>
             <h1 className="text-2xl font-headline font-bold">Admin Console</h1>
@@ -64,6 +134,64 @@ export default function AdminDashboard() {
       </div>
 
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
+        
+        {/* Banner Management Section */}
+        <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-xl">
+          <CardHeader className="pb-2 pt-6 px-6">
+            <CardTitle className="text-lg font-headline font-bold flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-primary" /> Dashboard Banner
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <div className="relative aspect-[21/9] w-full bg-muted rounded-2xl overflow-hidden border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center group transition-all">
+              {bannerData?.bannerUrl ? (
+                <>
+                  <Image src={bannerData.bannerUrl} alt="Banner" fill className="object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="rounded-xl font-bold text-xs"
+                    >
+                      <Upload className="h-3.5 w-3.5 mr-1" /> Change
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={handleRemoveBanner}
+                      className="rounded-xl font-bold text-xs"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="cursor-pointer flex flex-col items-center hover:scale-105 transition-transform"
+                >
+                  <div className="bg-primary/10 p-4 rounded-full mb-2">
+                    <Upload className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Upload Promotion Image</p>
+                </div>
+              )}
+              {isUploading && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                  <p className="text-xs font-bold font-headline">Syncing to Cloud...</p>
+                </div>
+              )}
+            </div>
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleBannerUpload} />
+            <div className="flex items-center gap-2 px-1">
+              <Sparkles className="h-3 w-3 text-accent" />
+              <p className="text-[9px] text-muted-foreground leading-tight">Recommended: 21:9 ratio (e.g. 1260x540px) for optimal display on mobile devices.</p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           {stats.map((stat, i) => (
@@ -90,7 +218,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent className="px-4 pb-6 h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data}>
+                <BarChart data={trafficData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} />
                   <YAxis axisLine={false} tickLine={false} fontSize={10} />
