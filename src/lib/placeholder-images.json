@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "item-wallet",
+      "description": "Lost wallet on pavement",
+      "imageUrl": "https://picsum.photos/seed/wallet/600/400",
+      "imageHint": "wallet floor"
+    },
+    {
+      "id": "item-phone",
+      "description": "Found smartphone on a bench",
+      "imageUrl": "https://picsum.photos/seed/phone/600/400",
+      "imageHint": "phone bench"
+    },
+    {
+      "id": "item-keys",
+      "description": "Set of keys on grass",
+      "imageUrl": "https://picsum.photos/seed/keys/600/400",
+      "imageHint": "keys grass"
+    },
+    {
+      "id": "item-watch",
+      "description": "Luxury watch left behind",
+      "imageUrl": "https://picsum.photos/seed/watch/600/400",
+      "imageHint": "luxury watch"
+    },
+    {
+      "id": "avatar-user1",
+      "description": "User profile avatar",
+      "imageUrl": "https://picsum.photos/seed/user1/200/200",
+      "imageHint": "portrait man"
+    },
+    {
+      "id": "avatar-user2",
+      "description": "User profile avatar",
+      "imageUrl": "https://picsum.photos/seed/user2/200/200",
+      "imageHint": "portrait woman"
+    }
+  ]
 }
