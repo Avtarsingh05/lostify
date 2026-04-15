@@ -40,16 +40,6 @@
       },
       "required": ["id", "ownerId", "name", "imageUrl", "category", "type", "status", "reportedAt"]
     },
-    "AppSettings": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AppSettings",
-      "type": "object",
-      "description": "Global application configuration settings.",
-      "properties": {
-        "bannerUrl": { "type": "string", "format": "uri" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      }
-    },
     "Chat": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Chat",
@@ -140,10 +130,6 @@
       {
         "path": "/items/{itemId}",
         "definition": { "entityName": "Item", "schema": { "$ref": "#/backend/entities/Item" }, "description": "Reported items." }
-      },
-      {
-        "path": "/appSettings/{settingId}",
-        "definition": { "entityName": "AppSettings", "schema": { "$ref": "#/backend/entities/AppSettings" }, "description": "Global settings like banners." }
       },
       {
         "path": "/chats/{chatId}",

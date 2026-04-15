@@ -18,12 +18,11 @@ import {
   Settings,
   LogOut,
   CreditCard,
-  Loader2,
-  Sparkles
+  Loader2
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { Badge } from "@/components/ui/badge"
-import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
+import { useAuth, useUser } from "@/firebase"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,8 +32,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Image from "next/image"
-import { doc } from "firebase/firestore"
 
 const menuItems = [
   {
@@ -84,16 +81,7 @@ const menuItems = [
 export default function Dashboard() {
   const { user, isUserLoading } = useUser()
   const auth = useAuth()
-  const db = useFirestore()
   const router = useRouter()
-
-  // Fetch Banner from App Settings
-  const bannerDocRef = useMemoFirebase(() => {
-    if (!db) return null
-    return doc(db, "appSettings", "banner")
-  }, [db])
-
-  const { data: bannerData } = useDoc(bannerDocRef)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -180,25 +168,6 @@ export default function Dashboard() {
       {/* Grid */}
       <main className="max-w-md mx-auto px-4 -mt-8 w-full space-y-4">
         
-        {/* Dynamic Admin Banner */}
-        {bannerData?.bannerUrl && (
-          <div className="relative w-full aspect-[21/9] rounded-[24px] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Image 
-              src={bannerData.bannerUrl} 
-              alt="Promotion" 
-              fill 
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-accent animate-pulse" />
-                <span className="text-white text-xs font-headline font-bold uppercase tracking-widest">Campus Highlights</span>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="grid grid-cols-2 gap-3">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block">
