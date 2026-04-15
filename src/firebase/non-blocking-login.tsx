@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Auth,
@@ -29,7 +30,10 @@ export function initiateEmailSignUp(authInstance: Auth, email: string, password:
 
       // 2. Sync to Firestore 'users' collection so Admin can see them
       const db = getFirestore(user.app);
-      setDoc(doc(db, "users", user.uid), {
+      const userRef = doc(db, "users", user.uid);
+      
+      // We use setDoc to explicitly create the document and thus the collection (container)
+      setDoc(userRef, {
         id: user.uid,
         username: displayName || email.split('@')[0],
         email: email,

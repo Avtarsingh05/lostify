@@ -20,7 +20,7 @@ import {
   Clock
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
-import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
-import { collection, query, where, orderBy, limit } from "firebase/firestore"
+import { collection, query, where, orderBy, limit, doc, setDoc } from "firebase/firestore"
 import { formatDistanceToNow } from "date-fns"
 
 const menuItems = [
@@ -90,6 +90,22 @@ export default function Dashboard() {
   const db = useFirestore()
   const router = useRouter()
   const { toast } = useToast()
+
+  // Ensure user document exists in Firestore (Profile Sync)
+  useEffect(() => {
+    if (user && db) {
+      const userRef = doc(db, "users", user.uid)
+      setDoc(userRef, {
+        id: user.uid,
+        email: user.email,
+        username: user.displayName || user.email?.split('@')[0] || 'User',
+        photoURL: user.photoURL || "",
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch((err) => {
+        console.warn("Profile sync skipped or failed:", err)
+      })
+    }
+  }, [user, db])
 
   // Real-time notifications listener
   const notifQuery = useMemoFirebase(() => {
