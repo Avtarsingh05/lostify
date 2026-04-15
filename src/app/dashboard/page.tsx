@@ -180,22 +180,22 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Grid - Increased Container Size */}
+      {/* Grid - Refined Container Size */}
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
         <div className="grid grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
               <ThreeDCard 
-                className={item.gradient + " p-6 h-48 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl"}
+                className={item.gradient + " p-5 h-44 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl"}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex flex-col gap-4 text-white">
                   <div className="bg-white/20 w-fit p-3 rounded-2xl">
-                    <item.icon className="h-7 w-7" />
+                    <item.icon className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-headline font-bold leading-tight">{item.title}</h3>
-                    <p className="text-[11px] opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
+                    <h3 className="text-base font-headline font-bold leading-tight">{item.title}</h3>
+                    <p className="text-[10px] opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
                   </div>
                 </div>
               </ThreeDCard>
