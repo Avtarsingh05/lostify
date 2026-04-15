@@ -3,17 +3,18 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Navigation, Search, Filter, MapPin, Loader2, Info } from "lucide-react"
+import { ArrowLeft, Navigation, Search, Filter, MapPin, Loader2, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/firebase"
+import Image from "next/image"
 
 const mockItems = [
   { id: 1, type: "lost", name: "Apple Watch", location: "Block 34", color: "hsl(38, 90%, 50%)", x: 45, y: 30, image: "https://picsum.photos/seed/watch/200/200" },
   { id: 2, type: "found", name: "Wallet", location: "Uni Mall", color: "hsl(147, 74%, 46%)", x: 60, y: 55, image: "https://picsum.photos/seed/wallet/200/200" },
-  { id: 3, type: "lost", name: "Backpack", location: "Baldev Raj Mittal Unipolis", color: "hsl(38, 90%, 50%)", x: 30, y: 70, image: "https://picsum.photos/seed/bag/200/200" },
+  { id: 3, type: "lost", name: "Backpack", location: "Unipolis", color: "hsl(38, 90%, 50%)", x: 30, y: 70, image: "https://picsum.photos/seed/bag/200/200" },
 ]
 
 export default function MapScreen() {
@@ -21,6 +22,7 @@ export default function MapScreen() {
   const { user, isUserLoading } = useUser()
   const { toast } = useToast()
   const [selectedItem, setSelectedItem] = useState<typeof mockItems[0] | null>(null)
+  const [isMapReady, setIsMapReady] = useState(false)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -37,6 +39,14 @@ export default function MapScreen() {
     window.open(`https://www.google.com/maps/search/?api=1&query=Lovely+Professional+University+${selectedItem.location}`, '_blank')
   }
 
+  const handleRecenter = () => {
+    setIsMapReady(false)
+    setTimeout(() => setIsMapReady(true), 100)
+    toast({
+      description: "Recentering on LPU Campus...",
+    })
+  }
+
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -46,22 +56,44 @@ export default function MapScreen() {
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-muted">
-      {/* Live LPU Satellite / Earth View Embed */}
-      <div className="absolute inset-0 z-0">
+    <div className="relative h-screen w-full overflow-hidden bg-black">
+      {/* Instant Static Map Backdrop (Pre-cached feel) */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <Image 
+          src="https://picsum.photos/seed/lpu-satellite/1200/1200" 
+          alt="Campus Overview" 
+          fill
+          className={`object-cover transition-opacity duration-1000 ${isMapReady ? 'opacity-30' : 'opacity-100'}`}
+          data-ai-hint="satellite university"
+        />
+      </div>
+
+      {/* Live Interactive Satellite View */}
+      <div className={`absolute inset-0 z-1 transition-opacity duration-700 ${isMapReady ? 'opacity-100' : 'opacity-0'}`}>
         <iframe
           src="https://maps.google.com/maps?q=Lovely+Professional+University+LPU+Campus+Phagwara&t=k&z=17&ie=UTF8&iwloc=&output=embed"
           width="100%"
           height="100%"
           style={{ border: 0 }}
           allowFullScreen={true}
-          loading="lazy"
-          className="opacity-100"
+          loading="eager"
+          onLoad={() => setIsMapReady(true)}
+          className="grayscale-[20%] brightness-[110%]"
         ></iframe>
       </div>
 
-      {/* Mobile Top Header */}
-      <div className="absolute top-0 left-0 right-0 p-3 z-10 pointer-events-none">
+      {/* Campus Lock & Recenter Tool */}
+      <div className="absolute top-20 right-4 z-20 flex flex-col gap-2">
+        <button 
+          onClick={handleRecenter}
+          className="bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl p-3 rounded-2xl active:scale-95 transition-transform border border-white/20"
+        >
+          <RefreshCw className={`h-5 w-5 text-primary ${!isMapReady ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+
+      {/* Top Header */}
+      <div className="absolute top-0 left-0 right-0 p-3 z-30 pointer-events-none">
         <div className="max-w-md mx-auto flex items-center gap-2 pointer-events-auto">
           <button 
             onClick={() => router.back()} 
@@ -73,7 +105,7 @@ export default function MapScreen() {
             <Search className="h-4 w-4 text-muted-foreground mr-2" />
             <input 
               type="text" 
-              placeholder="Search blocks or items..." 
+              placeholder="Search LPU blocks..." 
               className="bg-transparent border-none outline-none w-full text-[10px] font-bold"
             />
             <button className="p-1.5 hover:bg-muted rounded-lg ml-auto">
@@ -83,8 +115,8 @@ export default function MapScreen() {
         </div>
       </div>
 
-      {/* Mobile-Friendly Bottom Sheet */}
-      <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-500 ease-out z-30 ${selectedItem ? 'translate-y-[-80px]' : 'translate-y-full'}`}>
+      {/* Bottom Detail Sheet */}
+      <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-500 ease-out z-40 ${selectedItem ? 'translate-y-[-80px]' : 'translate-y-full'}`}>
         <Card className="max-w-md mx-auto rounded-[32px] shadow-2xl overflow-hidden border-none bg-white/95 dark:bg-card/95 backdrop-blur-xl">
           <div className="p-4">
             <div className="flex items-center gap-3">
@@ -104,7 +136,7 @@ export default function MapScreen() {
                 <h3 className="text-sm font-headline font-bold truncate">{selectedItem?.name}</h3>
                 <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
                   <MapPin className="h-2.5 w-2.5" />
-                  <span className="text-[9px] font-medium truncate">LPU - {selectedItem?.location}</span>
+                  <span className="text-[9px] font-medium truncate">Campus - {selectedItem?.location}</span>
                 </div>
               </div>
               <button 
@@ -117,28 +149,28 @@ export default function MapScreen() {
 
             <div className="grid grid-cols-2 gap-2 mt-4">
               <Button onClick={handleNavigate} className="rounded-xl h-9 bg-primary font-headline font-bold text-[10px] gap-2 shadow-lg shadow-primary/20">
-                <Navigation className="h-3 w-3" /> Directions
+                <Navigation className="h-3 w-3" /> Navigate
               </Button>
               <Button onClick={() => router.push('/chat')} variant="outline" className="rounded-xl h-9 font-headline font-bold text-[10px] border-2">
-                Chat
+                Chat Owner
               </Button>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Manual Pin Triggers */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Real-time Pins */}
+      <div className={`absolute inset-0 pointer-events-none z-20 transition-opacity duration-1000 ${isMapReady ? 'opacity-100' : 'opacity-0'}`}>
         {mockItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setSelectedItem(item)}
-            className="absolute z-20 transition-all duration-300 active:scale-150 pointer-events-auto"
+            className="absolute transition-all duration-300 active:scale-150 pointer-events-auto"
             style={{ left: `${item.x}%`, top: `${item.y}%` }}
           >
             <div className="relative flex flex-col items-center">
               <div 
-                className="w-8 h-8 rounded-full bg-white dark:bg-card shadow-2xl flex items-center justify-center p-0.5 border-[2px]"
+                className="w-10 h-10 rounded-full bg-white dark:bg-card shadow-2xl flex items-center justify-center p-0.5 border-[3px] hover:scale-110 transition-transform"
                 style={{ borderColor: item.color }}
               >
                 <div className="w-full h-full rounded-full overflow-hidden bg-muted">
@@ -146,7 +178,7 @@ export default function MapScreen() {
                 </div>
               </div>
               <div 
-                className="w-1.5 h-1.5 rotate-45 -mt-0.5 shadow-sm"
+                className="w-2 h-2 rotate-45 -mt-1 shadow-sm"
                 style={{ backgroundColor: item.color }}
               />
             </div>
