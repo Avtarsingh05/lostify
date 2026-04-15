@@ -1,9 +1,10 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mail, Lock, ArrowRight, Sparkles, UserPlus, Fingerprint, Info, User as UserIcon } from "lucide-react"
+import { Mail, Lock, ArrowRight, Sparkles, UserPlus, Fingerprint, Info, User as UserIcon, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -105,6 +106,14 @@ export default function LoginPage() {
       title: "Notice",
       description: "Phone login is for campus staff only.",
     })
+  }
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (

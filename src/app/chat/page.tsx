@@ -1,10 +1,12 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Send, Phone, Video, MoreVertical, Paperclip, Smile } from "lucide-react"
+import { ArrowLeft, Send, Phone, Video, MoreVertical, Paperclip, Smile, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { useUser } from "@/firebase"
 
 const initialMessages = [
   { id: 1, text: "Hi! I saw your post about the black wallet. I think I found it near the Central Park fountain.", sender: "received", time: "10:30 AM" },
@@ -16,9 +18,16 @@ const initialMessages = [
 
 export default function ChatScreen() {
   const router = useRouter()
+  const { user, isUserLoading } = useUser()
   const [messages, setMessages] = useState(initialMessages)
   const [newMessage, setNewMessage] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/")
+    }
+  }, [user, isUserLoading, router])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -39,6 +48,14 @@ export default function ChatScreen() {
 
     setMessages([...messages, msg])
     setNewMessage("")
+  }
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (

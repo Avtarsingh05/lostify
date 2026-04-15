@@ -1,12 +1,14 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Navigation, Search, Filter, Info, MapPin } from "lucide-react"
+import { ArrowLeft, Navigation, Search, Filter, Info, MapPin, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@/firebase"
 import Image from "next/image"
 
 const mockItems = [
@@ -17,8 +19,15 @@ const mockItems = [
 
 export default function MapScreen() {
   const router = useRouter()
+  const { user, isUserLoading } = useUser()
   const { toast } = useToast()
   const [selectedItem, setSelectedItem] = useState<typeof mockItems[0] | null>(null)
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/")
+    }
+  }, [user, isUserLoading, router])
 
   const handleNavigate = () => {
     toast({
@@ -28,6 +37,14 @@ export default function MapScreen() {
     setTimeout(() => {
       window.open(`https://www.google.com/maps/search/?api=1&query=${selectedItem?.location}`, '_blank')
     }, 1000)
+  }
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
