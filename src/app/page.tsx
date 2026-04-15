@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -34,20 +35,26 @@ export default function LoginPage() {
   useEffect(() => {
     const handleAuthError = (error: any) => {
       setIsLoading(false)
-      let message = error.message || "An unexpected error occurred."
+      let message = "Something went wrong."
       
-      // Map common Firebase errors to user-friendly messages
+      // Simple error words
       if (error.code === 'auth/user-not-found') {
-        message = "No account found with this email. Please register instead."
+        message = "Account not found. Register now?"
+        setIsSignup(true)
       } else if (error.code === 'auth/wrong-password') {
-        message = "Incorrect password. Please try again."
+        message = "Wrong password."
       } else if (error.code === 'auth/email-already-in-use') {
-        message = "This email is already registered. Try signing in."
+        message = "Email already used. Log in?"
+        setIsSignup(false)
+      } else if (error.code === 'auth/weak-password') {
+        message = "Password is too short."
+      } else if (error.code === 'auth/invalid-email') {
+        message = "Invalid email format."
       }
 
       toast({
         variant: "destructive",
-        title: "Authentication Issue",
+        title: "Access Denied",
         description: message,
       })
     }
@@ -61,8 +68,8 @@ export default function LoginPage() {
     if (!email.endsWith("@gmail.com")) {
       toast({
         variant: "destructive",
-        title: "Domain Restricted",
-        description: "Only official @gmail.com accounts are permitted.",
+        title: "Domain Error",
+        description: "Only @gmail.com is allowed.",
       })
       return
     }
@@ -70,8 +77,8 @@ export default function LoginPage() {
     if (isSignup && nickname.length < 3) {
       toast({
         variant: "destructive",
-        title: "Short Nickname",
-        description: "Nickname must be at least 3 characters.",
+        title: "Nickname Error",
+        description: "Name is too short.",
       })
       return
     }
@@ -79,8 +86,8 @@ export default function LoginPage() {
     if (password.length < 6) {
       toast({
         variant: "destructive",
-        title: "Weak Password",
-        description: "Password must be at least 6 characters.",
+        title: "Password Error",
+        description: "Use at least 6 characters.",
       })
       return
     }
@@ -88,10 +95,8 @@ export default function LoginPage() {
     setIsLoading(true)
     if (isSignup) {
       initiateEmailSignUp(auth, email, password, nickname)
-      toast({ title: "Creating Account", description: "Setting up your profile..." })
     } else {
       initiateEmailSignIn(auth, email, password)
-      toast({ title: "Signing In", description: "Verifying credentials..." })
     }
   }
 
@@ -99,7 +104,7 @@ export default function LoginPage() {
     e.preventDefault()
     toast({
       title: "Notice",
-      description: "Phone login is restricted for verified campus staff only.",
+      description: "Phone login is for campus staff only.",
     })
   }
 
@@ -121,7 +126,7 @@ export default function LoginPage() {
           <CardHeader className="pb-2 pt-6">
             <div className="flex justify-center mb-4">
                <h2 className="text-xl font-headline font-bold">
-                 {isSignup ? "New Account" : "Welcome Back"}
+                 {isSignup ? "Create Account" : "Welcome Back"}
                </h2>
             </div>
             
@@ -140,7 +145,7 @@ export default function LoginPage() {
                         <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input 
                           id="nickname" 
-                          placeholder="Your Nickname" 
+                          placeholder="What should we call you?" 
                           className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
                           value={nickname}
                           onChange={(e) => setNickname(e.target.value)}
@@ -151,7 +156,7 @@ export default function LoginPage() {
                   )}
 
                   <div className="space-y-1">
-                    <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Gmail</Label>
+                    <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Gmail Address</Label>
                     <div className="relative group">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                       <Input 
@@ -185,7 +190,7 @@ export default function LoginPage() {
                   </div>
 
                   <Button type="submit" className="w-full h-12 rounded-xl gradient-header font-bold text-sm shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all" disabled={isLoading}>
-                    {isLoading ? "Processing..." : (isSignup ? "Register Now" : "Sign In")} 
+                    {isLoading ? "Working..." : (isSignup ? "Join Now" : "Sign In")} 
                     {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
                 </form>
@@ -214,12 +219,12 @@ export default function LoginPage() {
                   <Alert className="bg-primary/5 border-none rounded-xl py-2 px-3">
                     <Info className="h-3 w-3 text-primary" />
                     <AlertDescription className="text-[9px] font-medium leading-tight">
-                      SMS verification is restricted to official campus devices.
+                      SMS login is restricted to staff devices.
                     </AlertDescription>
                   </Alert>
 
                   <Button type="submit" className="w-full h-12 rounded-xl gradient-header font-bold text-sm shadow-lg" disabled={isLoading}>
-                    Send Access Code
+                    Request Access Code
                   </Button>
                 </form>
               </TabsContent>
@@ -238,7 +243,7 @@ export default function LoginPage() {
                 onClick={() => setIsSignup(!isSignup)}
                 className="text-xs font-bold text-primary hover:opacity-80 transition-all underline decoration-primary/30 underline-offset-4"
               >
-                {isSignup ? "Already have an account? Sign In" : "Not registered? Register Now"}
+                {isSignup ? "Already have an account? Log In" : "New here? Register Now"}
               </button>
             </div>
           </CardContent>
