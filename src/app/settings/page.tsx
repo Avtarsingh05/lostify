@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Bell, Shield, User, LogOut, ChevronRight, Moon, Globe, HelpCircle, FileText, Eye } from "lucide-react"
+import { ArrowLeft, Bell, Shield, User, LogOut, ChevronRight, Moon, Globe, HelpCircle, FileText } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { useAuth, useUser } from "@/firebase"
@@ -172,12 +172,6 @@ export default function SettingsPage() {
                   label="Terms of Service" 
                   description="Platform usage rules" 
                   onClick={() => router.push('/terms')}
-                />
-                <SettingItem 
-                  icon={Eye} 
-                  label="Privacy Policy" 
-                  description="Data handling practices" 
-                  onClick={() => router.push('/privacy')}
                 />
               </CardContent>
             </Card>

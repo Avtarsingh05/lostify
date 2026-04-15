@@ -180,7 +180,7 @@ export default function AdminDashboard() {
               {isUploading && (
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
                   <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                  <p className="text-xs font-bold font-headline">Syncing to Cloud...</p>
+                  <p className="text-xs font-bold font-headline">Syncing to Cloudinary...</p>
                 </div>
               )}
             </div>
