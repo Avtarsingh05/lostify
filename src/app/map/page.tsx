@@ -60,9 +60,6 @@ export default function MapScreen() {
         ></iframe>
       </div>
 
-      {/* Subtle Overlay for Premium Feel */}
-      <div className="absolute inset-0 pointer-events-none bg-black/10" />
-
       {/* Mobile Top Header */}
       <div className="absolute top-0 left-0 right-0 p-3 z-10 pointer-events-none">
         <div className="max-w-md mx-auto flex items-center gap-2 pointer-events-auto">
@@ -82,16 +79,6 @@ export default function MapScreen() {
             <button className="p-1.5 hover:bg-muted rounded-lg ml-auto">
               <Filter className="h-4 w-4 text-primary" />
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Floating Action Hint */}
-      <div className="absolute top-16 left-0 right-0 p-3 z-10 pointer-events-none">
-        <div className="max-w-md mx-auto flex justify-center">
-          <div className="bg-primary/90 text-white backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 pointer-events-auto border border-white/20">
-            <Info className="h-3 w-3" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Earth View Enabled</span>
           </div>
         </div>
       </div>
