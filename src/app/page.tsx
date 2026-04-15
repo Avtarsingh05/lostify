@@ -1,8 +1,8 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Mail, Lock, ArrowRight, Sparkles, UserPlus, Fingerprint, Info, User as UserIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,7 +37,6 @@ export default function LoginPage() {
       setIsLoading(false)
       let message = "Something went wrong."
       
-      // Simple error words
       if (error.code === 'auth/user-not-found') {
         message = "Account not found. Register now?"
         setIsSignup(true)
@@ -245,6 +244,10 @@ export default function LoginPage() {
               >
                 {isSignup ? "Already have an account? Log In" : "New here? Register Now"}
               </button>
+
+              <Link href="/terms" className="text-[10px] text-muted-foreground hover:underline">
+                Terms of Service
+              </Link>
             </div>
           </CardContent>
         </Card>

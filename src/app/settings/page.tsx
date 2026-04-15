@@ -1,9 +1,8 @@
-
 "use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Bell, Shield, User, LogOut, ChevronRight, Moon, Globe, HelpCircle } from "lucide-react"
+import { ArrowLeft, Bell, Shield, User, LogOut, ChevronRight, Moon, Globe, HelpCircle, FileText } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { useAuth, useUser } from "@/firebase"
@@ -165,9 +164,15 @@ export default function SettingsPage() {
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-4">Support</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-4">Support & Legal</h3>
             <Card className="border-none shadow-lg rounded-[28px] overflow-hidden">
               <CardContent className="p-1">
+                <SettingItem 
+                  icon={FileText} 
+                  label="Terms of Service" 
+                  description="Platform usage rules" 
+                  onClick={() => router.push('/terms')}
+                />
                 <SettingItem 
                   icon={HelpCircle} 
                   label="Help Center" 
