@@ -73,10 +73,10 @@ service cloud.firestore {
 
     /**
      * @description Application global settings (e.g. Banners).
-     * Explicitly allowed read for all signed-in users to resolve permission errors.
+     * Publicly readable to prevent permission errors on dashboard initialization.
      */
     match /appSettings/{settingId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
