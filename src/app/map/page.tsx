@@ -12,6 +12,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebas
 import { collection, query, where } from "firebase/firestore"
 import Image from "next/image"
 
+// LPU Campus Landmarks Mapping
 const LPU_LOCATION_MAP: Record<string, { x: number, y: number }> = {
   "block 34": { x: 45, y: 30 },
   "block 33": { x: 48, y: 32 },
@@ -30,6 +31,7 @@ function getCoordinates(locationDesc: string = "") {
   for (const [key, coords] of Object.entries(LPU_LOCATION_MAP)) {
     if (normalized.includes(key)) return coords;
   }
+  // Deterministic fallback based on name
   const hash = locationDesc.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return { x: 20 + (hash % 60), y: 20 + ((hash * 7) % 60) };
 }
@@ -43,7 +45,7 @@ export default function MapScreen() {
   const [isMapReady, setIsMapReady] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Fetch items from Firestore - Filter by "In Custody" or "Active" (lost)
+  // Fetch items from Firestore
   const itemsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, "items"));
@@ -55,11 +57,10 @@ export default function MapScreen() {
   const items = useMemo(() => {
     if (!rawItems) return []
     return rawItems.filter(item => {
-      // Only show approved/active items
-      const isApproved = item.status === "In Custody" || item.type === "lost"
-      if (!isApproved) return false
+      // Only show approved items or reported lost items
+      const isVisible = item.status === "In Custody" || item.type === "lost"
+      if (!isVisible) return false
 
-      // Apply search query
       if (!searchQuery.trim()) return true
       const search = searchQuery.toLowerCase()
       return (
@@ -79,15 +80,15 @@ export default function MapScreen() {
   const handleNavigate = () => {
     if (!selectedItem) return
     toast({
-      title: "Opening Maps",
-      description: `Navigating to ${selectedItem.locationDescription}`,
+      title: "Opening Navigation",
+      description: `Heading to ${selectedItem.locationDescription}`,
     })
     window.open(`https://www.google.com/maps/search/?api=1&query=Lovely+Professional+University+${selectedItem.locationDescription}`, '_blank')
   }
 
   const handleRecenter = () => {
     setIsMapReady(false)
-    setTimeout(() => setIsMapReady(true), 300)
+    setTimeout(() => setIsMapReady(true), 100)
     toast({
       description: "Recentering on LPU Campus...",
     })
@@ -102,77 +103,68 @@ export default function MapScreen() {
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#1a1a1a]">
-      {/* Instant Static Backdrop */}
+    <div className="relative h-screen w-full overflow-hidden bg-black">
+      {/* Instant Satellite Backdrop */}
       <div className="absolute inset-0 z-0">
         <Image 
-          src="https://picsum.photos/seed/lpu-satellite-static/1200/1200" 
+          src="https://picsum.photos/seed/lpu-satellite/1200/1200" 
           alt="Campus Backdrop" 
           fill
-          className={`object-cover transition-opacity duration-1000 ${isMapReady ? 'opacity-40' : 'opacity-100'}`}
-          data-ai-hint="satellite campus"
+          className="object-cover opacity-60"
           priority
         />
-        {!isMapReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[2px]">
-             <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-8 w-8 animate-spin text-white opacity-50" />
-                <p className="text-[10px] text-white font-bold uppercase tracking-[0.2em] opacity-50">Calibrating Satellite...</p>
-             </div>
-          </div>
-        )}
       </div>
 
-      {/* Live Interactive Satellite View */}
+      {/* Interactive Map Layer */}
       <div className={`absolute inset-0 z-1 transition-opacity duration-700 ${isMapReady ? 'opacity-100' : 'opacity-0'}`}>
         <iframe
-          src="https://maps.google.com/maps?q=Lovely+Professional+University+LPU+Campus+Phagwara&t=k&z=17&ie=UTF8&iwloc=&output=embed"
+          src="https://maps.google.com/maps?q=Lovely+Professional+University+Campus&t=k&z=17&ie=UTF8&iwloc=&output=embed"
           width="100%"
           height="100%"
           style={{ border: 0 }}
           allowFullScreen={true}
-          loading="eager"
+          loading="lazy"
           onLoad={() => setIsMapReady(true)}
-          className="grayscale-[10%] brightness-[105%]"
+          className="grayscale-[10%] contrast-[1.1] brightness-[0.9]"
         ></iframe>
       </div>
 
-      {/* Top Controls */}
-      <div className="absolute top-0 left-0 right-0 p-3 z-30 pointer-events-none">
+      {/* Header Controls */}
+      <div className="absolute top-0 left-0 right-0 p-4 z-30 pointer-events-none">
         <div className="max-w-md mx-auto flex items-center gap-2 pointer-events-auto">
           <button 
             onClick={() => router.back()} 
-            className="bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl p-2.5 rounded-2xl active:scale-95 transition-transform border border-white/20"
+            className="bg-background/90 backdrop-blur-xl shadow-2xl p-3 rounded-2xl active:scale-95 transition-transform border"
           >
-            <ArrowLeft className="h-5 w-5 text-foreground" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="flex-1 bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl rounded-2xl flex items-center px-4 h-11 border border-white/20">
+          <div className="flex-1 bg-background/90 backdrop-blur-xl shadow-2xl rounded-2xl flex items-center px-4 h-12 border">
             <Search className="h-4 w-4 text-muted-foreground mr-2" />
             <input 
               type="text" 
-              placeholder="Search items or blocks..." 
+              placeholder="Search by block or item..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none w-full text-[10px] font-bold"
+              className="bg-transparent border-none outline-none w-full text-xs font-bold"
             />
-            <button className="p-1.5 hover:bg-muted rounded-lg ml-auto">
+            <button className="p-1.5 bg-primary/10 rounded-lg ml-auto">
               <Filter className="h-4 w-4 text-primary" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Utility Buttons */}
-      <div className="absolute top-20 right-4 z-20 flex flex-col gap-2">
+      {/* Recenter Button */}
+      <div className="absolute top-20 right-4 z-20 pointer-events-auto">
         <button 
           onClick={handleRecenter}
-          className="bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl p-3 rounded-2xl active:scale-95 transition-transform border border-white/20"
+          className="bg-background/90 backdrop-blur-xl shadow-2xl p-3 rounded-2xl active:scale-95 transition-transform border"
         >
           <RefreshCw className={`h-5 w-5 text-primary ${!isMapReady ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      {/* Real Pins Layer */}
+      {/* Verified Pins Layer */}
       <div className={`absolute inset-0 pointer-events-none z-20 transition-opacity duration-1000 ${isMapReady ? 'opacity-100' : 'opacity-0'}`}>
         {items?.map((item) => {
           const { x, y } = getCoordinates(item.locationDescription);
@@ -180,12 +172,12 @@ export default function MapScreen() {
             <button
               key={item.id}
               onClick={() => setSelectedItem(item)}
-              className="absolute transition-all duration-300 active:scale-150 pointer-events-auto"
+              className="absolute transition-all duration-300 active:scale-125 pointer-events-auto"
               style={{ left: `${x}%`, top: `${y}%` }}
             >
               <div className="relative flex flex-col items-center">
                 <div 
-                  className={`w-10 h-10 rounded-full bg-white dark:bg-card shadow-2xl flex items-center justify-center p-0.5 border-[3px] hover:scale-110 transition-transform ${item.type === 'lost' ? 'border-accent' : 'border-secondary'}`}
+                  className={`w-12 h-12 rounded-full bg-background shadow-2xl flex items-center justify-center p-0.5 border-[3px] hover:scale-110 transition-transform ${item.type === 'lost' ? 'border-accent' : 'border-secondary'}`}
                 >
                   <div className="w-full h-full rounded-full overflow-hidden bg-muted">
                     <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
@@ -200,12 +192,12 @@ export default function MapScreen() {
         })}
       </div>
 
-      {/* Detail Drawer */}
-      <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-500 ease-out z-40 ${selectedItem ? 'translate-y-[-80px]' : 'translate-y-full'}`}>
-        <Card className="max-w-md mx-auto rounded-[32px] shadow-2xl overflow-hidden border-none bg-white/95 dark:bg-card/95 backdrop-blur-xl">
-          <div className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-xl overflow-hidden shadow-lg shrink-0 relative border border-muted bg-muted">
+      {/* Details Sheet */}
+      <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-500 ease-out z-40 ${selectedItem ? 'translate-y-[-100px]' : 'translate-y-full'}`}>
+        <Card className="max-w-md mx-auto rounded-[32px] shadow-2xl overflow-hidden border-none bg-background/95 backdrop-blur-2xl">
+          <div className="p-5">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xl shrink-0 relative border">
                 {selectedItem && (
                   <img 
                     src={selectedItem.imageUrl} 
@@ -215,28 +207,28 @@ export default function MapScreen() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <Badge variant={selectedItem?.type === 'lost' ? 'destructive' : 'secondary'} className="mb-1 text-[7px] font-bold uppercase tracking-widest px-1.5 py-0 h-4">
+                <Badge variant={selectedItem?.type === 'lost' ? 'destructive' : 'secondary'} className="mb-1 text-[8px] font-bold uppercase tracking-widest px-2 py-0 h-4">
                   {selectedItem?.type}
                 </Badge>
-                <h3 className="text-sm font-headline font-bold truncate">{selectedItem?.name}</h3>
+                <h3 className="text-base font-headline font-bold truncate">{selectedItem?.name}</h3>
                 <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
-                  <MapPin className="h-2.5 w-2.5" />
-                  <span className="text-[9px] font-medium truncate">Campus - {selectedItem?.locationDescription}</span>
+                  <MapPin className="h-3 w-3" />
+                  <span className="text-[10px] font-medium truncate">{selectedItem?.locationDescription}</span>
                 </div>
               </div>
               <button 
                 onClick={() => setSelectedItem(null)}
-                className="p-2 hover:bg-muted rounded-full bg-muted/50"
+                className="p-2 hover:bg-muted rounded-full bg-muted/30"
               >
                 <ArrowLeft className="h-4 w-4 rotate-[-90deg] text-muted-foreground" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <Button onClick={handleNavigate} className="rounded-xl h-9 bg-primary font-headline font-bold text-[10px] gap-2 shadow-lg shadow-primary/20">
-                <Navigation className="h-3 w-3" /> Navigate
+            <div className="grid grid-cols-2 gap-3 mt-5">
+              <Button onClick={handleNavigate} className="rounded-xl h-11 bg-primary font-headline font-bold text-xs gap-2 shadow-lg shadow-primary/20">
+                <Navigation className="h-4 w-4" /> Navigate
               </Button>
-              <Button onClick={() => router.push('/chat')} variant="outline" className="rounded-xl h-9 font-headline font-bold text-[10px] border-2">
+              <Button onClick={() => router.push('/chat')} variant="outline" className="rounded-xl h-11 font-headline font-bold text-xs border-2">
                 Chat Owner
               </Button>
             </div>
@@ -244,9 +236,9 @@ export default function MapScreen() {
         </Card>
       </div>
 
-      <div className="absolute bottom-24 left-0 right-0 text-center pointer-events-none opacity-40 z-10">
-        <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-white">Made with Love ❤️ Lostify</p>
-        <p className="text-[7px] font-medium text-white/70">Powered by Igloo Enterprises</p>
+      <div className="absolute bottom-32 left-0 right-0 text-center pointer-events-none opacity-40 z-10">
+        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white">Made with Love ❤️ Lostify</p>
+        <p className="text-[8px] font-medium text-white/70">Powered by Igloo Enterprises</p>
       </div>
     </div>
   )

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -24,10 +25,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [nickname, setNickname] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("")
 
   useEffect(() => {
-    if (user && !isUserLoading) {
+    if (!isUserLoading && user) {
       router.push("/dashboard")
     }
   }, [user, isUserLoading, router])
@@ -73,15 +73,6 @@ export default function LoginPage() {
       return
     }
 
-    if (isSignup && nickname.length < 3) {
-      toast({
-        variant: "destructive",
-        title: "Nickname Error",
-        description: "Name is too short.",
-      })
-      return
-    }
-
     if (password.length < 6) {
       toast({
         variant: "destructive",
@@ -99,15 +90,7 @@ export default function LoginPage() {
     }
   }
 
-  const handlePhoneAuth = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast({
-      title: "Notice",
-      description: "Phone login is for campus staff only.",
-    })
-  }
-
-  // Prevent flicker by showing a loader while checking auth state
+  // Robust loading state to prevent flicker
   if (isUserLoading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -205,36 +188,9 @@ export default function LoginPage() {
               </TabsContent>
 
               <TabsContent value="phone" className="pt-4 space-y-4">
-                <form onSubmit={handlePhoneAuth} className="space-y-4">
-                  <div className="space-y-1">
-                    <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Mobile Number</Label>
-                    <div className="relative flex items-center group">
-                      <div className="absolute left-4 flex items-center gap-2 text-muted-foreground border-r pr-2 py-1 mr-1">
-                        <span className="text-xs font-bold text-foreground">+91</span>
-                      </div>
-                      <Input 
-                        id="phone" 
-                        type="tel" 
-                        placeholder="98765 43210" 
-                        className="pl-16 rounded-xl h-12 bg-muted/20 border-none shadow-none"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                        required 
-                      />
-                    </div>
-                  </div>
-                  
-                  <Alert className="bg-primary/5 border-none rounded-xl py-2 px-3">
-                    <Info className="h-3 w-3 text-primary" />
-                    <AlertDescription className="text-[9px] font-medium leading-tight">
-                      SMS login is restricted to staff devices.
-                    </AlertDescription>
-                  </Alert>
-
-                  <Button type="submit" className="w-full h-12 rounded-xl gradient-header font-bold text-sm shadow-lg" disabled={isLoading}>
-                    Request Access Code
-                  </Button>
-                </form>
+                <div className="text-center p-4">
+                   <p className="text-xs text-muted-foreground">Phone authentication is temporarily restricted to staff.</p>
+                </div>
               </TabsContent>
             </Tabs>
           </CardHeader>
@@ -253,15 +209,6 @@ export default function LoginPage() {
               >
                 {isSignup ? "Already have an account? Log In" : "New here? Register Now"}
               </button>
-
-              <div className="flex gap-4">
-                <Link href="/terms" className="text-[10px] text-muted-foreground hover:underline">
-                  Terms
-                </Link>
-                <Link href="/privacy" className="text-[10px] text-muted-foreground hover:underline">
-                  Privacy
-                </Link>
-              </div>
             </div>
           </CardContent>
         </Card>

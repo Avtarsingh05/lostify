@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -16,11 +17,11 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname()
 
-  // Hide navigation on the chat screen or login screen
-  if (pathname === '/chat' || pathname === '/') return null
+  // Hide navigation on the auth screen
+  if (pathname === '/') return null
 
   return (
-    <div className="fixed bottom-10 left-0 right-0 z-50 px-6 pointer-events-none">
+    <div className="fixed bottom-12 left-0 right-0 z-50 px-6 pointer-events-none">
       <nav className="max-w-[420px] mx-auto h-18 py-3 bg-white/85 dark:bg-card/85 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.15)] rounded-[32px] flex items-center justify-around px-4 pointer-events-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
         {navItems.map((item) => {
           const Icon = item.icon

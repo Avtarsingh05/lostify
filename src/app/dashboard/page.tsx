@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -14,7 +15,6 @@ import {
   ShieldCheck,
   Bell,
   User,
-  Settings,
   LogOut,
   Loader2
 } from "lucide-react"
@@ -100,7 +100,7 @@ export default function Dashboard() {
     })
   }
 
-  if (isUserLoading) {
+  if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -109,7 +109,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-24 bg-background">
+    <div className="flex flex-col min-h-screen pb-32 bg-background">
       {/* Header */}
       <div className="gradient-header pt-12 pb-20 px-4 rounded-b-[48px] shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -127,7 +127,7 @@ export default function Dashboard() {
                 className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-colors relative"
               >
                 <Bell className="text-white h-5 w-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full border-2 border-primary" />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-accent rounded-full border-2 border-primary" />
               </button>
               
               <DropdownMenu>
@@ -147,10 +147,6 @@ export default function Dashboard() {
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
-                    <Package className="mr-2 h-4 w-4" />
-                    <span>My Reports</span>
                   </DropdownMenuItem>
                   
                   <DropdownMenuSeparator />
@@ -184,22 +180,22 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid - Increased Container Size */}
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
         <div className="grid grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
               <ThreeDCard 
-                className={item.gradient + " p-5 h-44 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform"}
+                className={item.gradient + " p-6 h-48 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl"}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <div className="flex flex-col gap-3 text-white">
-                  <div className="bg-white/20 w-fit p-2.5 rounded-2xl">
-                    <item.icon className="h-6 w-6" />
+                <div className="flex flex-col gap-4 text-white">
+                  <div className="bg-white/20 w-fit p-3 rounded-2xl">
+                    <item.icon className="h-7 w-7" />
                   </div>
                   <div>
-                    <h3 className="text-base font-headline font-bold leading-tight">{item.title}</h3>
-                    <p className="text-[10px] opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
+                    <h3 className="text-lg font-headline font-bold leading-tight">{item.title}</h3>
+                    <p className="text-[11px] opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
                   </div>
                 </div>
               </ThreeDCard>

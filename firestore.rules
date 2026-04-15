@@ -7,9 +7,8 @@ service cloud.firestore {
      * LOSTIFY SECURITY RULES
      * 
      * Core Philosophy:
-     * This ruleset enforces a strict identity-based access model while maintaining 
-     * flexibility for data schema iteration. Access is primarily governed by 
-     * ownership fields (ownerId, sellerId, senderId) and membership arrays (participantIds).
+     * This ruleset enforces a strict identity-based access model.
+     * Deployment triggered to fix chat list permissions.
      */
 
     // --- Helper Functions ---
@@ -26,14 +25,8 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    // Checks if the user is part of a participant list (used for Chats and Messages)
     function isParticipant(participants) {
       return isSignedIn() && (request.auth.uid in participants);
-    }
-
-    // Validates that a resource exists and is owned by the requester (for updates/deletes)
-    function isExistingOwner(ownerId) {
-      return resource != null && request.auth.uid == ownerId;
     }
 
     // --- Collection Rules ---
@@ -59,7 +52,6 @@ service cloud.firestore {
 
     /**
      * @description Items (Lost/Found).
-     * We explicitly allow 'list' and 'get' to all signed-in users for recovery transparency.
      */
     match /items/{itemId} {
       allow get, list: if isSignedIn();
@@ -69,24 +61,24 @@ service cloud.firestore {
     }
 
     /**
-     * @description Private chats between users.
+     * @description Private chats.
+     * Rule updated to match query filters for participants.
      */
     match /chats/{chatId} {
-      allow get: if isParticipant(resource.data.participantIds) || isAdmin();
-      allow list: if isSignedIn();
+      allow get, list: if isParticipant(resource.data.participantIds) || isAdmin();
       allow create: if isSignedIn();
       allow update: if isParticipant(resource.data.participantIds);
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read: if isSignedIn() && (isParticipant(get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds) || isAdmin());
+        allow read: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds || isAdmin());
         allow create: if isSignedIn();
         allow update, delete: if resource != null && resource.data.senderId == request.auth.uid;
       }
     }
 
     /**
-     * @description Public auction listings for items.
+     * @description Public auction listings.
      */
     match /auctions/{auctionId} {
       allow read: if true;
@@ -101,7 +93,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Audit logs for admin actions.
+     * @description Audit logs.
      */
     match /adminActivityLogs/{logId} {
       allow get, list, create: if isAdmin();
@@ -110,7 +102,6 @@ service cloud.firestore {
 
     /**
      * @description Application Settings.
-     * Trigger deployment with comment to fix list permission.
      */
     match /appSettings/{settingId} {
       allow read: if true;
