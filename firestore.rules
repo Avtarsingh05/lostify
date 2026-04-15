@@ -17,15 +17,19 @@ service cloud.firestore {
 
     function isAdmin() {
       // Robust admin check including explicit UID and email patterns
+      // Priority 1: Specific Dev UID and Email
+      // Priority 2: Explicit roles_admin document
+      // Priority 3: role field in user document
       return isSignedIn() && (
-        request.auth.token.email == "worker@gmail.com" ||
         request.auth.uid == "tkGcuQnwxGgC32WZrtinZifDrDI2" ||
-        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+        request.auth.token.email == "worker@gmail.com" ||
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "ADMIN")
       );
     }
 
     function isGuard() {
-      return isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "GUARD");
+      return isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "GUARD");
     }
 
     function isParticipant(participants) {
