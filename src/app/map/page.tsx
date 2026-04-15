@@ -41,7 +41,8 @@ export default function MapScreen() {
 
   const handleRecenter = () => {
     setIsMapReady(false)
-    setTimeout(() => setIsMapReady(true), 100)
+    // Small delay to trigger the "re-entry" feel
+    setTimeout(() => setIsMapReady(true), 300)
     toast({
       description: "Recentering on LPU Campus...",
     })
@@ -56,16 +57,26 @@ export default function MapScreen() {
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black">
-      {/* Instant Static Map Backdrop (Pre-cached feel) */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
+    <div className="relative h-screen w-full overflow-hidden bg-[#1a1a1a]">
+      {/* Instant Static Backdrop: This is what the user sees while the iframe loads */}
+      <div className="absolute inset-0 z-0">
         <Image 
-          src="https://picsum.photos/seed/lpu-satellite/1200/1200" 
-          alt="Campus Overview" 
+          src="https://picsum.photos/seed/lpu-satellite-static/1200/1200" 
+          alt="Campus Backdrop" 
           fill
-          className={`object-cover transition-opacity duration-1000 ${isMapReady ? 'opacity-30' : 'opacity-100'}`}
-          data-ai-hint="satellite university"
+          className={`object-cover transition-opacity duration-1000 ${isMapReady ? 'opacity-40' : 'opacity-100'}`}
+          data-ai-hint="satellite campus"
+          priority
         />
+        {/* Loading Overlay */}
+        {!isMapReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[2px]">
+             <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-white opacity-50" />
+                <p className="text-[10px] text-white font-bold uppercase tracking-[0.2em] opacity-50">Calibrating Satellite...</p>
+             </div>
+          </div>
+        )}
       </div>
 
       {/* Live Interactive Satellite View */}
@@ -78,21 +89,11 @@ export default function MapScreen() {
           allowFullScreen={true}
           loading="eager"
           onLoad={() => setIsMapReady(true)}
-          className="grayscale-[20%] brightness-[110%]"
+          className="grayscale-[10%] brightness-[105%]"
         ></iframe>
       </div>
 
-      {/* Campus Lock & Recenter Tool */}
-      <div className="absolute top-20 right-4 z-20 flex flex-col gap-2">
-        <button 
-          onClick={handleRecenter}
-          className="bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl p-3 rounded-2xl active:scale-95 transition-transform border border-white/20"
-        >
-          <RefreshCw className={`h-5 w-5 text-primary ${!isMapReady ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
-      {/* Top Header */}
+      {/* Top Controls */}
       <div className="absolute top-0 left-0 right-0 p-3 z-30 pointer-events-none">
         <div className="max-w-md mx-auto flex items-center gap-2 pointer-events-auto">
           <button 
@@ -115,7 +116,44 @@ export default function MapScreen() {
         </div>
       </div>
 
-      {/* Bottom Detail Sheet */}
+      {/* Utility Buttons */}
+      <div className="absolute top-20 right-4 z-20 flex flex-col gap-2">
+        <button 
+          onClick={handleRecenter}
+          className="bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl p-3 rounded-2xl active:scale-95 transition-transform border border-white/20"
+        >
+          <RefreshCw className={`h-5 w-5 text-primary ${!isMapReady ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+
+      {/* Pins Layer */}
+      <div className={`absolute inset-0 pointer-events-none z-20 transition-opacity duration-1000 ${isMapReady ? 'opacity-100' : 'opacity-0'}`}>
+        {mockItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setSelectedItem(item)}
+            className="absolute transition-all duration-300 active:scale-150 pointer-events-auto"
+            style={{ left: `${item.x}%`, top: `${item.y}%` }}
+          >
+            <div className="relative flex flex-col items-center">
+              <div 
+                className="w-10 h-10 rounded-full bg-white dark:bg-card shadow-2xl flex items-center justify-center p-0.5 border-[3px] hover:scale-110 transition-transform"
+                style={{ borderColor: item.color }}
+              >
+                <div className="w-full h-full rounded-full overflow-hidden bg-muted">
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                </div>
+              </div>
+              <div 
+                className="w-2 h-2 rotate-45 -mt-1 shadow-sm"
+                style={{ backgroundColor: item.color }}
+              />
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Detail Drawer (Mobile optimized) */}
       <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-500 ease-out z-40 ${selectedItem ? 'translate-y-[-80px]' : 'translate-y-full'}`}>
         <Card className="max-w-md mx-auto rounded-[32px] shadow-2xl overflow-hidden border-none bg-white/95 dark:bg-card/95 backdrop-blur-xl">
           <div className="p-4">
@@ -157,33 +195,6 @@ export default function MapScreen() {
             </div>
           </div>
         </Card>
-      </div>
-
-      {/* Real-time Pins */}
-      <div className={`absolute inset-0 pointer-events-none z-20 transition-opacity duration-1000 ${isMapReady ? 'opacity-100' : 'opacity-0'}`}>
-        {mockItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setSelectedItem(item)}
-            className="absolute transition-all duration-300 active:scale-150 pointer-events-auto"
-            style={{ left: `${item.x}%`, top: `${item.y}%` }}
-          >
-            <div className="relative flex flex-col items-center">
-              <div 
-                className="w-10 h-10 rounded-full bg-white dark:bg-card shadow-2xl flex items-center justify-center p-0.5 border-[3px] hover:scale-110 transition-transform"
-                style={{ borderColor: item.color }}
-              >
-                <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                </div>
-              </div>
-              <div 
-                className="w-2 h-2 rotate-45 -mt-1 shadow-sm"
-                style={{ backgroundColor: item.color }}
-              />
-            </div>
-          </button>
-        ))}
       </div>
     </div>
   )
