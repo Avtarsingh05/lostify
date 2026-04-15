@@ -245,9 +245,14 @@ export default function LoginPage() {
                 {isSignup ? "Already have an account? Log In" : "New here? Register Now"}
               </button>
 
-              <Link href="/terms" className="text-[10px] text-muted-foreground hover:underline">
-                Terms of Service
-              </Link>
+              <div className="flex gap-4">
+                <Link href="/terms" className="text-[10px] text-muted-foreground hover:underline">
+                  Terms
+                </Link>
+                <Link href="/privacy" className="text-[10px] text-muted-foreground hover:underline">
+                  Privacy
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
