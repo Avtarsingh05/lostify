@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -87,36 +86,36 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-24 bg-background">
       {/* Header */}
-      <div className="gradient-header pt-10 pb-20 px-4 rounded-b-[40px] shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-          <MapIcon size={150} />
+      <div className="gradient-header pt-8 pb-16 px-4 rounded-b-[32px] shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+          <MapIcon size={120} />
         </div>
-        <div className="max-w-md mx-auto flex flex-col gap-4 relative z-10">
+        <div className="max-w-md mx-auto flex flex-col gap-3 relative z-10">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-white text-3xl font-headline font-bold">Lostify</h1>
-              <p className="text-white/80 text-sm font-medium">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'User'}!</p>
+              <h1 className="text-white text-2xl font-headline font-bold">Lostify</h1>
+              <p className="text-white/80 text-[11px] font-medium">Hi, {user?.displayName || user?.email?.split('@')[0] || 'User'}</p>
             </div>
             <div className="flex gap-2">
-              <button className="bg-white/20 p-2.5 rounded-full hover:bg-white/30 transition-colors">
-                <Bell className="text-white h-5 w-5" />
+              <button className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors">
+                <Bell className="text-white h-4 w-4" />
               </button>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="bg-white/20 p-1 rounded-full hover:bg-white/30 transition-colors">
+                  <button className="bg-white/20 p-0.5 rounded-full hover:bg-white/30 transition-colors">
                     <Avatar className="h-8 w-8 border-2 border-white/20">
                       <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/200/200`} />
                       <AvatarFallback className="bg-primary text-white text-[10px]">
-                        {user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+                        {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || <User className="h-3 w-3" />}
                       </AvatarFallback>
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2" align="end">
-                  <DropdownMenuLabel className="font-headline font-bold">My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel className="font-headline font-bold">Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
@@ -124,7 +123,7 @@ export default function Dashboard() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
                     <Package className="mr-2 h-4 w-4" />
-                    <span>My Items</span>
+                    <span>My Reports</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="rounded-xl cursor-pointer">
                     <CreditCard className="mr-2 h-4 w-4" />
@@ -140,31 +139,31 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20 flex items-center gap-3">
-            <div className="bg-white rounded-lg px-2 py-1 text-primary text-sm font-bold">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-2.5 border border-white/10 flex items-center gap-2">
+            <div className="bg-white rounded-md px-1.5 py-0.5 text-primary text-[10px] font-bold">
               3
             </div>
-            <p className="text-white text-xs font-medium">New matches found recently!</p>
+            <p className="text-white text-[10px] font-medium">New matches discovered in your area!</p>
           </div>
         </div>
       </div>
 
       {/* Grid */}
-      <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+      <main className="max-w-md mx-auto px-4 -mt-8 w-full space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block">
               <ThreeDCard 
-                className={item.gradient + " p-4 h-full"}
+                className={item.gradient + " p-3.5 h-full border-none"}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex flex-col gap-2 text-white">
-                  <div className="bg-white/20 w-fit p-2 rounded-xl">
-                    <item.icon className="h-6 w-6" />
+                  <div className="bg-white/20 w-fit p-1.5 rounded-lg">
+                    <item.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-headline font-bold leading-tight">{item.title}</h3>
-                    <p className="text-[10px] opacity-70 mt-0.5 line-clamp-2">{item.description}</p>
+                    <h3 className="text-xs font-headline font-bold leading-tight">{item.title}</h3>
+                    <p className="text-[9px] opacity-70 mt-0.5 line-clamp-1">{item.description}</p>
                   </div>
                 </div>
               </ThreeDCard>
@@ -172,34 +171,34 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           <Link href="/guard" className="block">
-             <ThreeDCard className="bg-white dark:bg-card border-2 flex items-center justify-between p-4 shadow-xl">
+             <ThreeDCard className="bg-white dark:bg-card border-none flex items-center justify-between p-3.5 shadow-lg">
                 <div className="flex items-center gap-3">
-                  <div className="bg-secondary/10 p-2 rounded-xl">
-                    <ShieldCheck className="h-5 w-5 text-secondary" />
+                  <div className="bg-secondary/10 p-2 rounded-lg">
+                    <ShieldCheck className="h-4 w-4 text-secondary" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-headline font-bold">Guard Dashboard</h3>
-                    <p className="text-[10px] text-muted-foreground">Manage handovers & claims</p>
+                    <h3 className="text-xs font-headline font-bold">Guard Station</h3>
+                    <p className="text-[9px] text-muted-foreground">Manage claims & handovers</p>
                   </div>
                 </div>
-                <Badge variant="secondary" className="px-3 py-0.5 text-[10px] bg-secondary/10 text-secondary border-none">Security</Badge>
+                <Badge variant="secondary" className="px-2 py-0 text-[8px] bg-secondary/10 text-secondary border-none">Security</Badge>
              </ThreeDCard>
           </Link>
 
           <Link href="/admin" className="block">
-             <ThreeDCard className="bg-white dark:bg-card border-2 flex items-center justify-between p-4 shadow-xl">
+             <ThreeDCard className="bg-white dark:bg-card border-none flex items-center justify-between p-3.5 shadow-lg">
                 <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-xl">
-                    <LayoutDashboard className="h-5 w-5 text-primary" />
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <LayoutDashboard className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-headline font-bold">Admin Console</h3>
-                    <p className="text-[10px] text-muted-foreground">Analytics & Global Control</p>
+                    <h3 className="text-xs font-headline font-bold">Admin Console</h3>
+                    <p className="text-[9px] text-muted-foreground">System Analytics</p>
                   </div>
                 </div>
-                <Badge variant="outline" className="px-3 py-0.5 text-[10px]">Manager</Badge>
+                <Badge variant="outline" className="px-2 py-0 text-[8px]">System</Badge>
              </ThreeDCard>
           </Link>
         </div>
