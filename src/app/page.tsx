@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Mail, Phone, Lock, ArrowRight, Sparkles, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,16 +10,25 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/firebase"
+import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSignIn } from "@/firebase"
 
 export default function LoginPage() {
   const router = useRouter()
   const auth = useAuth()
+  const { user, isUserLoading } = useUser()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [isSignup, setIsSignup] = useState(false)
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !isUserLoading) {
+      router.push("/dashboard")
+    }
+  }, [user, isUserLoading, router])
 
   const handleEmailAuth = (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,42 +42,29 @@ export default function LoginPage() {
     }
     
     setIsLoading(true)
-    // Simulate auth action
-    setTimeout(() => {
+    try {
+      if (isSignup) {
+        initiateEmailSignUp(auth, email, password)
+        toast({ title: "Creating Account", description: "Please wait..." })
+      } else {
+        initiateEmailSignIn(auth, email, password)
+        toast({ title: "Signing In", description: "Verifying credentials..." })
+      }
+    } catch (error: any) {
       toast({
-        title: isSignup ? "Account Created!" : "Welcome Back!",
-        description: isSignup ? "Your account has been successfully set up." : "Successfully signed in.",
+        variant: "destructive",
+        title: "Auth Error",
+        description: error.message || "An unexpected error occurred.",
       })
-      router.push("/dashboard")
       setIsLoading(false)
-    }, 1500)
+    }
   }
 
   const handlePhoneAuth = (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    setTimeout(() => {
-      toast({
-        title: "OTP Sent",
-        description: "Please check your phone for the verification code.",
-      })
-      router.push("/dashboard")
-      setIsLoading(false)
-    }, 1200)
-  }
-
-  const handleForgotPassword = () => {
-    if (!email) {
-      toast({
-        variant: "destructive",
-        title: "Email Required",
-        description: "Please enter your Gmail address to reset your password.",
-      })
-      return
-    }
     toast({
-      title: "Reset Link Sent",
-      description: "Check your inbox for password recovery instructions.",
+      title: "Feature coming soon",
+      description: "Phone authentication is being configured for this campus.",
     })
   }
 
@@ -116,19 +113,17 @@ export default function LoginPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center px-1">
                       <Label htmlFor="password">Password</Label>
-                      {!isSignup && (
-                        <button 
-                          type="button" 
-                          onClick={handleForgotPassword}
-                          className="text-[10px] font-bold text-primary hover:underline"
-                        >
-                          Forgot Password?
-                        </button>
-                      )}
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input id="password" type="password" className="pl-10 rounded-xl h-12" required />
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        className="pl-10 rounded-xl h-12" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required 
+                      />
                     </div>
                   </div>
                   <Button type="submit" className="w-full h-12 rounded-xl gradient-header font-bold text-lg" disabled={isLoading}>

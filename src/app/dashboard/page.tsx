@@ -2,6 +2,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { 
   Search, 
   PlusCircle, 
@@ -12,10 +13,23 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Bell,
-  User
+  User,
+  Settings,
+  LogOut,
+  CreditCard
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { Badge } from "@/components/ui/badge"
+import { useAuth, useUser } from "@/firebase"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const menuItems = [
   {
@@ -63,6 +77,15 @@ const menuItems = [
 ]
 
 export default function Dashboard() {
+  const { user } = useUser()
+  const auth = useAuth()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await auth.signOut()
+    router.push("/")
+  }
+
   return (
     <div className="flex flex-col min-h-screen pb-24">
       {/* Header */}
@@ -74,15 +97,46 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-white text-3xl font-headline font-bold">Lostify</h1>
-              <p className="text-white/80 text-sm font-medium">Welcome back, Alex!</p>
+              <p className="text-white/80 text-sm font-medium">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'User'}!</p>
             </div>
             <div className="flex gap-2">
               <button className="bg-white/20 p-2.5 rounded-full hover:bg-white/30 transition-colors">
                 <Bell className="text-white h-5 w-5" />
               </button>
-              <button className="bg-white/20 p-2.5 rounded-full hover:bg-white/30 transition-colors">
-                <User className="text-white h-5 w-5" />
-              </button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="bg-white/20 p-1 rounded-full hover:bg-white/30 transition-colors">
+                    <Avatar className="h-8 w-8 border-2 border-white/20">
+                      <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/200/200`} />
+                      <AvatarFallback className="bg-primary text-white text-[10px]">
+                        {user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2" align="end">
+                  <DropdownMenuLabel className="font-headline font-bold">My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
+                    <Package className="mr-2 h-4 w-4" />
+                    <span>My Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="rounded-xl cursor-pointer">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Rewards</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           
