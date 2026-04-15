@@ -1,22 +1,22 @@
-
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Bell, Shield, User, LogOut, ChevronRight, Moon, Globe, HelpCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { useAuth, useUser } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
+import { useTheme } from "@/components/theme-provider"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { user } = useUser()
   const auth = useAuth()
   const { toast } = useToast()
+  const { theme, setTheme } = useTheme()
 
   const [notifications, setNotifications] = useState(true)
-  const [darkMode, setDarkMode] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -141,14 +141,14 @@ export default function SettingsPage() {
                   description="Toggle visual theme" 
                   rightElement={
                     <Switch 
-                      checked={darkMode} 
+                      checked={theme === 'dark'} 
                       onCheckedChange={(checked) => {
-                        setDarkMode(checked)
+                        const newTheme = checked ? 'dark' : 'light';
+                        setTheme(newTheme);
                         toast({
                           title: "Theme Updated",
-                          description: `Switching to ${checked ? "dark" : "light"} mode...`,
+                          description: `Switching to ${newTheme} mode...`,
                         })
-                        document.documentElement.classList.toggle('dark', checked)
                       }}
                     />
                   }

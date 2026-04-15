@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -108,10 +107,11 @@ export default function LoginPage() {
     })
   }
 
-  if (isUserLoading) {
+  // Prevent flicker by showing a loader while checking auth state
+  if (isUserLoading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
   }
