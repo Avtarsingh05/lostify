@@ -73,9 +73,10 @@ service cloud.firestore {
 
     /**
      * @description Application global settings (e.g. Banners).
+     * Explicitly allowed read for all signed-in users to resolve permission errors.
      */
     match /appSettings/{settingId} {
-      allow get, list: if isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
@@ -84,14 +85,14 @@ service cloud.firestore {
      */
     match /chats/{chatId} {
       allow get: if isParticipant(resource.data.participantIds);
-      allow list: if isSignedIn() && request.query.limit <= 100;
+      allow list: if isSignedIn() && (request.query.limit <= 100 || isAdmin());
       allow create: if isSignedIn() && isParticipant(request.resource.data.participantIds);
       allow update: if isParticipant(resource.data.participantIds);
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow get, list: if isParticipant(resource.data.participantIds);
-        allow create: if isParticipant(request.resource.data.participantIds) && request.resource.data.senderId == request.auth.uid;
+        allow get, list: if isParticipant(get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds);
+        allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
         allow update, delete: if resource != null && resource.data.senderId == request.auth.uid;
       }
     }
