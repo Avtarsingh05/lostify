@@ -142,10 +142,19 @@ export default function Dashboard() {
                     <Package className="mr-2 h-4 w-4" />
                     <span>My Reports</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="rounded-xl cursor-pointer">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    <span>Rewards</span>
+                  
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="font-headline font-bold text-[10px] text-muted-foreground uppercase tracking-widest px-2 py-1">Management</DropdownMenuLabel>
+                  
+                  <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer">
+                    <ShieldCheck className="mr-2 h-4 w-4 text-secondary" />
+                    <span>Guard Station</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl cursor-pointer">
+                    <LayoutDashboard className="mr-2 h-4 w-4 text-primary" />
+                    <span>Admin Console</span>
+                  </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -187,38 +196,6 @@ export default function Dashboard() {
               </ThreeDCard>
             </Link>
           ))}
-        </div>
-
-        <div className="grid grid-cols-1 gap-3">
-          <Link href="/guard" className="block">
-             <ThreeDCard className="bg-white dark:bg-card border-none flex items-center justify-between p-3.5 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <div className="bg-secondary/10 p-2 rounded-lg">
-                    <ShieldCheck className="h-4 w-4 text-secondary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-headline font-bold">Guard Station</h3>
-                    <p className="text-[9px] text-muted-foreground">Manage claims & handovers</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="px-2 py-0 text-[8px] bg-secondary/10 text-secondary border-none">Security</Badge>
-             </ThreeDCard>
-          </Link>
-
-          <Link href="/admin" className="block">
-             <ThreeDCard className="bg-white dark:bg-card border-none flex items-center justify-between p-3.5 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <LayoutDashboard className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-headline font-bold">Admin Console</h3>
-                    <p className="text-[9px] text-muted-foreground">System Analytics</p>
-                  </div>
-                </div>
-                <Badge variant="outline" className="px-2 py-0 text-[8px]">System</Badge>
-             </ThreeDCard>
-          </Link>
         </div>
       </main>
     </div>
