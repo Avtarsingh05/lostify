@@ -1,28 +1,56 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Navigation, Search, Filter, MapPin, Loader2, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/firebase"
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, query } from "firebase/firestore"
 import Image from "next/image"
 
-const mockItems = [
-  { id: 1, type: "lost", name: "Apple Watch", location: "Block 34", color: "hsl(38, 90%, 50%)", x: 45, y: 30, image: "https://picsum.photos/seed/watch/200/200" },
-  { id: 2, type: "found", name: "Wallet", location: "Uni Mall", color: "hsl(147, 74%, 46%)", x: 60, y: 55, image: "https://picsum.photos/seed/wallet/200/200" },
-  { id: 3, type: "lost", name: "Backpack", location: "Unipolis", color: "hsl(38, 90%, 50%)", x: 30, y: 70, image: "https://picsum.photos/seed/bag/200/200" },
-]
+// Mapping of common LPU locations to map percentages (approximate for the satellite view)
+const LPU_LOCATION_MAP: Record<string, { x: number, y: number }> = {
+  "block 34": { x: 45, y: 30 },
+  "block 33": { x: 48, y: 32 },
+  "uni mall": { x: 60, y: 55 },
+  "unipolis": { x: 30, y: 70 },
+  "main gate": { x: 10, y: 50 },
+  "canteen": { x: 50, y: 45 },
+  "library": { x: 40, y: 35 },
+  "gh-1": { x: 80, y: 40 },
+  "bh-1": { x: 20, y: 80 },
+  "block 38": { x: 55, y: 25 },
+}
+
+function getCoordinates(locationDesc: string = "") {
+  const normalized = locationDesc.toLowerCase();
+  for (const [key, coords] of Object.entries(LPU_LOCATION_MAP)) {
+    if (normalized.includes(key)) return coords;
+  }
+  // Default random-ish spread within campus bounds if not recognized
+  const hash = locationDesc.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return { x: 20 + (hash % 60), y: 20 + ((hash * 7) % 60) };
+}
 
 export default function MapScreen() {
   const router = useRouter()
   const { user, isUserLoading } = useUser()
+  const db = useFirestore()
   const { toast } = useToast()
-  const [selectedItem, setSelectedItem] = useState<typeof mockItems[0] | null>(null)
+  const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
+
+  // Fetch real items from Firestore
+  const itemsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, "items"));
+  }, [db]);
+
+  const { data: items, isLoading: isItemsLoading } = useCollection(itemsQuery);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -34,14 +62,13 @@ export default function MapScreen() {
     if (!selectedItem) return
     toast({
       title: "Opening Maps",
-      description: `Navigating to ${selectedItem.location}`,
+      description: `Navigating to ${selectedItem.locationDescription}`,
     })
-    window.open(`https://www.google.com/maps/search/?api=1&query=Lovely+Professional+University+${selectedItem.location}`, '_blank')
+    window.open(`https://www.google.com/maps/search/?api=1&query=Lovely+Professional+University+${selectedItem.locationDescription}`, '_blank')
   }
 
   const handleRecenter = () => {
     setIsMapReady(false)
-    // Small delay to trigger the "re-entry" feel
     setTimeout(() => setIsMapReady(true), 300)
     toast({
       description: "Recentering on LPU Campus...",
@@ -58,7 +85,7 @@ export default function MapScreen() {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-[#1a1a1a]">
-      {/* Instant Static Backdrop: This is what the user sees while the iframe loads */}
+      {/* Instant Static Backdrop */}
       <div className="absolute inset-0 z-0">
         <Image 
           src="https://picsum.photos/seed/lpu-satellite-static/1200/1200" 
@@ -68,7 +95,6 @@ export default function MapScreen() {
           data-ai-hint="satellite campus"
           priority
         />
-        {/* Loading Overlay */}
         {!isMapReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[2px]">
              <div className="flex flex-col items-center gap-2">
@@ -126,34 +152,35 @@ export default function MapScreen() {
         </button>
       </div>
 
-      {/* Pins Layer */}
+      {/* Real Pins Layer */}
       <div className={`absolute inset-0 pointer-events-none z-20 transition-opacity duration-1000 ${isMapReady ? 'opacity-100' : 'opacity-0'}`}>
-        {mockItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setSelectedItem(item)}
-            className="absolute transition-all duration-300 active:scale-150 pointer-events-auto"
-            style={{ left: `${item.x}%`, top: `${item.y}%` }}
-          >
-            <div className="relative flex flex-col items-center">
-              <div 
-                className="w-10 h-10 rounded-full bg-white dark:bg-card shadow-2xl flex items-center justify-center p-0.5 border-[3px] hover:scale-110 transition-transform"
-                style={{ borderColor: item.color }}
-              >
-                <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+        {items?.map((item) => {
+          const { x, y } = getCoordinates(item.locationDescription);
+          return (
+            <button
+              key={item.id}
+              onClick={() => setSelectedItem(item)}
+              className="absolute transition-all duration-300 active:scale-150 pointer-events-auto"
+              style={{ left: `${x}%`, top: `${y}%` }}
+            >
+              <div className="relative flex flex-col items-center">
+                <div 
+                  className={`w-10 h-10 rounded-full bg-white dark:bg-card shadow-2xl flex items-center justify-center p-0.5 border-[3px] hover:scale-110 transition-transform ${item.type === 'lost' ? 'border-accent' : 'border-secondary'}`}
+                >
+                  <div className="w-full h-full rounded-full overflow-hidden bg-muted">
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
                 </div>
+                <div 
+                  className={`w-2 h-2 rotate-45 -mt-1 shadow-sm ${item.type === 'lost' ? 'bg-accent' : 'bg-secondary'}`}
+                />
               </div>
-              <div 
-                className="w-2 h-2 rotate-45 -mt-1 shadow-sm"
-                style={{ backgroundColor: item.color }}
-              />
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Detail Drawer (Mobile optimized) */}
+      {/* Detail Drawer */}
       <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-500 ease-out z-40 ${selectedItem ? 'translate-y-[-80px]' : 'translate-y-full'}`}>
         <Card className="max-w-md mx-auto rounded-[32px] shadow-2xl overflow-hidden border-none bg-white/95 dark:bg-card/95 backdrop-blur-xl">
           <div className="p-4">
@@ -161,7 +188,7 @@ export default function MapScreen() {
               <div className="w-14 h-14 rounded-xl overflow-hidden shadow-lg shrink-0 relative border border-muted bg-muted">
                 {selectedItem && (
                   <img 
-                    src={selectedItem.image} 
+                    src={selectedItem.imageUrl} 
                     alt={selectedItem.name} 
                     className="w-full h-full object-cover" 
                   />
@@ -174,7 +201,7 @@ export default function MapScreen() {
                 <h3 className="text-sm font-headline font-bold truncate">{selectedItem?.name}</h3>
                 <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
                   <MapPin className="h-2.5 w-2.5" />
-                  <span className="text-[9px] font-medium truncate">Campus - {selectedItem?.location}</span>
+                  <span className="text-[9px] font-medium truncate">Campus - {selectedItem?.locationDescription}</span>
                 </div>
               </div>
               <button 
