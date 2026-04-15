@@ -3,6 +3,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import { 
   Search, 
   PlusCircle, 
@@ -16,7 +17,8 @@ import {
   User,
   Settings,
   LogOut,
-  CreditCard
+  CreditCard,
+  Loader2
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { Badge } from "@/components/ui/badge"
@@ -77,13 +79,27 @@ const menuItems = [
 ]
 
 export default function Dashboard() {
-  const { user } = useUser()
+  const { user, isUserLoading } = useUser()
   const auth = useAuth()
   const router = useRouter()
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/")
+    }
+  }, [user, isUserLoading, router])
 
   const handleLogout = async () => {
     await auth.signOut()
     router.push("/")
+  }
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (

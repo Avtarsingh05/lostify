@@ -14,15 +14,25 @@ import { foundItemAIDetails, type FoundItemAIDetailsOutput } from "@/ai/flows/fo
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
+import { collection } from "firebase/firestore"
 
 export default function ReportFound() {
   const router = useRouter()
   const { toast } = useToast()
+  const { user } = useUser()
+  const db = useFirestore()
+  
   const [isScanning, setIsScanning] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [aiData, setAiData] = useState<FoundItemAIDetailsOutput | null>(null)
   const [step, setStep] = useState(1)
+  
+  const [location, setLocation] = useState("")
+  const [guardName, setGuardName] = useState("")
+  const [badgeNumber, setBadgeNumber] = useState("")
+  const [securityPost, setSecurityPost] = useState("")
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -58,16 +68,40 @@ export default function ReportFound() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user || !db) return
+
     setIsSubmitting(true)
     
-    setTimeout(() => {
-      setStep(3)
-      toast({
-        title: "Report Submitted!",
-        description: "The handover has been logged securely.",
+    const itemsRef = collection(db, "items")
+    const itemData = {
+      ownerId: user.uid,
+      name: aiData?.itemName || "Found Item",
+      category: aiData?.category || "Other",
+      description: aiData?.attributes?.join(", ") || "",
+      locationDescription: location,
+      eventDate: new Date().toISOString(),
+      type: "found",
+      status: "In Custody",
+      latitude: 0,
+      longitude: 0,
+      imageUrl: previewImage || "https://picsum.photos/seed/found/600/400",
+      storageInfo: `At ${securityPost} (Guard: ${guardName}, Badge: ${badgeNumber})`,
+      reportedAt: new Date().toISOString(),
+      lastUpdatedAt: new Date().toISOString()
+    }
+
+    addDocumentNonBlocking(itemsRef, itemData)
+      .then(() => {
+        setStep(3)
+        toast({
+          title: "Report Submitted!",
+          description: "The handover has been logged securely.",
+        })
+        setTimeout(() => router.push("/dashboard"), 3000)
       })
-      setTimeout(() => router.push("/dashboard"), 2000)
-    }, 1500)
+      .finally(() => {
+        setIsSubmitting(false)
+      })
   }
 
   if (step === 3) {
@@ -156,7 +190,14 @@ export default function ReportFound() {
                   Discovery Location
                 </Label>
                 <div className="relative">
-                  <Input id="foundLocation" placeholder="e.g. Canteen Table #4" className="rounded-xl pl-10 h-12" required />
+                  <Input 
+                    id="foundLocation" 
+                    placeholder="e.g. Canteen Table #4" 
+                    className="rounded-xl pl-10 h-12" 
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    required 
+                  />
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </div>
               </div>
@@ -174,7 +215,14 @@ export default function ReportFound() {
                 <div className="space-y-1.5">
                   <Label htmlFor="guardName" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Guard Name</Label>
                   <div className="relative">
-                    <Input id="guardName" placeholder="Full name" className="rounded-xl pl-10 h-12" required />
+                    <Input 
+                      id="guardName" 
+                      placeholder="Full name" 
+                      className="rounded-xl pl-10 h-12" 
+                      value={guardName}
+                      onChange={(e) => setGuardName(e.target.value)}
+                      required 
+                    />
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   </div>
                 </div>
@@ -182,7 +230,14 @@ export default function ReportFound() {
                 <div className="space-y-1.5">
                   <Label htmlFor="guardId" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Badge Number</Label>
                   <div className="relative">
-                    <Input id="guardId" placeholder="e.g. SEC-1042" className="rounded-xl pl-10 h-12" required />
+                    <Input 
+                      id="guardId" 
+                      placeholder="e.g. SEC-1042" 
+                      className="rounded-xl pl-10 h-12" 
+                      value={badgeNumber}
+                      onChange={(e) => setBadgeNumber(e.target.value)}
+                      required 
+                    />
                     <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   </div>
                 </div>
@@ -190,7 +245,14 @@ export default function ReportFound() {
                 <div className="space-y-1.5">
                   <Label htmlFor="guardPost" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Security Post</Label>
                   <div className="relative">
-                    <Input id="guardPost" placeholder="e.g. Main Gate Desk" className="rounded-xl pl-10 h-12" required />
+                    <Input 
+                      id="guardPost" 
+                      placeholder="e.g. Main Gate Desk" 
+                      className="rounded-xl pl-10 h-12" 
+                      value={securityPost}
+                      onChange={(e) => setSecurityPost(e.target.value)}
+                      required 
+                    />
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   </div>
                 </div>

@@ -1,48 +1,56 @@
+
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Package, Clock, CheckCircle2, History } from "lucide-react"
+import { ArrowLeft, Package, Clock, CheckCircle2, History, Loader2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import Image from "next/image"
-
-const mockData = {
-  lost: [
-    { id: 1, name: "RayBan Sunglasses", date: "2 days ago", status: "Searching", image: "https://picsum.photos/seed/sunglasses/200/200" },
-    { id: 2, name: "Apple AirPods Pro", date: "5 days ago", status: "Potential Match", image: "https://picsum.photos/seed/airpods/200/200" },
-  ],
-  found: [
-    { id: 3, name: "Car Keys (Toyota)", date: "1 day ago", status: "With Admin", image: "https://picsum.photos/seed/toyota/200/200" },
-  ],
-  claimed: [
-    { id: 4, name: "HP Laptop", date: "1 week ago", status: "Returned", image: "https://picsum.photos/seed/laptop/200/200" },
-  ]
-}
+import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, query, where, orderBy } from "firebase/firestore"
+import { formatDistanceToNow } from "date-fns"
 
 export default function MyItems() {
   const router = useRouter()
+  const { user } = useUser()
+  const db = useFirestore()
+
+  const itemsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return query(
+      collection(db, "items"),
+      where("ownerId", "==", user.uid),
+      orderBy("reportedAt", "desc")
+    )
+  }, [db, user])
+
+  const { data: items, isLoading } = useCollection(itemsQuery)
+
+  const lostItems = items?.filter(i => i.type === 'lost') || []
+  const foundItems = items?.filter(i => i.type === 'found') || []
+  const claimedItems = items?.filter(i => i.status === 'Returned' || i.status === 'Claimed') || []
 
   const ItemCard = ({ item }: { item: any }) => (
     <ThreeDCard className="p-0 overflow-hidden mb-4 border-none shadow-lg">
       <div className="flex h-32">
         <div className="w-32 h-full relative">
-          <Image src={item.image} alt={item.name} fill className="object-cover" />
+          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
         </div>
-        <div className="flex-1 p-4 flex flex-col justify-between">
+        <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
           <div>
-            <div className="flex justify-between items-start">
-              <h3 className="font-headline font-bold text-lg">{item.name}</h3>
-              <Badge variant={item.status === 'Returned' ? 'secondary' : 'outline'} className={item.status === 'Potential Match' ? 'bg-accent/10 text-accent border-accent/20' : ''}>
+            <div className="flex justify-between items-start gap-2">
+              <h3 className="font-headline font-bold text-sm truncate">{item.name}</h3>
+              <Badge variant={item.status === 'Returned' ? 'secondary' : 'outline'} className="text-[8px] whitespace-nowrap">
                 {item.status}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-              <Clock className="h-3 w-3" /> {item.date}
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+              <Clock className="h-3 w-3" /> {item.reportedAt ? formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true }) : "recently"}
             </p>
           </div>
-          <button className="text-primary text-xs font-bold uppercase tracking-widest text-left">
+          <button className="text-primary text-[10px] font-bold uppercase tracking-widest text-left">
             View Details
           </button>
         </div>
@@ -62,7 +70,7 @@ export default function MyItems() {
           </div>
           <div className="bg-white/20 px-4 py-2 rounded-2xl flex items-center gap-2">
             <Package className="h-5 w-5" />
-            <span className="font-bold">4 Total</span>
+            <span className="font-bold">{items?.length || 0} Total</span>
           </div>
         </div>
       </div>
@@ -81,15 +89,29 @@ export default function MyItems() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="lost" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {mockData.lost.map(item => <ItemCard key={item.id} item={item} />)}
-          </TabsContent>
-          <TabsContent value="found" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {mockData.found.map(item => <ItemCard key={item.id} item={item} />)}
-          </TabsContent>
-          <TabsContent value="claimed" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {mockData.claimed.map(item => <ItemCard key={item.id} item={item} />)}
-          </TabsContent>
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              <TabsContent value="lost" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {lostItems.length > 0 ? lostItems.map(item => <ItemCard key={item.id} item={item} />) : (
+                  <p className="text-center text-muted-foreground py-10">No lost items reported.</p>
+                )}
+              </TabsContent>
+              <TabsContent value="found" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {foundItems.length > 0 ? foundItems.map(item => <ItemCard key={item.id} item={item} />) : (
+                  <p className="text-center text-muted-foreground py-10">No found items reported.</p>
+                )}
+              </TabsContent>
+              <TabsContent value="claimed" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {claimedItems.length > 0 ? claimedItems.map(item => <ItemCard key={item.id} item={item} />) : (
+                  <p className="text-center text-muted-foreground py-10">No claimed items yet.</p>
+                )}
+              </TabsContent>
+            </>
+          )}
         </Tabs>
       </main>
     </div>
