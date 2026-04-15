@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -9,6 +10,7 @@ import {
   MessageCircle, 
   Gavel, 
   LayoutDashboard,
+  ShieldCheck,
   Bell,
   User
 } from "lucide-react"
@@ -94,7 +96,7 @@ export default function Dashboard() {
       </div>
 
       {/* Grid */}
-      <main className="max-w-md mx-auto px-4 -mt-10 w-full">
+      <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-4">
         <div className="grid grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block">
@@ -114,19 +116,36 @@ export default function Dashboard() {
               </ThreeDCard>
             </Link>
           ))}
-          
-          <Link href="/admin" className="block col-span-2 mt-2">
-             <ThreeDCard className="bg-card border-dashed border-2 flex items-center justify-between p-4">
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          <Link href="/guard" className="block">
+             <ThreeDCard className="bg-white dark:bg-card border-2 flex items-center justify-between p-4 shadow-xl">
                 <div className="flex items-center gap-3">
-                  <div className="bg-muted p-2 rounded-xl">
+                  <div className="bg-secondary/10 p-2 rounded-xl">
+                    <ShieldCheck className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-headline font-bold">Guard Dashboard</h3>
+                    <p className="text-[10px] text-muted-foreground">Manage handovers & claims</p>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="px-3 py-0.5 text-[10px] bg-secondary/10 text-secondary border-none">Security</Badge>
+             </ThreeDCard>
+          </Link>
+
+          <Link href="/admin" className="block">
+             <ThreeDCard className="bg-white dark:bg-card border-2 flex items-center justify-between p-4 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-xl">
                     <LayoutDashboard className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-headline font-semibold">Admin Console</h3>
-                    <p className="text-[10px] text-muted-foreground">Metrics & Management</p>
+                    <h3 className="text-sm font-headline font-bold">Admin Console</h3>
+                    <p className="text-[10px] text-muted-foreground">Analytics & Global Control</p>
                   </div>
                 </div>
-                <Badge variant="secondary" className="px-3 py-0.5 text-[10px]">Analytics</Badge>
+                <Badge variant="outline" className="px-3 py-0.5 text-[10px]">Manager</Badge>
              </ThreeDCard>
           </Link>
         </div>
