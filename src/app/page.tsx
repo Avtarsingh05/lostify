@@ -2,25 +2,25 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Mail, Phone, Lock, ArrowRight, Sparkles, AlertCircle } from "lucide-react"
+import { Mail, Phone, Lock, ArrowRight, Sparkles, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/firebase"
-import { initiateEmailSignIn, initiateAnonymousSignIn } from "@/firebase/non-blocking-login"
 
 export default function LoginPage() {
   const router = useRouter()
   const auth = useAuth()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [isSignup, setIsSignup] = useState(false)
   const [email, setEmail] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
 
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleEmailAuth = (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.endsWith("@gmail.com")) {
       toast({
@@ -32,28 +32,47 @@ export default function LoginPage() {
     }
     
     setIsLoading(true)
-    // For prototype, we'll simulate success and navigate
-    // In real app, initiateEmailSignIn(auth, email, "password") would be called
+    // Simulate auth action
     setTimeout(() => {
+      toast({
+        title: isSignup ? "Account Created!" : "Welcome Back!",
+        description: isSignup ? "Your account has been successfully set up." : "Successfully signed in.",
+      })
       router.push("/dashboard")
       setIsLoading(false)
-    }, 1000)
+    }, 1500)
   }
 
-  const handlePhoneLogin = (e: React.FormEvent) => {
+  const handlePhoneAuth = (e: React.FormEvent) => {
     e.preventDefault()
-    // Auto-prefixing +91 is handled by the input display and submission
-    const finalPhone = phoneNumber.startsWith("+91") ? phoneNumber : `+91${phoneNumber}`
-    
     setIsLoading(true)
     setTimeout(() => {
+      toast({
+        title: "OTP Sent",
+        description: "Please check your phone for the verification code.",
+      })
       router.push("/dashboard")
       setIsLoading(false)
-    }, 1000)
+    }, 1200)
+  }
+
+  const handleForgotPassword = () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your Gmail address to reset your password.",
+      })
+      return
+    }
+    toast({
+      title: "Reset Link Sent",
+      description: "Check your inbox for password recovery instructions.",
+    })
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-background">
       <div className="w-full max-w-[380px] space-y-8 animate-in fade-in zoom-in duration-500">
         <div className="flex flex-col items-center text-center space-y-2">
           <div className="w-16 h-16 rounded-2xl gradient-header shadow-2xl flex items-center justify-center text-white mb-2">
@@ -65,6 +84,12 @@ export default function LoginPage() {
 
         <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/80 backdrop-blur-xl">
           <CardHeader className="pb-2">
+            <div className="flex justify-center mb-6">
+               <h2 className="text-xl font-headline font-bold">
+                 {isSignup ? "Create Account" : "Sign In"}
+               </h2>
+            </div>
+            
             <Tabs defaultValue="email" className="w-full">
               <TabsList className="grid w-full grid-cols-2 rounded-2xl p-1 bg-muted">
                 <TabsTrigger value="email" className="rounded-xl font-bold py-2">Email</TabsTrigger>
@@ -72,7 +97,7 @@ export default function LoginPage() {
               </TabsList>
               
               <TabsContent value="email" className="pt-4 space-y-4">
-                <form onSubmit={handleEmailLogin} className="space-y-4">
+                <form onSubmit={handleEmailAuth} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Gmail Address</Label>
                     <div className="relative">
@@ -89,20 +114,32 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <div className="flex justify-between items-center px-1">
+                      <Label htmlFor="password">Password</Label>
+                      {!isSignup && (
+                        <button 
+                          type="button" 
+                          onClick={handleForgotPassword}
+                          className="text-[10px] font-bold text-primary hover:underline"
+                        >
+                          Forgot Password?
+                        </button>
+                      )}
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input id="password" type="password" className="pl-10 rounded-xl h-12" required />
                     </div>
                   </div>
                   <Button type="submit" className="w-full h-12 rounded-xl gradient-header font-bold text-lg" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Continue"} <ArrowRight className="ml-2 h-5 w-5" />
+                    {isLoading ? (isSignup ? "Creating..." : "Signing in...") : (isSignup ? "Sign Up" : "Continue")} 
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </form>
               </TabsContent>
 
               <TabsContent value="phone" className="pt-4 space-y-4">
-                <form onSubmit={handlePhoneLogin} className="space-y-4">
+                <form onSubmit={handlePhoneAuth} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Mobile Number</Label>
                     <div className="relative flex items-center">
@@ -128,23 +165,33 @@ export default function LoginPage() {
               </TabsContent>
             </Tabs>
           </CardHeader>
-          <CardContent className="pb-8 pt-4">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground font-bold">Or continue with</span></div>
+          <CardContent className="pb-8 pt-6">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-full">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest"><span className="bg-card px-3 text-muted-foreground">New to Lostify?</span></div>
+              </div>
+              
+              <button 
+                type="button"
+                onClick={() => setIsSignup(!isSignup)}
+                className="flex items-center gap-2 text-sm font-bold text-primary hover:opacity-80 transition-opacity"
+              >
+                {isSignup ? (
+                  <>Already have an account? Sign In</>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" />
+                    Don't have an account? Sign Up
+                  </>
+                )}
+              </button>
             </div>
-            <Button 
-              variant="outline" 
-              className="w-full h-12 rounded-xl border-2 font-bold hover:bg-muted transition-colors"
-              onClick={() => router.push("/dashboard")}
-            >
-              Guest Access
-            </Button>
           </CardContent>
         </Card>
         
-        <p className="text-center text-xs text-muted-foreground px-8">
-          By continuing, you agree to Lostify's Terms of Service and Privacy Policy.
+        <p className="text-center text-[10px] text-muted-foreground px-8 leading-relaxed">
+          By continuing, you agree to Lostify's <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>.
         </p>
       </div>
     </div>
