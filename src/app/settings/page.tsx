@@ -38,7 +38,7 @@ export default function SettingsPage() {
   const handleComingSoon = (feature: string) => {
     toast({
       title: "Coming Soon",
-      description: `${feature} settings will be available in the next update.`,
+      description: `${feature} will be available in the next update.`,
     })
   }
 
@@ -72,7 +72,6 @@ export default function SettingsPage() {
       </div>
 
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
-        {/* Profile Card */}
         <Card className="border-none shadow-xl rounded-[32px] overflow-hidden">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -86,7 +85,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
               <button 
-                onClick={() => handleComingSoon("Profile Editing")}
+                onClick={() => router.push('/settings/profile')}
                 className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
               >
                 Edit
@@ -95,7 +94,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Settings Sections */}
         <div className="space-y-4">
           <section className="space-y-2">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-4">Account & Security</h3>
@@ -105,19 +103,19 @@ export default function SettingsPage() {
                   icon={User} 
                   label="Profile Information" 
                   description="Name, email, and avatar" 
-                  onClick={() => handleComingSoon("Profile")}
+                  onClick={() => router.push('/settings/profile')}
                 />
                 <SettingItem 
                   icon={Shield} 
                   label="Privacy & Security" 
                   description="Password and authentication" 
-                  onClick={() => handleComingSoon("Security")}
+                  onClick={() => router.push('/settings/security')}
                 />
                 <SettingItem 
                   icon={Globe} 
                   label="Region" 
                   description="Campus location settings" 
-                  onClick={() => handleComingSoon("Region")}
+                  onClick={() => router.push('/settings/region')}
                 />
               </CardContent>
             </Card>
@@ -157,7 +155,6 @@ export default function SettingsPage() {
                           title: "Theme Updated",
                           description: `Switching to ${checked ? "dark" : "light"} mode...`,
                         })
-                        // In a real app, this would toggle the 'dark' class on <html>
                         document.documentElement.classList.toggle('dark', checked)
                       }}
                     />
