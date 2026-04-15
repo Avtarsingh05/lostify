@@ -8,15 +8,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-const boysHostels = Array.from({ length: 10 }, (_, i) => ({
-  id: `bh-${i + 1}`,
-  name: `BH-${i + 1} Apartment`,
-  area: "Boys Residential Wing"
-}))
+const boysHostels = [
+  {
+    id: "apartment-boys",
+    name: "Apartment",
+    area: "Boys Residential Wing"
+  },
+  ...Array.from({ length: 10 }, (_, i) => ({
+    id: `bh-${i + 1}`,
+    name: `BH-${i + 1}`,
+    area: "Boys Residential Wing"
+  }))
+]
 
 const girlsHostels = Array.from({ length: 10 }, (_, i) => ({
   id: `gh-${i + 1}`,
-  name: `GH-${i + 1} Apartment`,
+  name: `GH-${i + 1}`,
   area: "Girls Residential Wing"
 }))
 
