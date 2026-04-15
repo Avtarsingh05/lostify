@@ -17,11 +17,9 @@ import {
   User,
   Settings,
   LogOut,
-  CreditCard,
   Loader2
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
-import { Badge } from "@/components/ui/badge"
 import { useAuth, useUser } from "@/firebase"
 import {
   DropdownMenu,
@@ -135,7 +133,7 @@ export default function Dashboard() {
                   <DropdownMenuLabel className="font-headline font-bold">Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
+                    <User className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
@@ -176,7 +174,6 @@ export default function Dashboard() {
 
       {/* Grid */}
       <main className="max-w-md mx-auto px-4 -mt-8 w-full space-y-4">
-        
         <div className="grid grid-cols-2 gap-3">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block">
@@ -196,6 +193,11 @@ export default function Dashboard() {
               </ThreeDCard>
             </Link>
           ))}
+        </div>
+
+        <div className="pt-8 pb-4 text-center space-y-1 opacity-40">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
+          <p className="text-[9px] font-medium">Powered by Igloo Enterprises</p>
         </div>
       </main>
     </div>

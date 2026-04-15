@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mail, Lock, ArrowRight, Sparkles, UserPlus, Fingerprint, Info, User as UserIcon, Loader2 } from "lucide-react"
+import { Mail, Lock, ArrowRight, Sparkles, UserIcon, Loader2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -265,6 +265,11 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="pt-4 text-center space-y-1 opacity-40">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
+          <p className="text-[9px] font-medium">Powered by Igloo Enterprises</p>
+        </div>
       </div>
     </div>
   )
