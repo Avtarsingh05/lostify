@@ -75,28 +75,33 @@ export default function AdminDashboard() {
   const foundCount = allItems?.filter(i => i.type === 'found').length || 0
   const totalCount = allItems?.length || 0
 
-  const handlePushNotification = (e: React.FormEvent) => {
+  const handlePushNotification = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!notifTitle || !notifMessage) return
 
     setIsPushing(true)
     const notifRef = collection(db, "notifications")
     
-    addDocumentNonBlocking(notifRef, {
-      userId: 'all',
-      title: notifTitle,
-      message: notifMessage,
-      createdAt: new Date().toISOString()
-    }).then(() => {
+    try {
+      await addDocumentNonBlocking(notifRef, {
+        userId: 'all',
+        title: notifTitle,
+        message: notifMessage,
+        createdAt: new Date().toISOString()
+      })
+      
       setNotifTitle("")
       setNotifMessage("")
       toast({
         title: "Broadcast Sent",
         description: "Notification pushed to all users.",
       })
-    }).finally(() => {
+    } catch (err) {
+      // Permission errors are handled by the global listener, 
+      // but we reset loading state here.
+    } finally {
       setIsPushing(false)
-    })
+    }
   }
 
   const stats = [
@@ -227,6 +232,11 @@ export default function AdminDashboard() {
           </Card>
         </div>
       </main>
+
+      <div className="pt-8 pb-12 text-center space-y-2 opacity-50">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
+        <p className="text-[10px] font-medium">Powered by Igloo Enterprises</p>
+      </div>
     </div>
   )
 }

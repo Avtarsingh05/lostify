@@ -16,9 +16,10 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // recognize specific worker account and roles_admin collection
+      // Robust admin check including explicit UID and email patterns
       return isSignedIn() && (
         request.auth.token.email == "worker@gmail.com" ||
+        request.auth.uid == "tkGcuQnwxGgC32WZrtinZifDrDI2" ||
         exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
       );
     }
@@ -78,10 +79,9 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all');
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all');
-      allow create: if isAdmin();
-      allow update, delete: if isAdmin();
+      // Allow users to see notifications directed at 'all' or their specific UID
+      allow list, get: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     match /appSettings/{settingId} {

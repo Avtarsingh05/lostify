@@ -96,7 +96,6 @@ export default function Dashboard() {
     if (!db || !user) return null
     return query(
       collection(db, "notifications"),
-      where("userId", "in", ["all", user.uid]),
       orderBy("createdAt", "desc"),
       limit(10)
     )
