@@ -228,18 +228,18 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Grid - Refined Compact Layout */}
+      {/* Grid - Compact Layout optimized for mobile */}
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
         <div className="grid grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
               <ThreeDCard 
-                className={item.gradient + " p-5 h-40 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl"}
+                className={item.gradient + " p-4 h-36 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl"}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <div className="flex flex-col gap-3 text-white">
-                  <div className="bg-white/20 w-fit p-2.5 rounded-xl">
-                    <item.icon className="h-5 w-5" />
+                <div className="flex flex-col gap-2 text-white">
+                  <div className="bg-white/20 w-fit p-2 rounded-xl">
+                    <item.icon className="h-4 w-4" />
                   </div>
                   <div>
                     <h3 className="text-sm font-headline font-bold leading-tight">{item.title}</h3>

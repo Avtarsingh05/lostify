@@ -1,6 +1,7 @@
 
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, MapPin, Plus, Settings, MessageCircle } from "lucide-react"
@@ -16,9 +17,16 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
+
+  // Ensure hydration stability by only rendering the lifted layout on the client
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Hide navigation on the auth screen
   if (pathname === '/') return null
+  if (!mounted) return null
 
   return (
     <div className="fixed bottom-12 left-0 right-0 z-50 px-6 pointer-events-none">
