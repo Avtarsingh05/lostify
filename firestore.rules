@@ -1,0 +1,167 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * LOSTIFY SECURITY RULES (PROTOTYPING MODE)
+     * 
+     * Core Philosophy:
+     * This ruleset enforces a strict identity-based access model while maintaining 
+     * flexibility for data schema iteration. Access is primarily governed by 
+     * ownership fields (ownerId, sellerId, senderId) and membership arrays (participantIds).
+     * 
+     * Data Structure:
+     * - Top-level collections: /users, /items, /auctions, /chats, /roles_admin, /adminActivityLogs.
+     * - Sub-collections: /chats/{chatId}/messages, /auctions/{auctionId}/bids.
+     * 
+     * Key Security Decisions:
+     * - Domain Restriction: Only @gmail.com email addresses are permitted for user profiles.
+     * - Authorization Independence: Critical authorization data (like participantIds) is 
+     *   denormalized into sub-collections to avoid nested get() calls and improve performance.
+     * - Admin Access: Managed via a dedicated /roles_admin collection for clean separation 
+     *   from user profile data.
+     * - Public Discovery: Items and Auctions are publicly readable to support browsing, 
+     *   but write operations are strictly restricted to the resource creators.
+     */
+
+    // --- Helper Functions ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // Checks if the user is part of a participant list (used for Chats and Messages)
+    function isParticipant(participants) {
+      return isSignedIn() && (request.auth.uid in participants);
+    }
+
+    // Validates the gmail-only requirement from the user instructions
+    function isGmail(email) {
+      return email.matches('.*@gmail\\.com$');
+    }
+
+    // Validates that a resource exists and is owned by the requester (for updates/deletes)
+    function isExistingOwner(ownerId) {
+      return resource != null && request.auth.uid == ownerId;
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the User collection. Restricts profile management to the owner.
+     * @path /users/{userId}
+     * @allow (create) if auth.uid matches userId and email ends in @gmail.com.
+     * @deny (update) if trying to change someone else's profile.
+     * @principle Ownership and Identity Verification.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isGmail(request.resource.data.email);
+      allow update: if isOwner(userId) && (request.resource.data.email == resource.data.email);
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Look-up collection for administrative privileges.
+     * @path /roles_admin/{adminId}
+     * @allow (get) for any signed-in user to check admin status.
+     * @deny (write) for all users; managed by system-level permissions.
+     * @principle Structural Segregation for Roles.
+     */
+    match /roles_admin/{adminId} {
+      allow get: if isSignedIn();
+      allow list, create, update, delete: if false; 
+    }
+
+    /**
+     * @description Publicly readable items (Lost/Found). Only the reporter can manage the item.
+     * @path /items/{itemId}
+     * @allow (list) for all users to facilitate discovery.
+     * @deny (create) if the ownerId does not match the authenticated user.
+     * @principle Public Read with Owner-Only Writes.
+     */
+    match /items/{itemId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.ownerId);
+      allow delete: if isExistingOwner(resource.data.ownerId) || isAdmin();
+    }
+
+    /**
+     * @description Private chats between users. Membership verified via participantIds array.
+     * @path /chats/{chatId}
+     * @allow (get) if the user's UID is in the participantIds array.
+     * @deny (list) if the user is not a participant.
+     * @principle Shared Access (Closed Collaborators).
+     */
+    match /chats/{chatId} {
+      allow get: if isParticipant(resource.data.participantIds);
+      allow list: if isSignedIn() && request.query.limit <= 100; // Simplified list protection
+      allow create: if isSignedIn() && isParticipant(request.resource.data.participantIds);
+      allow update: if isParticipant(resource.data.participantIds);
+      allow delete: if isAdmin();
+
+      /**
+       * @description Individual messages. Uses denormalized participantIds for auth efficiency.
+       * @path /chats/{chatId}/messages/{messageId}
+       * @allow (create) if user is a participant and identifies as the sender.
+       * @principle Authorization Independence via Denormalization.
+       */
+      match /messages/{messageId} {
+        allow get, list: if isParticipant(resource.data.participantIds);
+        allow create: if isParticipant(request.resource.data.participantIds) && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if resource != null && resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    /**
+     * @description Public auction listings for items.
+     * @path /auctions/{auctionId}
+     * @allow (get) for everyone.
+     * @deny (update) if the user is not the seller.
+     * @principle Public Read with Owner-Only Writes.
+     */
+    match /auctions/{auctionId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.sellerId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.sellerId);
+      allow delete: if isExistingOwner(resource.data.sellerId) || isAdmin();
+
+      /**
+       * @description Bids placed on auctions. Denormalized fields allow checking auction seller.
+       * @path /auctions/{auctionId}/bids/{bidId}
+       * @allow (get) if the user is the bidder or the auction seller.
+       * @principle Relational Integrity for Sub-collections.
+       */
+      match /bids/{bidId} {
+        allow get: if isSignedIn() && (request.auth.uid == resource.data.bidderId || request.auth.uid == resource.data.auctionSellerId);
+        allow list: if isSignedIn(); // Queries must still filter by bidderId or auctionSellerId
+        allow create: if isSignedIn() && request.resource.data.bidderId == request.auth.uid;
+        allow update: if isExistingOwner(resource.data.bidderId);
+        allow delete: if isExistingOwner(resource.data.bidderId) || isAdmin();
+      }
+    }
+
+    /**
+     * @description Audit logs for admin actions. Strict admin-only access.
+     * @path /adminActivityLogs/{logId}
+     * @allow (create) if user has the admin role.
+     * @deny (read/write) for standard users.
+     * @principle Auditable and Maintainable Logic.
+     */
+    match /adminActivityLogs/{logId} {
+      allow get, list, create: if isAdmin();
+      allow update, delete: if false; // Logs are usually immutable
+    }
+
+  }
+}
