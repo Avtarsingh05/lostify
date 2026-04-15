@@ -16,7 +16,8 @@ import {
   Bell,
   User,
   LogOut,
-  Loader2
+  Loader2,
+  Clock
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
@@ -28,9 +29,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
 import { collection, query, where, orderBy, limit } from "firebase/firestore"
+import { formatDistanceToNow } from "date-fns"
 
 const menuItems = [
   {
@@ -86,12 +93,12 @@ export default function Dashboard() {
 
   // Real-time notifications listener
   const notifQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !user) return null
     return query(
       collection(db, "notifications"),
-      where("userId", "in", ["all", user?.uid || ""]),
+      where("userId", "in", ["all", user.uid]),
       orderBy("createdAt", "desc"),
-      limit(5)
+      limit(10)
     )
   }, [db, user])
 
@@ -106,21 +113,6 @@ export default function Dashboard() {
   const handleLogout = async () => {
     await auth.signOut()
     router.push("/")
-  }
-
-  const handleNotificationClick = () => {
-    if (notifications && notifications.length > 0) {
-      const latest = notifications[0]
-      toast({
-        title: latest.title,
-        description: latest.message,
-      })
-    } else {
-      toast({
-        title: "Notifications",
-        description: "You are all caught up! No new alerts.",
-      })
-    }
   }
 
   if (isUserLoading || !user) {
@@ -145,15 +137,45 @@ export default function Dashboard() {
               <p className="text-white/80 text-xs font-medium">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'User'}</p>
             </div>
             <div className="flex gap-3">
-              <button 
-                onClick={handleNotificationClick}
-                className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-colors relative"
-              >
-                <Bell className="text-white h-5 w-5" />
-                {notifications && notifications.length > 0 && (
-                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-accent rounded-full border-2 border-primary animate-pulse" />
-                )}
-              </button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button 
+                    className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-colors relative"
+                  >
+                    <Bell className="text-white h-5 w-5" />
+                    {notifications && notifications.length > 0 && (
+                      <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-accent rounded-full border-2 border-primary animate-pulse" />
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 rounded-[28px] p-4 mt-2" align="end">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between px-1">
+                      <h4 className="font-headline font-bold text-sm">Notifications</h4>
+                      <Bell className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                      {notifications && notifications.length > 0 ? (
+                        notifications.map((notif) => (
+                          <div key={notif.id} className="p-3 bg-muted/30 rounded-2xl space-y-1">
+                            <p className="text-xs font-bold leading-tight">{notif.title}</p>
+                            <p className="text-[10px] text-muted-foreground leading-relaxed">{notif.message}</p>
+                            <div className="flex items-center gap-1 pt-1 opacity-50">
+                              <Clock className="h-2.5 w-2.5" />
+                              <span className="text-[8px] font-bold uppercase">{formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 opacity-40">
+                          <Bell className="h-8 w-8 mx-auto mb-2" />
+                          <p className="text-[10px] font-bold uppercase tracking-widest">No new alerts</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
