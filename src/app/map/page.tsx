@@ -47,38 +47,37 @@ export default function MapScreen() {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-muted">
-      {/* Live LPU Google Map Embed */}
+      {/* Live LPU Satellite / Earth View Embed */}
       <div className="absolute inset-0 z-0">
         <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3410.726514732!2d75.70251327632661!3d31.25599207433543!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x391a5f5e9c489cf3%3A0x4049a5409d53c300!2sLovely+Professional+University!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+          src="https://maps.google.com/maps?q=Lovely+Professional+University+LPU+Campus+Phagwara&t=k&z=17&ie=UTF8&iwloc=&output=embed"
           width="100%"
           height="100%"
           style={{ border: 0 }}
           allowFullScreen={true}
           loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          className="grayscale-[20%] contrast-[1.1] opacity-90"
+          className="opacity-100"
         ></iframe>
       </div>
 
-      {/* Grid Overlay for Premium Feel */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.05)_100%)]" />
+      {/* Subtle Overlay for Premium Feel */}
+      <div className="absolute inset-0 pointer-events-none bg-black/10" />
 
       {/* Mobile Top Header */}
       <div className="absolute top-0 left-0 right-0 p-3 z-10 pointer-events-none">
         <div className="max-w-md mx-auto flex items-center gap-2 pointer-events-auto">
           <button 
             onClick={() => router.back()} 
-            className="bg-white dark:bg-card shadow-2xl p-3 rounded-2xl active:scale-95 transition-transform border border-black/5"
+            className="bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl p-2.5 rounded-2xl active:scale-95 transition-transform border border-white/20"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
-          <div className="flex-1 bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl rounded-2xl flex items-center px-4 h-11 border border-black/5">
+          <div className="flex-1 bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl rounded-2xl flex items-center px-4 h-11 border border-white/20">
             <Search className="h-4 w-4 text-muted-foreground mr-2" />
             <input 
               type="text" 
               placeholder="Search blocks or items..." 
-              className="bg-transparent border-none outline-none w-full text-[11px] font-bold"
+              className="bg-transparent border-none outline-none w-full text-[10px] font-bold"
             />
             <button className="p-1.5 hover:bg-muted rounded-lg ml-auto">
               <Filter className="h-4 w-4 text-primary" />
@@ -92,17 +91,17 @@ export default function MapScreen() {
         <div className="max-w-md mx-auto flex justify-center">
           <div className="bg-primary/90 text-white backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 pointer-events-auto border border-white/20">
             <Info className="h-3 w-3" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">LPU Campus Live View</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Earth View Enabled</span>
           </div>
         </div>
       </div>
 
-      {/* Simplified Mobile-Friendly Bottom Sheet */}
+      {/* Mobile-Friendly Bottom Sheet */}
       <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-500 ease-out z-30 ${selectedItem ? 'translate-y-[-80px]' : 'translate-y-full'}`}>
         <Card className="max-w-md mx-auto rounded-[32px] shadow-2xl overflow-hidden border-none bg-white/95 dark:bg-card/95 backdrop-blur-xl">
-          <div className="p-5">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg shrink-0 relative border border-muted bg-muted">
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-xl overflow-hidden shadow-lg shrink-0 relative border border-muted bg-muted">
                 {selectedItem && (
                   <img 
                     src={selectedItem.image} 
@@ -112,7 +111,7 @@ export default function MapScreen() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <Badge variant={selectedItem?.type === 'lost' ? 'destructive' : 'secondary'} className="mb-1 text-[7px] font-bold uppercase tracking-widest px-2 py-0 h-4">
+                <Badge variant={selectedItem?.type === 'lost' ? 'destructive' : 'secondary'} className="mb-1 text-[7px] font-bold uppercase tracking-widest px-1.5 py-0 h-4">
                   {selectedItem?.type}
                 </Badge>
                 <h3 className="text-sm font-headline font-bold truncate">{selectedItem?.name}</h3>
@@ -123,17 +122,17 @@ export default function MapScreen() {
               </div>
               <button 
                 onClick={() => setSelectedItem(null)}
-                className="p-2 hover:bg-muted rounded-full"
+                className="p-2 hover:bg-muted rounded-full bg-muted/50"
               >
                 <ArrowLeft className="h-4 w-4 rotate-[-90deg] text-muted-foreground" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <Button onClick={handleNavigate} className="rounded-2xl h-10 bg-primary font-headline font-bold text-[10px] gap-2 shadow-lg shadow-primary/20">
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <Button onClick={handleNavigate} className="rounded-xl h-9 bg-primary font-headline font-bold text-[10px] gap-2 shadow-lg shadow-primary/20">
                 <Navigation className="h-3 w-3" /> Directions
               </Button>
-              <Button onClick={() => router.push('/chat')} variant="outline" className="rounded-2xl h-10 font-headline font-bold text-[10px] border-2">
+              <Button onClick={() => router.push('/chat')} variant="outline" className="rounded-xl h-9 font-headline font-bold text-[10px] border-2">
                 Chat
               </Button>
             </div>
@@ -141,7 +140,7 @@ export default function MapScreen() {
         </Card>
       </div>
 
-      {/* Manual Pin Triggers (For Demo Purposes) */}
+      {/* Manual Pin Triggers */}
       <div className="absolute inset-0 pointer-events-none">
         {mockItems.map((item) => (
           <button
