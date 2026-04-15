@@ -18,9 +18,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
 } from "recharts"
-import { ChartTooltipContent } from "@/components/ui/chart"
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { Badge } from "@/components/ui/badge"
 
 const trafficData = [
@@ -32,6 +31,17 @@ const trafficData = [
   { name: "S", lost: 23, found: 38 },
   { name: "S", lost: 34, found: 43 },
 ]
+
+const chartConfig = {
+  lost: {
+    label: "Lost",
+    color: "hsl(var(--accent))",
+  },
+  found: {
+    label: "Found",
+    color: "hsl(var(--secondary))",
+  },
+} satisfies ChartConfig
 
 const stats = [
   { label: "Lost", value: "1,248", icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
@@ -88,7 +98,7 @@ export default function AdminDashboard() {
               <Badge variant="outline" className="text-[10px]">Weekly</Badge>
             </CardHeader>
             <CardContent className="px-4 pb-6 h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer config={chartConfig} className="h-full w-full">
                 <BarChart data={trafficData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} />
@@ -97,10 +107,10 @@ export default function AdminDashboard() {
                     cursor={{fill: 'rgba(0,0,0,0.05)'}}
                     content={<ChartTooltipContent />}
                   />
-                  <Bar dataKey="lost" fill="hsl(var(--accent))" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="found" fill="hsl(var(--secondary))" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="lost" fill="var(--color-lost)" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="found" fill="var(--color-found)" radius={[2, 2, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
 
