@@ -18,7 +18,6 @@ export default function MyItems() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
 
-  // Simplified query without orderBy to avoid index requirement and permission issues
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return query(
@@ -29,7 +28,6 @@ export default function MyItems() {
 
   const { data: rawItems, isLoading } = useCollection(itemsQuery)
 
-  // Sort items client-side instead of server-side
   const items = useMemo(() => {
     if (!rawItems) return []
     return [...rawItems].sort((a, b) => {
@@ -41,30 +39,35 @@ export default function MyItems() {
 
   const lostItems = items.filter(i => i.type === 'lost')
   const foundItems = items.filter(i => i.type === 'found')
-  const claimedItems = items.filter(i => i.status === 'Returned' || i.status === 'Claimed')
+  const claimedItems = items.filter(i => i.status === 'Returned' || i.status === 'Claimed' || i.status === 'In Custody')
 
   const ItemCard = ({ item }: { item: any }) => (
-    <ThreeDCard className="p-0 overflow-hidden mb-4 border-none shadow-lg">
-      <div className="flex h-32">
-        <div className="w-32 h-full relative">
+    <ThreeDCard className="p-0 overflow-hidden mb-3 border-none shadow-lg bg-card/80 backdrop-blur-sm">
+      <div className="flex h-28">
+        <div className="w-28 h-full relative shrink-0">
           <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+          <div className="absolute top-1 left-1">
+             <Badge className={`text-[8px] h-4 px-1 border-none shadow-sm ${item.type === 'lost' ? 'bg-accent' : 'bg-secondary'}`}>
+                {item.type}
+             </Badge>
+          </div>
         </div>
-        <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
-          <div>
+        <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+          <div className="space-y-1">
             <div className="flex justify-between items-start gap-2">
-              <h3 className="font-headline font-bold text-sm truncate">{item.name}</h3>
-              <Badge variant={item.status === 'Returned' ? 'secondary' : 'outline'} className="text-[8px] whitespace-nowrap">
+              <h3 className="font-headline font-bold text-xs truncate leading-tight">{item.name}</h3>
+              <Badge variant="outline" className="text-[7px] font-bold h-4 px-1 border-primary/20 bg-primary/5">
                 {item.status}
               </Badge>
             </div>
-            <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-              <Clock className="h-3 w-3" /> {item.reportedAt ? formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true }) : "recently"}
+            <p className="text-[9px] text-muted-foreground flex items-center gap-1">
+              <Clock className="h-2.5 w-2.5" /> {item.reportedAt ? formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true }) : "now"}
             </p>
           </div>
           <div className="flex justify-between items-end">
-             <p className="text-[9px] text-muted-foreground truncate italic pr-2">{item.locationDescription}</p>
-             <button className="text-primary text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">
-                View
+             <p className="text-[8px] text-muted-foreground truncate italic w-2/3">{item.locationDescription}</p>
+             <button className="text-primary text-[9px] font-bold uppercase tracking-widest hover:opacity-70">
+                Details
              </button>
           </div>
         </div>
@@ -82,60 +85,59 @@ export default function MyItems() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="gradient-header pt-12 pb-20 px-6 rounded-b-[40px] shadow-xl text-white">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
-              <ArrowLeft className="h-6 w-6" />
+      <div className="gradient-header pt-10 pb-20 px-4 rounded-b-[40px] shadow-xl text-white">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full active:scale-95 transition-transform">
+              <ArrowLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-3xl font-headline font-bold">My Reports</h1>
+            <h1 className="text-xl font-headline font-bold">My Items</h1>
           </div>
-          <div className="bg-white/20 px-4 py-2 rounded-2xl flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            <span className="font-bold text-sm">{items.length}</span>
-          </div>
+          <Badge className="bg-white/20 text-white border-none gap-1 font-bold">
+            <Package className="h-3 w-3" /> {items.length}
+          </Badge>
         </div>
       </div>
 
-      <main className="max-w-3xl mx-auto px-6 -mt-10">
+      <main className="max-w-md mx-auto px-4 -mt-10">
         <Tabs defaultValue="lost" className="w-full">
-          <TabsList className="w-full bg-card/80 backdrop-blur-md shadow-xl h-14 rounded-2xl p-1 mb-8 border border-white/20">
-            <TabsTrigger value="lost" className="flex-1 rounded-xl font-headline font-bold gap-2">
-              <History className="h-4 w-4" /> Lost
+          <TabsList className="w-full bg-white/90 dark:bg-card/90 backdrop-blur-md shadow-xl h-12 rounded-2xl p-1 mb-6 border border-white/20">
+            <TabsTrigger value="lost" className="flex-1 rounded-xl text-[10px] font-headline font-bold gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-white">
+              <History className="h-3 w-3" /> Lost
             </TabsTrigger>
-            <TabsTrigger value="found" className="flex-1 rounded-xl font-headline font-bold gap-2">
-              <Search className="h-4 w-4" /> Found
+            <TabsTrigger value="found" className="flex-1 rounded-xl text-[10px] font-headline font-bold gap-1.5 data-[state=active]:bg-secondary data-[state=active]:text-white">
+              <Search className="h-3 w-3" /> Found
             </TabsTrigger>
-            <TabsTrigger value="claimed" className="flex-1 rounded-xl font-headline font-bold gap-2">
-              <CheckCircle2 className="h-4 w-4" /> Claimed
+            <TabsTrigger value="claimed" className="flex-1 rounded-xl text-[10px] font-headline font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-white">
+              <CheckCircle2 className="h-3 w-3" /> Status
             </TabsTrigger>
           </TabsList>
 
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Loading Records...</p>
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary opacity-30" />
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fetching records...</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <TabsContent value="lost" className="animate-in fade-in slide-in-from-bottom-4 duration-500 m-0">
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <TabsContent value="lost" className="m-0">
                 {lostItems.length > 0 ? lostItems.map(item => <ItemCard key={item.id} item={item} />) : (
-                  <Card className="border-none bg-muted/30 p-12 text-center rounded-[32px]">
-                    <p className="text-sm text-muted-foreground font-medium">No lost items reported yet.</p>
+                  <Card className="border-none bg-muted/20 p-10 text-center rounded-[24px]">
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wide">No Lost Items</p>
                   </Card>
                 )}
               </TabsContent>
-              <TabsContent value="found" className="animate-in fade-in slide-in-from-bottom-4 duration-500 m-0">
+              <TabsContent value="found" className="m-0">
                 {foundItems.length > 0 ? foundItems.map(item => <ItemCard key={item.id} item={item} />) : (
-                  <Card className="border-none bg-muted/30 p-12 text-center rounded-[32px]">
-                    <p className="text-sm text-muted-foreground font-medium">No found items reported yet.</p>
+                  <Card className="border-none bg-muted/20 p-10 text-center rounded-[24px]">
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wide">No Found Items</p>
                   </Card>
                 )}
               </TabsContent>
-              <TabsContent value="claimed" className="animate-in fade-in slide-in-from-bottom-4 duration-500 m-0">
+              <TabsContent value="claimed" className="m-0">
                 {claimedItems.length > 0 ? claimedItems.map(item => <ItemCard key={item.id} item={item} />) : (
-                  <Card className="border-none bg-muted/30 p-12 text-center rounded-[32px]">
-                    <p className="text-sm text-muted-foreground font-medium">No items have been claimed yet.</p>
+                  <Card className="border-none bg-muted/20 p-10 text-center rounded-[24px]">
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wide">No Claimed Items</p>
                   </Card>
                 )}
               </TabsContent>
