@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo } from "react"
+import { useEffect, useState } from "react"
 import { 
   Search, 
   PlusCircle, 
@@ -20,7 +20,7 @@ import {
   Clock
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
-import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
+import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
-import { collection, query, where, orderBy, limit, doc, setDoc } from "firebase/firestore"
+import { collection, query, orderBy, limit, doc, setDoc } from "firebase/firestore"
 import { formatDistanceToNow } from "date-fns"
 
 const menuItems = [
@@ -90,10 +90,11 @@ export default function Dashboard() {
   const db = useFirestore()
   const router = useRouter()
   const { toast } = useToast()
+  const [isSynced, setIsSynced] = useState(false)
 
-  // Ensure user document exists in Firestore (Profile Sync)
+  // 1. Profile Sync - Ensures User "Container" exists in Firestore
   useEffect(() => {
-    if (user && db) {
+    if (user && db && !isSynced) {
       const userRef = doc(db, "users", user.uid)
       setDoc(userRef, {
         id: user.uid,
@@ -101,13 +102,13 @@ export default function Dashboard() {
         username: user.displayName || user.email?.split('@')[0] || 'User',
         photoURL: user.photoURL || "",
         updatedAt: new Date().toISOString()
-      }, { merge: true }).catch((err) => {
-        console.warn("Profile sync skipped or failed:", err)
-      })
+      }, { merge: true })
+      .then(() => setIsSynced(true))
+      .catch((err) => console.warn("Sync error:", err))
     }
-  }, [user, db])
+  }, [user, db, isSynced])
 
-  // Real-time notifications listener
+  // 2. Notifications Listener
   const notifQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return query(
@@ -140,7 +141,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen pb-32 bg-background">
-      {/* Header */}
       <div className="gradient-header pt-12 pb-20 px-4 rounded-b-[48px] shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
           <MapIcon size={160} />
@@ -154,9 +154,7 @@ export default function Dashboard() {
             <div className="flex gap-3">
               <Popover>
                 <PopoverTrigger asChild>
-                  <button 
-                    className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-colors relative"
-                  >
+                  <button className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-colors relative">
                     <Bell className="text-white h-5 w-5" />
                     {notifications && notifications.length > 0 && (
                       <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-accent rounded-full border-2 border-primary animate-pulse" />
@@ -224,7 +222,7 @@ export default function Dashboard() {
                   </DropdownMenuItem>
                   
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive focus:text-destructive">
+                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -244,7 +242,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Grid - Compact Layout optimized for mobile */}
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
         <div className="grid grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
