@@ -52,7 +52,6 @@ export default function ReportFound() {
       try {
         const result = await foundItemAIDetails({ photoDataUri: dataUri })
         setAiData(result)
-        // Auto-populate if empty to help the student/guard
         if (!itemName) setItemName(result.itemName)
         if (!category) setCategory(result.category)
         if (!description) setDescription(result.attributes.join(", "))
@@ -89,7 +88,7 @@ export default function ReportFound() {
       locationDescription: location,
       eventDate: new Date().toISOString(),
       type: "found",
-      status: "In Custody",
+      status: "Pending Verification", // New workflow status
       latitude: 0,
       longitude: 0,
       imageUrl: previewImage || "https://picsum.photos/seed/found/600/400",
@@ -103,7 +102,7 @@ export default function ReportFound() {
         setStep(3)
         toast({
           title: "Report Submitted!",
-          description: "The handover has been logged securely.",
+          description: "Waiting for guard approval to pin on map.",
         })
         setTimeout(() => router.push("/dashboard"), 2500)
       })
@@ -118,8 +117,8 @@ export default function ReportFound() {
         <div className="w-20 h-20 bg-secondary/10 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-500">
           <CheckCircle2 className="h-10 w-10 text-secondary" />
         </div>
-        <h2 className="text-2xl font-headline font-bold mb-2">Logged Successfully</h2>
-        <p className="text-muted-foreground text-sm mb-8">Redirecting to dashboard...</p>
+        <h2 className="text-2xl font-headline font-bold mb-2">Report Logged</h2>
+        <p className="text-muted-foreground text-sm mb-8">Waiting for guard verification...</p>
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
@@ -140,7 +139,7 @@ export default function ReportFound() {
         <Alert className="bg-white/95 border-secondary/20 rounded-2xl shadow-lg py-3">
           <Info className="h-4 w-4 text-secondary" />
           <AlertDescription className="text-[10px] text-muted-foreground font-medium">
-            Hand over to campus security and log the receipt details below. AI will help with descriptions.
+            Hand over to campus security. The item will appear on the map once verified by a guard.
           </AlertDescription>
         </Alert>
 
@@ -162,7 +161,7 @@ export default function ReportFound() {
                     {isScanning && (
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center text-white z-10">
                         <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                        <p className="font-headline font-bold text-[10px] uppercase tracking-widest">Scanning in background...</p>
+                        <p className="font-headline font-bold text-[10px] uppercase tracking-widest">Scanning...</p>
                       </div>
                     )}
                   </>
@@ -183,7 +182,7 @@ export default function ReportFound() {
                   <div className="relative">
                     <Input 
                       id="itemName" 
-                      placeholder={isScanning ? "AI is identifying..." : "e.g. Blue Umbrella"} 
+                      placeholder={isScanning ? "AI Analyzing..." : "e.g. Blue Umbrella"} 
                       className="rounded-xl h-11 pl-9 text-sm" 
                       value={itemName}
                       onChange={(e) => setItemName(e.target.value)}
@@ -198,7 +197,7 @@ export default function ReportFound() {
                   <div className="relative">
                     <Textarea 
                       id="description" 
-                      placeholder="Add identifying marks, brand, or color..." 
+                      placeholder="Add identifying marks or type manually..." 
                       className="rounded-xl min-h-[80px] pl-9 text-sm resize-none"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -236,7 +235,7 @@ export default function ReportFound() {
                 <div className="space-y-1.5">
                   <Label htmlFor="guardName" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Guard Name</Label>
                   <div className="relative">
-                    <Input id="guardName" placeholder="Full name of guard" className="rounded-xl h-11 pl-9 text-sm" value={guardName} onChange={(e) => setGuardName(e.target.value)} required />
+                    <Input id="guardName" placeholder="Guard's full name" className="rounded-xl h-11 pl-9 text-sm" value={guardName} onChange={(e) => setGuardName(e.target.value)} required />
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>

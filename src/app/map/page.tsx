@@ -9,10 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query } from "firebase/firestore"
+import { collection, query, where } from "firebase/firestore"
 import Image from "next/image"
 
-// Mapping of common LPU locations to map percentages (approximate for the satellite view)
 const LPU_LOCATION_MAP: Record<string, { x: number, y: number }> = {
   "block 34": { x: 45, y: 30 },
   "block 33": { x: 48, y: 32 },
@@ -31,7 +30,6 @@ function getCoordinates(locationDesc: string = "") {
   for (const [key, coords] of Object.entries(LPU_LOCATION_MAP)) {
     if (normalized.includes(key)) return coords;
   }
-  // Default random-ish spread within campus bounds if not recognized
   const hash = locationDesc.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return { x: 20 + (hash % 60), y: 20 + ((hash * 7) % 60) };
 }
@@ -43,14 +41,34 @@ export default function MapScreen() {
   const { toast } = useToast()
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
-  // Fetch real items from Firestore
+  // Fetch items from Firestore - Filter by "In Custody" or "Active" (lost)
   const itemsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, "items"));
   }, [db]);
 
-  const { data: items, isLoading: isItemsLoading } = useCollection(itemsQuery);
+  const { data: rawItems, isLoading: isItemsLoading } = useCollection(itemsQuery);
+
+  // Filter approved items only and apply search
+  const items = useMemo(() => {
+    if (!rawItems) return []
+    return rawItems.filter(item => {
+      // Only show approved/active items
+      const isApproved = item.status === "In Custody" || item.type === "lost"
+      if (!isApproved) return false
+
+      // Apply search query
+      if (!searchQuery.trim()) return true
+      const search = searchQuery.toLowerCase()
+      return (
+        item.name.toLowerCase().includes(search) ||
+        item.locationDescription.toLowerCase().includes(search) ||
+        item.category.toLowerCase().includes(search)
+      )
+    })
+  }, [rawItems, searchQuery])
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -132,7 +150,9 @@ export default function MapScreen() {
             <Search className="h-4 w-4 text-muted-foreground mr-2" />
             <input 
               type="text" 
-              placeholder="Search LPU blocks..." 
+              placeholder="Search items or blocks..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent border-none outline-none w-full text-[10px] font-bold"
             />
             <button className="p-1.5 hover:bg-muted rounded-lg ml-auto">
@@ -222,6 +242,11 @@ export default function MapScreen() {
             </div>
           </div>
         </Card>
+      </div>
+
+      <div className="absolute bottom-24 left-0 right-0 text-center pointer-events-none opacity-40 z-10">
+        <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-white">Made with Love ❤️ Lostify</p>
+        <p className="text-[7px] font-medium text-white/70">Powered by Igloo Enterprises</p>
       </div>
     </div>
   )
