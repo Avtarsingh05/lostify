@@ -63,7 +63,10 @@ export default function Dashboard() {
   const { data: userData } = useDoc(userDocRef)
 
   // Hardened Super Admin Check Logic
-  const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.email === "worker@gmail.com" || userData?.role === "ADMIN";
+  const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
+                  user?.email === "worker@gmail.com" || 
+                  user?.email === "avtarsingh9528972330@gmail.com" ||
+                  userData?.role === "ADMIN";
   const isGuard = isAdmin || userData?.role === "GUARD";
 
   useEffect(() => {

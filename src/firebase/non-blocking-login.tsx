@@ -29,7 +29,10 @@ export function initiateEmailSignUp(authInstance: Auth, email: string, password:
 
       // 2. Sync to Firestore 'users' collection
       // Auto-promote specific emails to ADMIN
-      const isAdminEmail = email === "worker@gmail.com" || email === "forigloohelp@gmail.com" || user.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02";
+      const isAdminEmail = email === "worker@gmail.com" || 
+                          email === "forigloohelp@gmail.com" || 
+                          email === "avtarsingh9528972330@gmail.com" ||
+                          user.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02";
       
       const db = getFirestore(user.app);
       const userRef = doc(db, "users", user.uid);
