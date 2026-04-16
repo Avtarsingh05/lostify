@@ -160,15 +160,7 @@ export default function Dashboard() {
     )
   }
 
-  const defaultBanner = {
-    id: 'default',
-    title: 'Campus Recovery 2024',
-    subtitle: 'Help your peers find their belongings. High-reputation students earn exclusive campus rewards.',
-    imageUrl: 'https://picsum.photos/seed/lpu-recovery/800/400',
-    targetUrl: '/report-found'
-  }
-
-  const displayBanners = customBanners && customBanners.length > 0 ? customBanners : [defaultBanner]
+  const displayBanners = customBanners || []
 
   return (
     <div className="flex flex-col min-h-screen pb-32 bg-background">
@@ -288,43 +280,50 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
-        <Carousel 
-          className="w-full"
-          plugins={[
-            Autoplay({
-              delay: 5000,
-            }),
-          ]}
-        >
-          <CarouselContent>
-            {displayBanners.map((banner) => (
-              <CarouselItem key={banner.id}>
-                <Link href={banner.targetUrl || "#"} className={banner.targetUrl ? "cursor-pointer" : "cursor-default"}>
-                  <div className="relative h-44 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10">
-                    <Image 
-                      src={banner.imageUrl} 
-                      alt={banner.title} 
-                      fill 
-                      className="object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-6">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className="h-4 w-4 text-accent animate-pulse" />
-                        <p className="text-[9px] font-bold text-accent uppercase tracking-[0.2em]">Featured</p>
+        {displayBanners.length > 0 && (
+          <Carousel 
+            className="w-full"
+            plugins={[
+              Autoplay({
+                delay: 5000,
+              }),
+            ]}
+          >
+            <CarouselContent>
+              {displayBanners.map((banner) => (
+                <CarouselItem key={banner.id}>
+                  <Link 
+                    href={banner.targetUrl || "#"} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={banner.targetUrl ? "cursor-pointer" : "cursor-default"}
+                  >
+                    <div className="relative h-44 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10">
+                      <Image 
+                        src={banner.imageUrl} 
+                        alt={banner.title} 
+                        fill 
+                        className="object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-6">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Sparkles className="h-4 w-4 text-accent animate-pulse" />
+                          <p className="text-[9px] font-bold text-accent uppercase tracking-[0.2em]">Featured</p>
+                        </div>
+                        <h2 className="text-white text-lg font-headline font-bold leading-tight">{banner.title}</h2>
+                        {banner.subtitle && (
+                          <p className="text-white/70 text-[10px] font-medium leading-relaxed max-w-[80%] mt-1">
+                            {banner.subtitle}
+                          </p>
+                        )}
                       </div>
-                      <h2 className="text-white text-lg font-headline font-bold leading-tight">{banner.title}</h2>
-                      {banner.subtitle && (
-                        <p className="text-white/70 text-[10px] font-medium leading-relaxed max-w-[80%] mt-1">
-                          {banner.subtitle}
-                        </p>
-                      )}
                     </div>
-                  </div>
-                </Link>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+                  </Link>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
