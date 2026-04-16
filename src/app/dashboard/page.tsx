@@ -16,8 +16,7 @@ import {
   User,
   LogOut,
   Loader2,
-  Clock,
-  ShieldAlert
+  Clock
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
@@ -35,7 +34,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useToast } from "@/hooks/use-toast"
 import { collection, query, orderBy, limit, doc, setDoc } from "firebase/firestore"
 import { formatDistanceToNow } from "date-fns"
 import { Badge } from "@/components/ui/badge"
@@ -137,6 +135,10 @@ export default function Dashboard() {
     router.push("/")
   }
 
+  // Force Admin role for your UID for the prototype dashboard view
+  const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.uid === "tkGcuQnwxGgC32WZrtinZifDrDI2" || user?.email === "worker@gmail.com";
+  const isGuard = userData?.role === "GUARD" || isAdmin;
+
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -156,12 +158,11 @@ export default function Dashboard() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <h1 className="text-white text-3xl font-headline font-bold">Lostify</h1>
-                {userData?.role === "GUARD" && (
+                {isAdmin ? (
+                  <Badge className="bg-accent text-[8px] font-bold h-4">SUPER ADMIN</Badge>
+                ) : isGuard ? (
                   <Badge className="bg-secondary text-[8px] font-bold h-4">GUARD</Badge>
-                )}
-                {userData?.role === "ADMIN" && (
-                  <Badge className="bg-accent text-[8px] font-bold h-4">ADMIN</Badge>
-                )}
+                ) : null}
               </div>
               <p className="text-white/80 text-xs font-medium">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'User'}</p>
             </div>
@@ -223,7 +224,7 @@ export default function Dashboard() {
                     <span>Settings</span>
                   </DropdownMenuItem>
                   
-                  {(userData?.role === "GUARD" || userData?.role === "ADMIN") && (
+                  {isGuard && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel className="font-headline font-bold text-[10px] text-muted-foreground uppercase tracking-widest px-2 py-1">Management</DropdownMenuLabel>
@@ -235,7 +236,7 @@ export default function Dashboard() {
                     </>
                   )}
 
-                  {userData?.role === "ADMIN" && (
+                  {isAdmin && (
                     <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4 text-primary" />
                       <span>Admin Console</span>
