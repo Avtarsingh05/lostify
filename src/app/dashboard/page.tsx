@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -45,6 +44,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel"
+import { Skeleton } from "@/components/ui/skeleton"
 import Autoplay from "embla-carousel-autoplay"
 
 const menuItems = [
@@ -136,7 +136,7 @@ export default function Dashboard() {
     return query(collection(db, "banners"), orderBy("createdAt", "desc"))
   }, [db])
 
-  const { data: customBanners } = useCollection(bannersQuery)
+  const { data: customBanners, isLoading: isBannersLoading } = useCollection(bannersQuery)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -280,7 +280,9 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
-        {displayBanners.length > 0 && (
+        {isBannersLoading ? (
+          <Skeleton className="h-44 w-full rounded-[32px] shadow-2xl" />
+        ) : displayBanners.length > 0 && (
           <Carousel 
             className="w-full"
             plugins={[
