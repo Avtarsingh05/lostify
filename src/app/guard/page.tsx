@@ -15,13 +15,23 @@ import {
   AlertCircle,
   AlertTriangle,
   History,
-  Filter
+  Building,
+  UserCheck
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useFirestore, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, doc, orderBy, limit } from "firebase/firestore"
@@ -35,7 +45,12 @@ export default function GuardDashboard() {
   const { user, isUserLoading } = useUser()
   const [search, setSearch] = useState("")
 
-  // Fetch items - broader query to see everything
+  // Modal states
+  const [verifyingItem, setVerifyingItem] = useState<any | null>(null)
+  const [resolvingItem, setResolvingItem] = useState<any | null>(null)
+  const [storageLocation, setStorageLocation] = useState("")
+  const [regNumber, setRegNumber] = useState("")
+
   const itemsQuery = useMemoFirebase(() => {
     if (!db) return null
     return query(
@@ -47,7 +62,6 @@ export default function GuardDashboard() {
 
   const { data: allItems, isLoading } = useCollection(itemsQuery)
 
-  // Local filtering for performance and index flexibility
   const pendingFound = useMemo(() => {
     return allItems?.filter(i => i.type === 'found' && i.status === 'Pending Verification') || []
   }, [allItems])
@@ -56,30 +70,39 @@ export default function GuardDashboard() {
     return allItems?.filter(i => i.type === 'lost' && i.status === 'Active') || []
   }, [allItems])
 
-  const handleApprove = (itemId: string) => {
-    if (!db) return
-    const itemRef = doc(db, "items", itemId)
+  const handleApprove = () => {
+    if (!db || !verifyingItem || !storageLocation) return
+    const itemRef = doc(db, "items", verifyingItem.id)
     updateDocumentNonBlocking(itemRef, {
       status: "In Custody",
+      storageOffice: storageLocation,
+      verifiedBy: user?.email,
       lastUpdatedAt: new Date().toISOString()
     })
     toast({
       title: "Item Approved",
-      description: "Item is now live on the campus map.",
+      description: `Logged at ${storageLocation}. Now visible on map.`,
     })
+    setVerifyingItem(null)
+    setStorageLocation("")
   }
 
-  const handleResolveLost = (itemId: string) => {
-    if (!db) return
-    const itemRef = doc(db, "items", itemId)
+  const handleResolveLost = () => {
+    if (!db || !resolvingItem || !regNumber) return
+    const itemRef = doc(db, "items", resolvingItem.id)
     updateDocumentNonBlocking(itemRef, {
       status: "Resolved",
+      claimerRegNo: regNumber,
+      resolvedBy: user?.email,
+      resolvedAt: new Date().toISOString(),
       lastUpdatedAt: new Date().toISOString()
     })
     toast({
       title: "Report Resolved",
-      description: "Lost report has been marked as found/returned.",
+      description: `Claimed by student: ${regNumber}`,
     })
+    setResolvingItem(null)
+    setRegNumber("")
   }
 
   const filterItems = (list: any[]) => {
@@ -121,13 +144,13 @@ export default function GuardDashboard() {
 
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
         <div className="grid grid-cols-2 gap-4">
-          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-md">
+          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-4">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Handovers</p>
               <h3 className="text-2xl font-headline font-bold mt-1 text-secondary">{pendingFound.length}</h3>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-md">
+          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-4">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active Lost</p>
               <h3 className="text-2xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
@@ -177,16 +200,13 @@ export default function GuardDashboard() {
                       <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
                         <MapPin className="h-3 w-3" /> {item.locationDescription}
                       </p>
-                      <p className="text-[9px] text-muted-foreground mt-1">
-                        {item.reportedAt ? formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true }) : "just now"}
-                      </p>
                       <div className="flex items-center justify-end mt-3">
                         <Button 
                           size="sm" 
-                          onClick={() => handleApprove(item.id)}
+                          onClick={() => setVerifyingItem(item)}
                           className="h-8 px-4 rounded-xl text-[10px] font-bold bg-primary active:scale-95 transition-transform"
                         >
-                          Verify & Map Pin
+                          Verify Handover
                         </Button>
                       </div>
                     </div>
@@ -216,17 +236,14 @@ export default function GuardDashboard() {
                       <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
                         <MapPin className="h-3 w-3" /> {item.locationDescription}
                       </p>
-                      <p className="text-[9px] text-muted-foreground mt-1">
-                        {item.reportedAt ? formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true }) : "just now"}
-                      </p>
                       <div className="flex items-center justify-end mt-3">
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleResolveLost(item.id)}
+                          onClick={() => setResolvingItem(item)}
                           className="h-8 px-4 rounded-xl text-[10px] font-bold border-accent/20 text-accent hover:bg-accent/10"
                         >
-                          Mark Resolved
+                          Mark Returned
                         </Button>
                       </div>
                     </div>
@@ -244,11 +261,79 @@ export default function GuardDashboard() {
           <div>
             <h4 className="text-xs font-bold text-primary">Guard Protocol</h4>
             <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
-              Verify student ID for all handovers. Lost reports should be cross-referenced with your physical inventory at the security post.
+              Mandatory: Log the specific storage office for handovers and student registration number for returns.
             </p>
           </div>
         </div>
       </main>
+
+      {/* Verify Handover Modal */}
+      <Dialog open={!!verifyingItem} onOpenChange={() => setVerifyingItem(null)}>
+        <DialogContent className="max-w-[360px] rounded-[32px] p-6">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-lg flex items-center gap-2">
+              <Building className="h-5 w-5 text-primary" /> Log Storage
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Where is this item being physically kept?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Office / Building No.</Label>
+              <Input 
+                value={storageLocation}
+                onChange={(e) => setStorageLocation(e.target.value)}
+                placeholder="e.g. Block 34, Office 102"
+                className="rounded-xl h-12 text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={handleApprove}
+              disabled={!storageLocation}
+              className="w-full h-12 rounded-xl gradient-header font-bold text-xs"
+            >
+              Verify & Add to Map
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Resolve Lost Modal */}
+      <Dialog open={!!resolvingItem} onOpenChange={() => setResolvingItem(null)}>
+        <DialogContent className="max-w-[360px] rounded-[32px] p-6">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-lg flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-accent" /> Student Return
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Enter the student's registration details.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Registration Number</Label>
+              <Input 
+                value={regNumber}
+                onChange={(e) => setRegNumber(e.target.value)}
+                placeholder="e.g. 12200000"
+                className="rounded-xl h-12 text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={handleResolveLost}
+              disabled={!regNumber}
+              className="w-full h-12 rounded-xl gradient-accent font-bold text-xs"
+            >
+              Confirm Return
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
