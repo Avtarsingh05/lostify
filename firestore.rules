@@ -7,7 +7,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Absolute Admin check for the user's UIDs and Email
+    // Absolute Admin check for specific UIDs and Email
     function isSuperAdmin() {
       return isSignedIn() && (
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
@@ -16,49 +16,45 @@ service cloud.firestore {
       );
     }
 
-    // Universal read/write access for Super Admins
+    // MASTER RULE: Super Admins have absolute unrestricted access to everything
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }
 
-    // Items: Anyone signed in can read/create. Owners/Admins can update.
+    // Collection specific rules for non-admin students
+    
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+    }
+
     match /items/{itemId} {
       allow read, create: if isSignedIn();
-      allow update: if isSignedIn() && (isSuperAdmin() || resource.data.ownerId == request.auth.uid);
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isSuperAdmin());
       allow delete: if isSuperAdmin();
     }
 
-    // Banners: Read for everyone, Write for Admins
-    match /banners/{bannerId} {
-      allow read: if isSignedIn();
-      allow write: if isSuperAdmin();
-    }
-
-    // ShopItems: Read for everyone, Write for Admins
     match /shopItems/{itemId} {
       allow read: if isSignedIn();
       allow write: if isSuperAdmin();
     }
 
-    // Notifications: Read for targeted user or all, Write for Admins
+    match /orders/{orderId} {
+      allow create: if isSignedIn();
+      // Students can only list their own orders. Admins (via master rule) can see all.
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isSuperAdmin());
+    }
+
     match /notifications/{notifId} {
-      allow read: if isSignedIn() && (isSuperAdmin() || resource.data.userId == request.auth.uid || resource.data.userId == 'all');
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isSuperAdmin());
       allow write: if isSuperAdmin();
     }
 
-    // Users: Read for everyone, Write for owner or Admin
-    match /users/{userId} {
+    match /banners/{bannerId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && (isSuperAdmin() || request.auth.uid == userId);
+      allow write: if isSuperAdmin();
     }
 
-    // Orders: Owners can see their own orders. Admins see all.
-    match /orders/{orderId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn() && (isSuperAdmin() || resource.data.userId == request.auth.uid);
-    }
-
-    // Auctions: Read for everyone, Write for Admins
     match /auctions/{auctionId} {
       allow read: if isSignedIn();
       allow write: if isSuperAdmin();

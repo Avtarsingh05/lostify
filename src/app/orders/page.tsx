@@ -24,10 +24,10 @@ export default function OrderHistory() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
 
-  // Simplified query that matches the security rules perfectly
+  // This query is specifically structured to satisfy the security rule:
+  // allow read: if resource.data.userId == request.auth.uid
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null
-    // We filter by userId to ensure the security rule "resource.data.userId == request.auth.uid" is satisfied
     return query(
       collection(db, "orders"),
       where("userId", "==", user.uid),
@@ -38,19 +38,17 @@ export default function OrderHistory() {
   const { data: orders, isLoading } = useCollection(ordersQuery)
 
   const getStatusBadge = (status: string) => {
-    const s = status?.toUpperCase()
-    switch (s) {
-      case "SUCCESS":
-      case "PAID":
-        return <Badge className="bg-secondary text-white border-none gap-1"><CheckCircle2 className="h-3 w-3" /> Paid</Badge>
-      case "PENDING":
-      case "MOCK_PENDING":
-        return <Badge className="bg-accent text-white border-none gap-1 animate-pulse"><Clock className="h-3 w-3" /> Processing</Badge>
-      case "FAILED":
-        return <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" /> Failed</Badge>
-      default:
-        return <Badge variant="outline">{status || "Unknown"}</Badge>
+    const s = status?.toUpperCase() || ""
+    if (s.includes("SUCCESS") || s.includes("PAID")) {
+      return <Badge className="bg-secondary text-white border-none gap-1"><CheckCircle2 className="h-3 w-3" /> Paid</Badge>
     }
+    if (s.includes("PENDING") || s.includes("MOCK")) {
+      return <Badge className="bg-accent text-white border-none gap-1 animate-pulse"><Clock className="h-3 w-3" /> Processing</Badge>
+    }
+    if (s.includes("FAILED")) {
+      return <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" /> Failed</Badge>
+    }
+    return <Badge variant="outline" className="opacity-50">{status || "Checking..."}</Badge>
   }
 
   if (isUserLoading) {
@@ -106,13 +104,13 @@ export default function OrderHistory() {
                 </div>
                 
                 <div className="bg-muted/30 px-4 py-3 border-t border-dashed flex items-center justify-between">
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-0.5 min-w-0">
                     <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Order ID</p>
-                    <p className="text-[10px] font-mono font-medium truncate max-w-[180px]">{order.id}</p>
+                    <p className="text-[9px] font-mono font-medium truncate">{order.id}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Delivery Info</p>
-                    <p className="text-[10px] font-medium">{order.deliveryPhone || "N/A"}</p>
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Contact</p>
+                    <p className="text-[10px] font-medium">{order.deliveryPhone || "No phone listed"}</p>
                   </div>
                 </div>
               </CardContent>
