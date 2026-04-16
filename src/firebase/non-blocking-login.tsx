@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Auth,
@@ -32,12 +31,15 @@ export function initiateEmailSignUp(authInstance: Auth, email: string, password:
       const db = getFirestore(user.app);
       const userRef = doc(db, "users", user.uid);
       
+      // Auto-promote specific emails to ADMIN
+      const isAdminEmail = email === "worker@gmail.com" || email === "forigloohelp@gmail.com";
+      
       // We use setDoc to explicitly create the document and thus the collection (container)
       setDoc(userRef, {
         id: user.uid,
         username: displayName || email.split('@')[0],
         email: email,
-        role: "USER",
+        role: isAdminEmail ? "ADMIN" : "USER",
         photoURL: user.photoURL || "",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
