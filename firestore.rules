@@ -16,12 +16,13 @@ service cloud.firestore {
       );
     }
 
-    // MASTER RULE: Super Admins have absolute unrestricted access to everything
+    // 1. MASTER RULE: Super Admins have absolute unrestricted access to everything
+    // This resolves 'method: list' and other permission errors for the admin account
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }
 
-    // Collection specific rules for non-admin students
+    // 2. Collection Specific Rules for Students
     
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -29,7 +30,9 @@ service cloud.firestore {
     }
 
     match /items/{itemId} {
-      allow read, create: if isSignedIn();
+      // Students can list and get items for the map and dashboard
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isSuperAdmin());
       allow delete: if isSuperAdmin();
     }
@@ -40,8 +43,8 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
+      // Students can only create orders and read their OWN orders
       allow create: if isSignedIn();
-      // Students can only list their own orders. Admins (via master rule) can see all.
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isSuperAdmin());
     }
 

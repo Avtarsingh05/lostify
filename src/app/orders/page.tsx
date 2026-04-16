@@ -6,7 +6,6 @@ import {
   ShoppingBag, 
   Clock, 
   CreditCard, 
-  ChevronRight, 
   Package, 
   Loader2, 
   CheckCircle2, 
@@ -24,8 +23,8 @@ export default function OrderHistory() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
 
-  // This query is specifically structured to satisfy the security rule:
-  // allow read: if resource.data.userId == request.auth.uid
+  // This query specifically satisfies the security rule:
+  // allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isSuperAdmin())
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return query(
@@ -39,16 +38,16 @@ export default function OrderHistory() {
 
   const getStatusBadge = (status: string) => {
     const s = status?.toUpperCase() || ""
-    if (s.includes("SUCCESS") || s.includes("PAID")) {
+    if (s.includes("SUCCESS") || s.includes("PAID") || s.includes("COMPLETED")) {
       return <Badge className="bg-secondary text-white border-none gap-1"><CheckCircle2 className="h-3 w-3" /> Paid</Badge>
     }
-    if (s.includes("PENDING") || s.includes("MOCK")) {
+    if (s.includes("PENDING") || s.includes("MOCK") || s.includes("PROCESSING")) {
       return <Badge className="bg-accent text-white border-none gap-1 animate-pulse"><Clock className="h-3 w-3" /> Processing</Badge>
     }
-    if (s.includes("FAILED")) {
+    if (s.includes("FAILED") || s.includes("CANCELLED")) {
       return <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" /> Failed</Badge>
     }
-    return <Badge variant="outline" className="opacity-50">{status || "Checking..."}</Badge>
+    return <Badge variant="outline" className="opacity-50">{status || "Pending"}</Badge>
   }
 
   if (isUserLoading) {
@@ -110,7 +109,7 @@ export default function OrderHistory() {
                   </div>
                   <div className="text-right">
                     <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Contact</p>
-                    <p className="text-[10px] font-medium">{order.deliveryPhone || "No phone listed"}</p>
+                    <p className="text-[10px] font-medium">{order.deliveryPhone || "No contact info"}</p>
                   </div>
                 </div>
               </CardContent>
