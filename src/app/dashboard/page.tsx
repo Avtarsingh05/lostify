@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -236,10 +235,6 @@ export default function Dashboard() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2" align="end">
                   <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-3">Account</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
                     <History className="mr-2 h-4 w-4" />
                     <span>My Reports</span>
@@ -249,7 +244,6 @@ export default function Dashboard() {
                     <span>My Orders</span>
                   </DropdownMenuItem>
                   
-                  {/* Staff tools are strictly hidden for normal users */}
                   {isGuard && (
                     <>
                       <DropdownMenuSeparator />
@@ -269,6 +263,10 @@ export default function Dashboard() {
                   )}
                   
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive font-bold">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
