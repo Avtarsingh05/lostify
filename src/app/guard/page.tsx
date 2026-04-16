@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   History,
   Building,
-  UserCheck
+  UserCheck,
+  Archive
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -66,6 +67,10 @@ export default function GuardDashboard() {
     return allItems?.filter(i => i.type === 'found' && i.status === 'Pending Verification') || []
   }, [allItems])
 
+  const inOfficeFound = useMemo(() => {
+    return allItems?.filter(i => i.type === 'found' && i.status === 'In Custody') || []
+  }, [allItems])
+
   const activeLost = useMemo(() => {
     return allItems?.filter(i => i.type === 'lost' && i.status === 'Active') || []
   }, [allItems])
@@ -81,13 +86,13 @@ export default function GuardDashboard() {
     })
     toast({
       title: "Item Approved",
-      description: `Logged at ${storageLocation}. Now visible on map.`,
+      description: `Logged at ${storageLocation}. Now visible in gallery.`,
     })
     setVerifyingItem(null)
     setStorageLocation("")
   }
 
-  const handleResolveLost = () => {
+  const handleResolve = () => {
     if (!db || !resolvingItem || !regNumber) return
     const itemRef = doc(db, "items", resolvingItem.id)
     updateDocumentNonBlocking(itemRef, {
@@ -98,7 +103,7 @@ export default function GuardDashboard() {
       lastUpdatedAt: new Date().toISOString()
     })
     toast({
-      title: "Report Resolved",
+      title: "Item Resolved",
       description: `Claimed by student: ${regNumber}`,
     })
     setResolvingItem(null)
@@ -143,17 +148,23 @@ export default function GuardDashboard() {
       </div>
 
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-2">
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Handovers</p>
-              <h3 className="text-2xl font-headline font-bold mt-1 text-secondary">{pendingFound.length}</h3>
+            <CardContent className="p-3 text-center">
+              <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Handovers</p>
+              <h3 className="text-xl font-headline font-bold mt-1 text-secondary">{pendingFound.length}</h3>
             </CardContent>
           </Card>
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active Lost</p>
-              <h3 className="text-2xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
+            <CardContent className="p-3 text-center">
+              <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">In Office</p>
+              <h3 className="text-xl font-headline font-bold mt-1 text-primary">{inOfficeFound.length}</h3>
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
+            <CardContent className="p-3 text-center">
+              <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Active Lost</p>
+              <h3 className="text-xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
             </CardContent>
           </Card>
         </div>
@@ -169,12 +180,15 @@ export default function GuardDashboard() {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border">
-            <TabsTrigger value="pending" className="rounded-xl font-bold text-[10px] uppercase tracking-widest gap-2">
+          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border overflow-x-auto">
+            <TabsTrigger value="pending" className="rounded-xl font-bold text-[8px] uppercase tracking-widest gap-1">
               <Clock className="h-3 w-3" /> Handovers
             </TabsTrigger>
-            <TabsTrigger value="lost" className="rounded-xl font-bold text-[10px] uppercase tracking-widest gap-2">
-              <AlertTriangle className="h-3 w-3" /> Lost Reports
+            <TabsTrigger value="office" className="rounded-xl font-bold text-[8px] uppercase tracking-widest gap-1">
+              <Archive className="h-3 w-3" /> In Office
+            </TabsTrigger>
+            <TabsTrigger value="lost" className="rounded-xl font-bold text-[8px] uppercase tracking-widest gap-1">
+              <AlertTriangle className="h-3 w-3" /> Lost
             </TabsTrigger>
           </TabsList>
 
@@ -214,7 +228,44 @@ export default function GuardDashboard() {
                 </Card>
               ))
             ) : (
-              <EmptyState icon={CheckCircle2} message="All handovers verified!" />
+              <EmptyState icon={CheckCircle2} message="No handovers pending." />
+            )}
+          </TabsContent>
+
+          <TabsContent value="office" className="space-y-4">
+            {filterItems(inOfficeFound).length > 0 ? (
+              filterItems(inOfficeFound).map((item) => (
+                <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
+                  <div className="flex p-4 gap-4">
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
+                      <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-headline font-bold text-sm truncate pr-2">{item.name}</h3>
+                        <Badge variant="outline" className="text-[8px] border-none px-2 py-0 bg-primary/10 text-primary">
+                          In Office
+                        </Badge>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                        <Building className="h-3 w-3" /> {item.storageOffice}
+                      </p>
+                      <div className="flex items-center justify-end mt-3">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setResolvingItem(item)}
+                          className="h-8 px-4 rounded-xl text-[10px] font-bold border-primary/20 text-primary hover:bg-primary/10"
+                        >
+                          Mark Claimed
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <EmptyState icon={Archive} message="No items in custody." />
             )}
           </TabsContent>
 
@@ -261,7 +312,7 @@ export default function GuardDashboard() {
           <div>
             <h4 className="text-xs font-bold text-primary">Guard Protocol</h4>
             <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
-              Mandatory: Log the specific storage office for handovers and student registration number for returns.
+              For security, always log the student's Registration Number when handing back property.
             </p>
           </div>
         </div>
@@ -301,7 +352,7 @@ export default function GuardDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Resolve Lost Modal */}
+      {/* Resolve Modal */}
       <Dialog open={!!resolvingItem} onOpenChange={() => setResolvingItem(null)}>
         <DialogContent className="max-w-[360px] rounded-[32px] p-6">
           <DialogHeader>
@@ -309,7 +360,7 @@ export default function GuardDashboard() {
               <UserCheck className="h-5 w-5 text-accent" /> Student Return
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Enter the student's registration details.
+              Enter the student's registration details to close this report.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -325,7 +376,7 @@ export default function GuardDashboard() {
           </div>
           <DialogFooter>
             <Button 
-              onClick={handleResolveLost}
+              onClick={handleResolve}
               disabled={!regNumber}
               className="w-full h-12 rounded-xl gradient-accent font-bold text-xs"
             >
