@@ -9,12 +9,12 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 
 const mockAuctions = [
-  { id: 1, name: "Nikon Camera", currentBid: "$120", timeLeft: "02h 14m", image: "https://picsum.photos/seed/camera/200/200" },
-  { id: 2, name: "Basketball", currentBid: "$85", timeLeft: "14h 20m", image: "https://picsum.photos/seed/ball/200/200" },
-  { id: 3, name: "Diamond Ring", currentBid: "$1,450", timeLeft: "45m", image: "https://picsum.photos/seed/ring/200/200" },
-  { id: 4, name: "Luxury Watch", currentBid: "$320", timeLeft: "05h 10m", image: "https://picsum.photos/seed/watch2/200/200" },
-  { id: 5, name: "Blue Backpack", currentBid: "$45", timeLeft: "08h 05m", image: "https://picsum.photos/seed/bag/200/200" },
-  { id: 6, name: "AirPods Pro", currentBid: "$90", timeLeft: "01h 30m", image: "https://picsum.photos/seed/pods/200/200" },
+  { id: 1, name: "Nikon Camera", currentBid: "₹9,500", timeLeft: "02h 14m", image: "https://picsum.photos/seed/camera/200/200" },
+  { id: 2, name: "Basketball", currentBid: "₹1,200", timeLeft: "14h 20m", image: "https://picsum.photos/seed/ball/200/200" },
+  { id: 3, name: "Diamond Ring", currentBid: "₹85,000", timeLeft: "45m", image: "https://picsum.photos/seed/ring/200/200" },
+  { id: 4, name: "Luxury Watch", currentBid: "₹24,000", timeLeft: "05h 10m", image: "https://picsum.photos/seed/watch2/200/200" },
+  { id: 5, name: "Blue Backpack", currentBid: "₹800", timeLeft: "08h 05m", image: "https://picsum.photos/seed/bag/200/200" },
+  { id: 6, name: "AirPods Pro", currentBid: "₹12,500", timeLeft: "01h 30m", image: "https://picsum.photos/seed/pods/200/200" },
 ]
 
 export default function AuctionScreen() {
@@ -31,7 +31,7 @@ export default function AuctionScreen() {
             <h1 className="text-lg font-headline font-bold">Live Auctions</h1>
           </div>
           <p className="text-[9px] text-white/80 font-medium leading-relaxed uppercase tracking-wider">
-            Funds help campus rewards.
+            All prices in INR. Proceeds help campus rewards.
           </p>
         </div>
       </div>

@@ -41,31 +41,21 @@
       },
       "required": ["id", "ownerId", "name", "imageUrl", "category", "type", "status", "reportedAt"]
     },
-    "Chat": {
+    "ShopItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Chat",
+      "title": "ShopItem",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "itemId": { "type": "string" },
-        "participantIds": { "type": "array", "items": { "type": "string" } },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "lastMessageAt": { "type": "string", "format": "date-time" }
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "category": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "sold"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "itemId", "participantIds", "createdAt"]
-    },
-    "Message": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Message",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "chatId": { "type": "string" },
-        "senderId": { "type": "string" },
-        "content": { "type": "string" },
-        "sentAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "chatId", "senderId", "content", "sentAt"]
+      "required": ["id", "name", "price", "imageUrl", "status"]
     },
     "Auction": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -86,33 +76,21 @@
       },
       "required": ["id", "itemId", "sellerId", "startPrice", "currentBid", "startTime", "endTime", "status", "createdAt"]
     },
-    "Bid": {
+    "Order": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Bid",
+      "title": "Order",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "auctionId": { "type": "string" },
-        "bidderId": { "type": "string" },
+        "userId": { "type": "string" },
+        "itemId": { "type": "string" },
         "amount": { "type": "number" },
-        "bidAt": { "type": "string", "format": "date-time" }
+        "currency": { "type": "string" },
+        "paymentStatus": { "type": "string" },
+        "cfOrderId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "auctionId", "bidderId", "amount", "bidAt"]
-    },
-    "AdminActivityLog": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AdminActivityLog",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "adminUserId": { "type": "string" },
-        "action": { "type": "string" },
-        "targetEntity": { "type": "string" },
-        "targetEntityId": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" },
-        "details": { "type": "string" }
-      },
-      "required": ["id", "adminUserId", "action", "targetEntity", "targetEntityId", "timestamp"]
+      "required": ["id", "userId", "itemId", "amount", "currency", "paymentStatus"]
     },
     "Notification": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -138,32 +116,20 @@
         "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "Stores user profiles." }
       },
       {
-        "path": "/roles_admin/{adminId}",
-        "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "Admin roles." }
-      },
-      {
         "path": "/items/{itemId}",
         "definition": { "entityName": "Item", "schema": { "$ref": "#/backend/entities/Item" }, "description": "Reported items." }
       },
       {
-        "path": "/chats/{chatId}",
-        "definition": { "entityName": "Chat", "schema": { "$ref": "#/backend/entities/Chat" }, "description": "Private conversations." }
+        "path": "/shopItems/{itemId}",
+        "definition": { "entityName": "ShopItem", "schema": { "$ref": "#/backend/entities/ShopItem" }, "description": "Items for sale in shop." }
       },
       {
-        "path": "/chats/{chatId}/messages/{messageId}",
-        "definition": { "entityName": "Message", "schema": { "$ref": "#/backend/entities/Message" }, "description": "Chat messages." }
+        "path": "/orders/{orderId}",
+        "definition": { "entityName": "Order", "schema": { "$ref": "#/backend/entities/Order" }, "description": "Payment orders." }
       },
       {
         "path": "/auctions/{auctionId}",
         "definition": { "entityName": "Auction", "schema": { "$ref": "#/backend/entities/Auction" }, "description": "Auction listings." }
-      },
-      {
-        "path": "/auctions/{auctionId}/bids/{bidId}",
-        "definition": { "entityName": "Bid", "schema": { "$ref": "#/backend/entities/Bid" }, "description": "Individual bids." }
-      },
-      {
-        "path": "/adminActivityLogs/{logId}",
-        "definition": { "entityName": "AdminActivityLog", "schema": { "$ref": "#/backend/entities/AdminActivityLog" }, "description": "Admin activity logs." }
       },
       {
         "path": "/notifications/{notificationId}",

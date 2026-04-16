@@ -10,7 +10,7 @@ import {
   PlusCircle, 
   Map as MapIcon, 
   Package, 
-  MessageCircle, 
+  ShoppingBag, 
   Gavel, 
   LayoutDashboard,
   ShieldCheck,
@@ -77,18 +77,18 @@ const menuItems = [
     description: "Manage your reports"
   },
   {
-    title: "Chat",
-    icon: MessageCircle,
-    href: "/chat",
+    title: "Campus Shop",
+    icon: ShoppingBag,
+    href: "/shop",
     gradient: "bg-blue-600",
-    description: "Secure messaging"
+    description: "Premium marketplace"
   },
   {
     title: "Auctions",
     icon: Gavel,
     href: "/auctions",
     gradient: "bg-purple-600",
-    description: "Bid on items"
+    description: "Bid on items (INR)"
   }
 ]
 
@@ -149,7 +149,7 @@ export default function Dashboard() {
     router.push("/")
   }
 
-  const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.email === "worker@gmail.com";
+  const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.uid === "tkGcuQnwxGgC32WZrtinZifDrDI2" || user?.email === "worker@gmail.com";
   const isGuard = userData?.role === "GUARD" || isAdmin;
 
   if (isUserLoading || !user) {

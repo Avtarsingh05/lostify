@@ -18,7 +18,9 @@ import {
   Image as ImageIcon,
   Trash2,
   Upload,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ShoppingBag,
+  DollarSign
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -79,6 +81,13 @@ export default function AdminDashboard() {
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const bannerFileRef = useRef<HTMLInputElement>(null)
 
+  // Shop State
+  const [shopItemName, setShopItemName] = useState("")
+  const [shopItemPrice, setShopItemPrice] = useState("")
+  const [shopItemDesc, setShopItemDesc] = useState("")
+  const [isUploadingShopItem, setIsUploadingShopItem] = useState(false)
+  const shopFileRef = useRef<HTMLInputElement>(null)
+
   // Real-time data sync
   const itemsQuery = useMemoFirebase(() => collection(db, "items"), [db])
   const { data: allItems } = useCollection(itemsQuery)
@@ -89,6 +98,10 @@ export default function AdminDashboard() {
 
   const bannersQuery = useMemoFirebase(() => collection(db, "banners"), [db])
   const { data: allBanners } = useCollection(bannersQuery)
+
+  const shopItemsQuery = useMemoFirebase(() => 
+    query(collection(db, "shopItems"), orderBy("createdAt", "desc")), [db])
+  const { data: shopItems } = useCollection(shopItemsQuery)
 
   const lostCount = allItems?.filter(i => i.type === 'lost').length || 0
   const foundCount = allItems?.filter(i => i.type === 'found').length || 0
@@ -169,12 +182,72 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleShopItemUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !shopItemName || !shopItemPrice) {
+      toast({
+        variant: "destructive",
+        title: "Incomplete Data",
+        description: "Name and Price are required.",
+      })
+      return
+    }
+
+    setIsUploadingShopItem(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("upload_preset", "admin_banner_upload")
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      
+      if (!res.ok) throw new Error("Cloudinary upload failed")
+      const data = await res.json()
+      
+      const shopItemsRef = collection(db, "shopItems")
+      await addDocumentNonBlocking(shopItemsRef, {
+        name: shopItemName,
+        price: parseFloat(shopItemPrice),
+        description: shopItemDesc,
+        imageUrl: data.secure_url,
+        status: "available",
+        createdAt: new Date().toISOString()
+      })
+
+      setShopItemName("")
+      setShopItemPrice("")
+      setShopItemDesc("")
+      toast({
+        title: "Item Listed",
+        description: "New item added to campus shop.",
+      })
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: err.message,
+      })
+    } finally {
+      setIsUploadingShopItem(false)
+    }
+  }
+
   const handleDeleteBanner = (id: string) => {
     const bannerRef = doc(db, "banners", id)
     deleteDocumentNonBlocking(bannerRef)
     toast({
       title: "Banner Removed",
-      description: "The banner has been deleted from the rotation.",
+    })
+  }
+
+  const handleDeleteShopItem = (id: string) => {
+    const itemRef = doc(db, "shopItems", id)
+    deleteDocumentNonBlocking(itemRef)
+    toast({
+      title: "Item Removed",
     })
   }
 
@@ -202,7 +275,7 @@ export default function AdminDashboard() {
     { label: "Lost Items", value: lostCount.toString(), icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
     { label: "Found Items", value: foundCount.toString(), icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
     { label: "Total Students", value: allUsers?.length.toString() || "0", icon: Users, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Health", value: "99%", icon: ShieldCheck, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { label: "Shop Items", value: shopItems?.length.toString() || "0", icon: ShoppingBag, color: "text-purple-500", bg: "bg-purple-500/10" },
   ]
 
   return (
@@ -221,10 +294,11 @@ export default function AdminDashboard() {
 
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6">
-            <TabsTrigger value="overview" className="rounded-xl font-bold text-[9px] uppercase">Stats</TabsTrigger>
-            <TabsTrigger value="users" className="rounded-xl font-bold text-[9px] uppercase">Users</TabsTrigger>
-            <TabsTrigger value="banners" className="rounded-xl font-bold text-[9px] uppercase">Banners</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 overflow-x-auto">
+            <TabsTrigger value="overview" className="rounded-xl font-bold text-[8px] uppercase">Stats</TabsTrigger>
+            <TabsTrigger value="users" className="rounded-xl font-bold text-[8px] uppercase">Users</TabsTrigger>
+            <TabsTrigger value="banners" className="rounded-xl font-bold text-[8px] uppercase">Banners</TabsTrigger>
+            <TabsTrigger value="shop" className="rounded-xl font-bold text-[8px] uppercase">Shop</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -367,70 +441,107 @@ export default function AdminDashboard() {
                   <div className="relative">
                     <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                      placeholder="Destination Link (e.g. /auctions)" 
+                      placeholder="Destination Link" 
                       className="rounded-xl h-11 text-xs pl-9"
                       value={bannerLink}
                       onChange={(e) => setBannerLink(e.target.value)}
                     />
                   </div>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    ref={bannerFileRef} 
-                    accept="image/*"
-                    onChange={handleBannerUpload}
-                  />
+                  <input type="file" className="hidden" ref={bannerFileRef} accept="image/*" onChange={handleBannerUpload} />
                   <Button 
                     onClick={() => bannerFileRef.current?.click()}
                     className="w-full rounded-xl gradient-success font-bold text-xs h-11"
                     disabled={isUploadingBanner || !bannerTitle}
                   >
                     {isUploadingBanner ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ImageIcon className="h-4 w-4 mr-2" />}
-                    Upload to Cloudinary
+                    Upload & Publish
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
             <div className="space-y-3 pb-12">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Active Banners</h3>
-              {allBanners && allBanners.length > 0 ? allBanners.map((banner) => (
+              {allBanners?.map((banner) => (
                 <Card key={banner.id} className="border-none shadow-sm rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
                   <div className="flex h-20">
                     <div className="w-24 h-full relative">
                       <Image src={banner.imageUrl} alt={banner.title} fill className="object-cover" />
                     </div>
                     <div className="flex-1 p-3 flex items-center justify-between">
-                      <div className="min-w-0">
-                        <h4 className="text-[10px] font-bold truncate leading-tight">{banner.title}</h4>
-                        <p className="text-[8px] text-muted-foreground truncate">{banner.subtitle}</p>
-                        {banner.targetUrl && (
-                           <p className="text-[7px] text-primary truncate font-bold mt-1">Link: {banner.targetUrl}</p>
-                        )}
-                      </div>
-                      <button 
-                        onClick={() => handleDeleteBanner(banner.id)}
-                        className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <h4 className="text-[10px] font-bold truncate leading-tight">{banner.title}</h4>
+                      <button onClick={() => handleDeleteBanner(banner.id)} className="p-2 text-destructive"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </div>
                 </Card>
-              )) : (
-                <div className="text-center py-12 opacity-30">
-                  <ImageIcon className="h-8 w-8 mx-auto mb-2" />
-                  <p className="text-[10px] font-bold uppercase">No Custom Banners</p>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="shop" className="space-y-4">
+            <Card className="border-none shadow-md rounded-[32px] overflow-hidden">
+              <CardHeader className="px-6 pt-6 pb-2">
+                <CardTitle className="font-headline font-bold text-lg flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5 text-primary" /> List for Shop
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-6 pb-6 space-y-4">
+                <div className="space-y-3">
+                  <Input 
+                    placeholder="Item Name" 
+                    className="rounded-xl h-11 text-xs"
+                    value={shopItemName}
+                    onChange={(e) => setShopItemName(e.target.value)}
+                  />
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Price in INR" 
+                      type="number"
+                      className="rounded-xl h-11 text-xs pl-9"
+                      value={shopItemPrice}
+                      onChange={(e) => setShopItemPrice(e.target.value)}
+                    />
+                  </div>
+                  <Input 
+                    placeholder="Short Description" 
+                    className="rounded-xl h-11 text-xs"
+                    value={shopItemDesc}
+                    onChange={(e) => setShopItemDesc(e.target.value)}
+                  />
+                  <input type="file" className="hidden" ref={shopFileRef} accept="image/*" onChange={handleShopItemUpload} />
+                  <Button 
+                    onClick={() => shopFileRef.current?.click()}
+                    className="w-full rounded-xl gradient-header font-bold text-xs h-11"
+                    disabled={isUploadingShopItem || !shopItemName}
+                  >
+                    {isUploadingShopItem ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                    Add to Shop
+                  </Button>
                 </div>
-              )}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-3 pb-12">
+              {shopItems?.map((item) => (
+                <Card key={item.id} className="border-none shadow-sm rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
+                  <div className="flex h-20">
+                    <div className="w-24 h-full relative">
+                      <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                    </div>
+                    <div className="flex-1 p-3 flex items-center justify-between">
+                      <div>
+                        <h4 className="text-[10px] font-bold truncate leading-tight">{item.name}</h4>
+                        <p className="text-[10px] font-bold text-primary">₹{item.price}</p>
+                      </div>
+                      <button onClick={() => handleDeleteShopItem(item.id)} className="p-2 text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           </TabsContent>
         </Tabs>
       </main>
-
-      <div className="pt-8 pb-12 text-center opacity-40">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Platform Sync Enabled</p>
-      </div>
     </div>
   )
 }

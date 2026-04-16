@@ -1,17 +1,14 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * LOSTIFY GLOBAL SECURITY RULES - COMPREHENSIVE FIX
-     * This version prioritizes functionality and accessibility for the prototype.
-     */
-
+    
+    // Check if user is signed in
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Super Admin: Explicitly whitelisting the provided UIDs and the worker email
+    // Check if user is a Super Admin
     function isSuperAdmin() {
       return isSignedIn() && (
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
@@ -20,58 +17,25 @@ service cloud.firestore {
       );
     }
 
-    // Guard: Admin or user with GUARD role in their profile
-    function isGuard() {
-      return isSuperAdmin() || (isSignedIn() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "GUARD");
-    }
-
-    /**
-     * UNIVERSAL READ ACCESS
-     * Allows all signed-in users to read (get/list) any document.
-     * This resolves all listing errors across the dashboard, map, and guard station.
-     */
+    // Universal Rule: Any signed-in user can read anything.
+    // Super Admins can write anything.
     match /{document=**} {
       allow read: if isSignedIn();
-      // Super Admins can write anything
       allow write: if isSuperAdmin();
     }
 
-    /**
-     * SPECIFIC WRITE PERMISSIONS
-     */
-
+    // Specific permissions for Students
     match /users/{userId} {
-      // Users can manage their own profiles
-      allow write: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
     match /items/{itemId} {
-      // Anyone can report an item
       allow create: if isSignedIn();
-      // Owners, Guards, and Admins can update items
-      allow update: if isSignedIn(); 
-      // Only Admins can delete
-      allow delete: if isSuperAdmin();
+      allow update: if isSignedIn();
     }
 
-    match /chats/{chatId} {
-      allow write: if isSignedIn();
-      match /messages/{messageId} {
-        allow write: if isSignedIn();
-      }
-    }
-
-    match /auctions/{auctionId} {
-      allow write: if isSuperAdmin();
-      match /bids/{bidId} {
-        allow create: if isSignedIn();
-      }
-    }
-
-    match /notifications/{notificationId} {
-      allow write: if isSuperAdmin();
+    match /orders/{orderId} {
+      allow create: if isSignedIn();
     }
   }
 }
