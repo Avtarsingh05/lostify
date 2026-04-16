@@ -84,10 +84,14 @@
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "itemId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "itemImageUrl": { "type": "string" },
         "amount": { "type": "number" },
         "currency": { "type": "string" },
         "paymentStatus": { "type": "string" },
         "cfOrderId": { "type": "string" },
+        "deliveryEmail": { "type": "string" },
+        "deliveryPhone": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "userId", "itemId", "amount", "currency", "paymentStatus"]

@@ -1,8 +1,20 @@
+
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Bell, Shield, User, LogOut, ChevronRight, Moon, Globe, HelpCircle } from "lucide-react"
+import { 
+  ArrowLeft, 
+  Bell, 
+  Shield, 
+  User, 
+  LogOut, 
+  ChevronRight, 
+  Moon, 
+  Globe, 
+  HelpCircle,
+  ShoppingBag
+} from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { useAuth, useUser } from "@/firebase"
@@ -89,9 +101,15 @@ export default function SettingsPage() {
 
         <div className="space-y-4">
           <section className="space-y-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-4">Account & Security</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-4">Account & Transactions</h3>
             <Card className="border-none shadow-lg rounded-[28px] overflow-hidden">
               <CardContent className="p-1">
+                <SettingItem 
+                  icon={ShoppingBag} 
+                  label="My Orders" 
+                  description="View purchase history & status" 
+                  onClick={() => router.push('/orders')}
+                />
                 <SettingItem 
                   icon={User} 
                   label="Profile Information" 

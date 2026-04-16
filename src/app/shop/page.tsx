@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -117,10 +118,12 @@ export default function ShopScreen() {
 
       // 2. Record Order in Firestore
       const ordersRef = collection(db, "orders")
-      await addDocumentNonBlocking(ordersRef, {
+      addDocumentNonBlocking(ordersRef, {
         id: orderId,
         userId: user.uid,
         itemId: selectedItem.id,
+        itemName: selectedItem.name,
+        itemImageUrl: selectedItem.imageUrl,
         amount: selectedItem.price,
         currency: "INR",
         paymentStatus: sessionResult.isMock ? "MOCK_PENDING" : "PENDING",
@@ -139,6 +142,7 @@ export default function ShopScreen() {
           setIsProcessing(null);
           setSelectedItem(null);
           toast({ title: "Success", description: "Mock order placed!" });
+          router.push("/orders");
         }, 2000);
         return;
       }
