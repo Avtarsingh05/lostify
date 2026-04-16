@@ -21,7 +21,8 @@ import {
   History,
   Info,
   ChevronRight,
-  Package
+  Package,
+  AlertCircle
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -126,18 +127,18 @@ export default function Dashboard() {
 
   const menuItems = [
     {
+      title: "Report Lost",
+      icon: AlertCircle,
+      href: "/report-lost",
+      gradient: "gradient-accent",
+      description: "Submit details of your missing item"
+    },
+    {
       title: "Campus Gallery",
       icon: Package,
       href: "/gallery",
       gradient: "gradient-header",
       description: "Browse found & lost items"
-    },
-    {
-      title: "Report Found",
-      icon: PlusCircle,
-      href: "/report-found",
-      gradient: "bg-emerald-600",
-      description: "Help return an item"
     },
     {
       title: "Interactive Map",
@@ -147,18 +148,18 @@ export default function Dashboard() {
       description: "Browse campus matches"
     },
     {
+      title: "Report Found",
+      icon: PlusCircle,
+      href: "/report-found",
+      gradient: "bg-emerald-600",
+      description: "Help return an item"
+    },
+    {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
       gradient: "bg-blue-600",
       description: "Premium marketplace"
-    },
-    {
-      title: "My Reports",
-      icon: History,
-      href: "/my-items",
-      gradient: "bg-purple-600",
-      description: "Track your submissions"
     },
     {
       title: "Help Center",
@@ -238,6 +239,10 @@ export default function Dashboard() {
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
+                    <History className="mr-2 h-4 w-4" />
+                    <span>My Reports</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/orders')} className="rounded-xl cursor-pointer">
                     <ShoppingBag className="mr-2 h-4 w-4" />
@@ -331,7 +336,7 @@ export default function Dashboard() {
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
               <ThreeDCard 
-                className={item.gradient + " p-4 h-36 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl"}
+                className={item.gradient + " p-4 h-36 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl shadow-black/5"}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex flex-col gap-2 text-white">
