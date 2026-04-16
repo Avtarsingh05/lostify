@@ -28,7 +28,6 @@ export default function OrderHistory() {
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     // We filter by userId to ensure the security rule "resource.data.userId == request.auth.uid" is satisfied
-    // Admins can also run this query.
     return query(
       collection(db, "orders"),
       where("userId", "==", user.uid),
