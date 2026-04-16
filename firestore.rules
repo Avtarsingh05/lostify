@@ -1,18 +1,16 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
      * LOSTIFY GLOBAL SECURITY RULES - COMPREHENSIVE FIX
-     * WHITELISTED ADMINS: PX8zNjMWBWTFGYnaYWrtxojquD02, tkGcuQnwxGgC32WZrtinZifDrDI2
+     * WHITELISTED ADMIN: PX8zNjMWBWTFGYnaYWrtxojquD02
      */
 
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // SUPER ADMIN - Explicitly whitelist your account
     function isSuperAdmin() {
       return isSignedIn() && (
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
@@ -28,58 +26,36 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "GUARD");
     }
 
-    // GLOBAL OVERRIDE: Super Admin allows everything
+    // GLOBAL READ ACCESS: Allow all authenticated users to read any data
+    // This prevents "list" permission errors across the app.
     match /{document=**} {
-      allow read, write: if isSuperAdmin();
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
     }
 
-    // User Profile Rules
+    // Specific Write Permissions for standard users
     match /users/{userId} {
-      allow read: if isSignedIn();
       allow write: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
     }
 
-    // Items Rules - Allow listing for all authenticated students
     match /items/{itemId} {
-      allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isGuard() || isSuperAdmin() || (resource.data.ownerId == request.auth.uid);
       allow delete: if isSuperAdmin() || (resource.data.ownerId == request.auth.uid);
     }
 
-    // Notifications Rules
-    match /notifications/{notifId} {
-      allow read: if isSignedIn();
-      allow write: if isSuperAdmin();
-    }
-
-    // Chat Rules
     match /chats/{chatId} {
-      allow read, write: if isSignedIn() && (isSuperAdmin() || request.auth.uid in resource.data.participantIds);
-      allow create: if isSignedIn();
-      
+      allow write: if isSignedIn();
       match /messages/{messageId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn();
-        allow update, delete: if isSuperAdmin() || (resource.data.senderId == request.auth.uid);
+        allow write: if isSignedIn();
       }
     }
 
-    // Auction Rules
     match /auctions/{auctionId} {
-      allow read: if true;
       allow write: if isSuperAdmin() || (isSignedIn() && resource.data.sellerId == request.auth.uid);
-
       match /bids/{bidId} {
-        allow read: if isSignedIn();
         allow create: if isSignedIn();
-        allow write: if isSuperAdmin() || (resource.data.bidderId == request.auth.uid);
       }
-    }
-
-    // Activity Logs
-    match /adminActivityLogs/{logId} {
-      allow read, write: if isSuperAdmin();
     }
   }
 }

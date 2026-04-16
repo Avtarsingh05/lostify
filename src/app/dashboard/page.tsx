@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -93,7 +92,6 @@ export default function Dashboard() {
   const router = useRouter()
   const [isSynced, setIsSynced] = useState(false)
 
-  // 1. Profile Sync & Fetch Current Role
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null
     return doc(db, "users", user.uid)
@@ -104,6 +102,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (user && db && !isSynced) {
       const userRef = doc(db, "users", user.uid)
+      // Robust profile sync to ensure user container exists in Firestore
       setDoc(userRef, {
         id: user.uid,
         email: user.email,
@@ -116,7 +115,6 @@ export default function Dashboard() {
     }
   }, [user, db, isSynced])
 
-  // 2. Notifications Listener
   const notifQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return query(
