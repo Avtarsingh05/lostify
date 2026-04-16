@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -39,6 +38,7 @@ import {
 import { collection, query, orderBy, doc } from "firebase/firestore"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
+import { createPaymentSession } from "@/app/actions/cashfree"
 
 export default function ShopScreen() {
   const router = useRouter()
@@ -96,44 +96,62 @@ export default function ShopScreen() {
     setIsCheckoutOpen(false)
     
     try {
-      // Initialize Cashfree from the global window object
       const Cashfree = (window as any).Cashfree;
       if (!Cashfree) {
-        throw new Error("Cashfree SDK not loaded. Please check your connection.");
+        throw new Error("Cashfree SDK not loaded. Check your connection.");
       }
       
-      // Use sandbox for demo/test
-      const cashfree = Cashfree({ mode: "sandbox" });
+      const isProd = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'PRODUCTION';
+      const cashfree = Cashfree({ mode: isProd ? "production" : "sandbox" });
 
-      // 1. Create Order in Firestore
+      const orderId = `order_${Date.now()}_${user.uid.substring(0, 5)}`;
+
+      // 1. Create Payment Session via Server Action
+      const sessionResult = await createPaymentSession({
+        amount: selectedItem.price,
+        orderId: orderId,
+        customerEmail: deliveryEmail,
+        customerPhone: deliveryPhone,
+        customerName: userData?.username || user.displayName || "User",
+      });
+
+      // 2. Record Order in Firestore
       const ordersRef = collection(db, "orders")
-      const orderData = {
+      await addDocumentNonBlocking(ordersRef, {
+        id: orderId,
         userId: user.uid,
         itemId: selectedItem.id,
         amount: selectedItem.price,
         currency: "INR",
-        paymentStatus: "PENDING",
+        paymentStatus: sessionResult.isMock ? "MOCK_PENDING" : "PENDING",
+        cfOrderId: sessionResult.order_id,
         deliveryEmail,
         deliveryPhone,
         createdAt: new Date().toISOString()
-      }
-      
-      await addDocumentNonBlocking(ordersRef, orderData)
-
-      toast({
-        title: "Order Initialized",
-        description: `Processing order for ${selectedItem.name} via Cashfree...`,
       })
 
-      // Simulate a small delay for payment gateway interaction
-      setTimeout(() => {
+      if (sessionResult.isMock) {
         toast({
-          title: "Payment Gateway Demo",
-          description: "This would normally open the Cashfree SDK overlay using a session ID.",
-        })
-        setIsProcessing(null)
-        setSelectedItem(null)
-      }, 2000)
+          title: "Demo Mode",
+          description: "API keys missing in .env. Showing simulated payment process.",
+        });
+        setTimeout(() => {
+          setIsProcessing(null);
+          setSelectedItem(null);
+          toast({ title: "Success", description: "Mock order placed!" });
+        }, 2000);
+        return;
+      }
+
+      // 3. Open Cashfree Checkout Modal
+      const checkoutOptions = {
+        paymentSessionId: sessionResult.payment_session_id,
+        redirectTarget: "_modal",
+      };
+      
+      cashfree.checkout(checkoutOptions);
+      setIsProcessing(null);
+      setSelectedItem(null);
 
     } catch (err: any) {
       toast({
@@ -141,7 +159,7 @@ export default function ShopScreen() {
         title: "Payment Error",
         description: err.message,
       })
-      setIsProcessing(null)
+      setIsProcessing(null);
     }
   }
 
@@ -200,7 +218,7 @@ export default function ShopScreen() {
                       <Button 
                         onClick={() => handleOpenCheckout(item)}
                         className="flex-1 rounded-xl h-10 gradient-header text-[10px] font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform"
-                        disabled={isProcessing === item.id}
+                        disabled={!!isProcessing}
                       >
                         {isProcessing === item.id ? (
                           <Loader2 className="h-3 w-3 animate-spin mr-2" />
@@ -233,7 +251,6 @@ export default function ShopScreen() {
         </div>
       </main>
 
-      {/* Checkout Dialog */}
       <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
         <DialogContent className="max-w-[360px] rounded-[32px] p-6">
           <DialogHeader>
