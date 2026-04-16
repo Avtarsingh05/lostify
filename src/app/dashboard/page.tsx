@@ -134,11 +134,11 @@ export default function Dashboard() {
       description: "Submit details of your missing item"
     },
     {
-      title: "Campus Gallery",
-      icon: Package,
-      href: "/gallery",
-      gradient: "gradient-header",
-      description: "Browse found & lost items"
+      title: "Report Found",
+      icon: PlusCircle,
+      href: "/report-found",
+      gradient: "bg-emerald-600",
+      description: "Help return an item"
     },
     {
       title: "Interactive Map",
@@ -148,18 +148,18 @@ export default function Dashboard() {
       description: "Browse campus matches"
     },
     {
-      title: "Report Found",
-      icon: PlusCircle,
-      href: "/report-found",
-      gradient: "bg-emerald-600",
-      description: "Help return an item"
-    },
-    {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
       gradient: "bg-blue-600",
       description: "Premium marketplace"
+    },
+    {
+      title: "Campus Gallery",
+      icon: Package,
+      href: "/gallery",
+      gradient: "gradient-header",
+      description: "Browse found & lost items"
     },
     {
       title: "Help Center",
