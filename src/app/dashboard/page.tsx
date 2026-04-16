@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -6,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { 
-  Search, 
   PlusCircle, 
   Map as MapIcon, 
   ShoppingBag, 
@@ -65,7 +63,6 @@ export default function Dashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Staff Authorization Logic
   const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
                   user?.uid === "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
                   user?.email === "worker@gmail.com" || 
@@ -176,7 +173,7 @@ export default function Dashboard() {
         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
           <MapIcon size={160} />
         </div>
-        <div className="max-w-md mx-auto flex flex-col gap-4 relative z-10">
+        <div className="max-w-md lg:max-w-6xl mx-auto flex flex-col gap-4 relative z-10">
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
@@ -187,7 +184,7 @@ export default function Dashboard() {
                   <Badge className="bg-secondary text-[8px] font-bold h-4">GUARD</Badge>
                 ) : null}
               </div>
-              <p className="text-white/80 text-xs font-medium truncate max-w-[200px]">
+              <p className="text-white/80 text-xs font-medium truncate max-w-[200px] lg:max-w-md">
                 Welcome, {userData?.username || user?.displayName || user?.email?.split('@')[0]}
               </p>
             </div>
@@ -277,18 +274,18 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-3">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-3 w-fit">
             <div className="bg-white rounded-lg px-2 py-1 text-primary text-xs font-bold shadow-sm">
               {notifications?.length || 0}
             </div>
-            <p className="text-white text-xs font-medium truncate">
+            <p className="text-white text-xs font-medium truncate max-w-[250px] lg:max-w-md">
               {notifications?.[0]?.title || "Campus recovery is active!"}
             </p>
           </div>
         </div>
       </div>
 
-      <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
+      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 w-full space-y-6 lg:space-y-12">
         {isBannersLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-44 w-full rounded-[32px] shadow-2xl" />
@@ -305,7 +302,7 @@ export default function Dashboard() {
                     href={banner.targetUrl || "#"} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="block relative h-44 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10"
+                    className="block relative h-44 lg:h-64 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10"
                   >
                     <Image 
                       src={banner.imageUrl} 
@@ -313,14 +310,14 @@ export default function Dashboard() {
                       fill 
                       className="object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-6">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-6 lg:p-10">
                       <div className="flex items-center gap-2 mb-1">
                         <Sparkles className="h-4 w-4 text-accent animate-pulse" />
                         <p className="text-[9px] font-bold text-accent uppercase tracking-widest">Featured</p>
                       </div>
-                      <h2 className="text-white text-lg font-headline font-bold leading-tight">{banner.title}</h2>
+                      <h2 className="text-white text-lg lg:text-3xl font-headline font-bold leading-tight">{banner.title}</h2>
                       {banner.subtitle && (
-                        <p className="text-white/70 text-[10px] font-medium leading-relaxed max-w-[80%] mt-1">
+                        <p className="text-white/70 text-[10px] lg:text-sm font-medium leading-relaxed max-w-[80%] mt-1">
                           {banner.subtitle}
                         </p>
                       )}
@@ -332,20 +329,20 @@ export default function Dashboard() {
           </Carousel>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
               <ThreeDCard 
-                className={item.gradient + " p-4 h-36 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl shadow-black/5"}
+                className={item.gradient + " p-4 lg:p-8 h-36 lg:h-48 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl shadow-black/5"}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <div className="flex flex-col gap-2 text-white">
-                  <div className="bg-white/20 w-fit p-2 rounded-xl">
-                    <item.icon className="h-4 w-4" />
+                <div className="flex flex-col gap-2 lg:gap-4 text-white">
+                  <div className="bg-white/20 w-fit p-2 lg:p-3 rounded-xl">
+                    <item.icon className="h-4 w-4 lg:h-6 lg:w-6" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-headline font-bold leading-tight">{item.title}</h3>
-                    <p className="text-[9px] opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
+                    <h3 className="text-sm lg:text-xl font-headline font-bold leading-tight">{item.title}</h3>
+                    <p className="text-[9px] lg:text-xs opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
                   </div>
                 </div>
               </ThreeDCard>
@@ -354,34 +351,34 @@ export default function Dashboard() {
         </div>
 
         {isGuard && (
-          <section className="pt-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-2 mb-3">Staff Control Center</h3>
-            <div className="space-y-3">
-              <Link href="/guard" className="flex items-center justify-between p-4 bg-secondary/10 rounded-[28px] group hover:bg-secondary/20 transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="bg-secondary p-2.5 rounded-2xl shadow-lg shadow-secondary/20">
-                    <ShieldCheck className="h-5 w-5 text-white" />
+          <section className="pt-4 lg:pt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h3 className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground px-2 mb-3 lg:mb-6">Staff Control Center</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+              <Link href="/guard" className="flex items-center justify-between p-4 lg:p-8 bg-secondary/10 rounded-[28px] group hover:bg-secondary/20 transition-all">
+                <div className="flex items-center gap-3 lg:gap-6">
+                  <div className="bg-secondary p-2.5 lg:p-4 rounded-2xl shadow-lg shadow-secondary/20">
+                    <ShieldCheck className="h-5 w-5 lg:h-8 lg:w-8 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-headline font-bold">Guard Station</p>
-                    <p className="text-[10px] text-muted-foreground">Verify handovers & map pins</p>
+                    <p className="text-sm lg:text-lg font-headline font-bold">Guard Station</p>
+                    <p className="text-[10px] lg:text-sm text-muted-foreground">Verify handovers & map pins</p>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </Link>
 
               {isAdmin && (
-                <Link href="/admin" className="flex items-center justify-between p-4 bg-primary/10 rounded-[28px] group hover:bg-primary/20 transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary p-2.5 rounded-2xl shadow-lg shadow-primary/20">
-                      <LayoutDashboard className="h-5 w-5 text-white" />
+                <Link href="/admin" className="flex items-center justify-between p-4 lg:p-8 bg-primary/10 rounded-[28px] group hover:bg-primary/20 transition-all">
+                  <div className="flex items-center gap-3 lg:gap-6">
+                    <div className="bg-primary p-2.5 lg:p-4 rounded-2xl shadow-lg shadow-primary/20">
+                      <LayoutDashboard className="h-5 w-5 lg:h-8 lg:w-8 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-headline font-bold">Admin Console</p>
-                      <p className="text-[10px] text-muted-foreground">Global settings & analytics</p>
+                      <p className="text-sm lg:text-lg font-headline font-bold">Admin Console</p>
+                      <p className="text-[10px] lg:text-sm text-muted-foreground">Global settings & analytics</p>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight className="h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                 </Link>
               )}
             </div>
@@ -389,8 +386,8 @@ export default function Dashboard() {
         )}
 
         <div className="pt-12 pb-8 text-center space-y-2 opacity-50">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
-          <p className="text-[10px] font-medium">Powered by Igloo Enterprises</p>
+          <p className="text-[11px] lg:text-sm font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
+          <p className="text-[10px] lg:text-xs font-medium">Powered by Igloo Enterprises</p>
         </div>
       </main>
     </div>

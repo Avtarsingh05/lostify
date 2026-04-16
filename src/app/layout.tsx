@@ -1,4 +1,3 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
@@ -31,7 +30,7 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground min-h-screen relative overflow-x-hidden">
         <ThemeProvider>
           <FirebaseClientProvider>
-            <div className="pb-24 lg:pb-0">
+            <div className="pb-32 lg:pb-40">
               {children}
             </div>
             <BottomNav />

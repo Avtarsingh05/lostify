@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -19,18 +18,16 @@ export function BottomNav() {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
 
-  // Ensure hydration stability by only rendering the lifted layout on the client
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Hide navigation on the auth screen
   if (pathname === '/') return null
   if (!mounted) return null
 
   return (
     <div className="fixed bottom-12 left-0 right-0 z-50 px-6 pointer-events-none">
-      <nav className="max-w-[420px] mx-auto h-18 py-3 bg-white/85 dark:bg-card/85 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.15)] rounded-[32px] flex items-center justify-around px-4 pointer-events-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
+      <nav className="max-w-md lg:max-w-xl mx-auto h-18 py-3 bg-white/85 dark:bg-card/85 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.15)] rounded-[32px] flex items-center justify-around px-4 pointer-events-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href
@@ -61,7 +58,7 @@ export function BottomNav() {
               )}
             >
               <Icon className={cn("h-5 w-5", isActive && "fill-primary/20")} />
-              <span className="text-[10px] font-bold uppercase tracking-tighter">
+              <span className="text-[10px] lg:text-[11px] font-bold uppercase tracking-tighter">
                 {item.label}
               </span>
               {isActive && (

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -6,18 +5,16 @@ import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
   ShieldCheck, 
-  Package, 
   Search, 
   CheckCircle2, 
   Clock, 
   MapPin, 
   Loader2,
   AlertCircle,
-  AlertTriangle,
-  History,
+  Archive,
   Building,
   UserCheck,
-  Archive
+  History
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -37,7 +34,6 @@ import { useToast } from "@/hooks/use-toast"
 import { useFirestore, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, doc, orderBy, limit } from "firebase/firestore"
 import Image from "next/image"
-import { formatDistanceToNow } from "date-fns"
 
 export default function GuardDashboard() {
   const router = useRouter()
@@ -46,7 +42,6 @@ export default function GuardDashboard() {
   const { user, isUserLoading } = useUser()
   const [search, setSearch] = useState("")
 
-  // Modal states
   const [verifyingItem, setVerifyingItem] = useState<any | null>(null)
   const [resolvingItem, setResolvingItem] = useState<any | null>(null)
   const [storageLocation, setStorageLocation] = useState("")
@@ -134,42 +129,42 @@ export default function GuardDashboard() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="gradient-header pt-10 pb-20 px-4 rounded-b-[40px] shadow-2xl text-white">
-        <div className="max-w-md mx-auto flex items-center justify-between">
+        <div className="max-w-md lg:max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full active:scale-95 transition-transform">
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-2xl font-headline font-bold">Guard Station</h1>
+            <h1 className="text-2xl lg:text-4xl font-headline font-bold">Guard Station</h1>
           </div>
-          <div className="bg-white/20 p-2 rounded-xl">
-            <ShieldCheck className="h-5 w-5" />
+          <div className="bg-white/20 p-2 lg:p-4 rounded-xl">
+            <ShieldCheck className="h-5 w-5 lg:h-8 lg:w-8" />
           </div>
         </div>
       </div>
 
-      <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
-        <div className="grid grid-cols-3 gap-2">
+      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6 lg:space-y-12">
+        <div className="grid grid-cols-3 gap-2 lg:gap-8">
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-3 text-center">
-              <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Handovers</p>
-              <h3 className="text-xl font-headline font-bold mt-1 text-secondary">{pendingFound.length}</h3>
+            <CardContent className="p-3 lg:p-8 text-center">
+              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Handovers</p>
+              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-secondary">{pendingFound.length}</h3>
             </CardContent>
           </Card>
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-3 text-center">
-              <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">In Office</p>
-              <h3 className="text-xl font-headline font-bold mt-1 text-primary">{inOfficeFound.length}</h3>
+            <CardContent className="p-3 lg:p-8 text-center">
+              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">In Office</p>
+              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-primary">{inOfficeFound.length}</h3>
             </CardContent>
           </Card>
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-3 text-center">
-              <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Active Lost</p>
-              <h3 className="text-xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
+            <CardContent className="p-3 lg:p-8 text-center">
+              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Lost</p>
+              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
             </CardContent>
           </Card>
         </div>
 
-        <div className="relative group">
+        <div className="relative group max-w-2xl mx-auto lg:max-w-none">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input 
             placeholder="Search all reports..." 
@@ -180,15 +175,15 @@ export default function GuardDashboard() {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border overflow-x-auto">
-            <TabsTrigger value="pending" className="rounded-xl font-bold text-[8px] uppercase tracking-widest gap-1">
-              <Clock className="h-3 w-3" /> Handovers
+          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border overflow-x-auto max-w-2xl mx-auto lg:max-w-none">
+            <TabsTrigger value="pending" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
+              <Clock className="h-3 w-3 lg:h-4 lg:w-4" /> Handovers
             </TabsTrigger>
-            <TabsTrigger value="office" className="rounded-xl font-bold text-[8px] uppercase tracking-widest gap-1">
-              <Archive className="h-3 w-3" /> In Office
+            <TabsTrigger value="office" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
+              <Archive className="h-3 w-3 lg:h-4 lg:w-4" /> In Office
             </TabsTrigger>
-            <TabsTrigger value="lost" className="rounded-xl font-bold text-[8px] uppercase tracking-widest gap-1">
-              <AlertTriangle className="h-3 w-3" /> Lost
+            <TabsTrigger value="lost" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
+              <AlertCircle className="h-3 w-3 lg:h-4 lg:w-4" /> Lost Reports
             </TabsTrigger>
           </TabsList>
 
@@ -198,35 +193,39 @@ export default function GuardDashboard() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
               </div>
             ) : filterItems(pendingFound).length > 0 ? (
-              filterItems(pendingFound).map((item) => (
-                <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
-                  <div className="flex p-4 gap-4">
-                    <div className="w-20 h-20 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
-                      <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-headline font-bold text-sm truncate pr-2">{item.name}</h3>
-                        <Badge variant="outline" className="text-[8px] border-none px-2 py-0 bg-secondary/10 text-secondary">
-                          Handover
-                        </Badge>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+                {filterItems(pendingFound).map((item) => (
+                  <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
+                    <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
+                      <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
+                        <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
                       </div>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                        <MapPin className="h-3 w-3" /> {item.locationDescription}
-                      </p>
-                      <div className="flex items-center justify-end mt-3">
-                        <Button 
-                          size="sm" 
-                          onClick={() => setVerifyingItem(item)}
-                          className="h-8 px-4 rounded-xl text-[10px] font-bold bg-primary active:scale-95 transition-transform"
-                        >
-                          Verify Handover
-                        </Button>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-secondary/10 text-secondary">
+                              Handover
+                            </Badge>
+                          </div>
+                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            <MapPin className="h-3 w-3" /> {item.locationDescription}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-end mt-3">
+                          <Button 
+                            size="sm" 
+                            onClick={() => setVerifyingItem(item)}
+                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-primary active:scale-95 transition-transform"
+                          >
+                            Verify Handover
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                ))}
+              </div>
             ) : (
               <EmptyState icon={CheckCircle2} message="No handovers pending." />
             )}
@@ -234,36 +233,40 @@ export default function GuardDashboard() {
 
           <TabsContent value="office" className="space-y-4">
             {filterItems(inOfficeFound).length > 0 ? (
-              filterItems(inOfficeFound).map((item) => (
-                <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
-                  <div className="flex p-4 gap-4">
-                    <div className="w-20 h-20 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
-                      <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-headline font-bold text-sm truncate pr-2">{item.name}</h3>
-                        <Badge variant="outline" className="text-[8px] border-none px-2 py-0 bg-primary/10 text-primary">
-                          In Office
-                        </Badge>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+                {filterItems(inOfficeFound).map((item) => (
+                  <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
+                    <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
+                      <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
+                        <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
                       </div>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                        <Building className="h-3 w-3" /> {item.storageOffice}
-                      </p>
-                      <div className="flex items-center justify-end mt-3">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => setResolvingItem(item)}
-                          className="h-8 px-4 rounded-xl text-[10px] font-bold border-primary/20 text-primary hover:bg-primary/10"
-                        >
-                          Mark Claimed
-                        </Button>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-primary/10 text-primary">
+                              In Office
+                            </Badge>
+                          </div>
+                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            <Building className="h-3 w-3" /> {item.storageOffice}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-end mt-3">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setResolvingItem(item)}
+                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-primary/20 text-primary hover:bg-primary/10"
+                          >
+                            Mark Claimed
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                ))}
+              </div>
             ) : (
               <EmptyState icon={Archive} message="No items in custody." />
             )}
@@ -271,65 +274,68 @@ export default function GuardDashboard() {
 
           <TabsContent value="lost" className="space-y-4">
             {filterItems(activeLost).length > 0 ? (
-              filterItems(activeLost).map((item) => (
-                <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
-                  <div className="flex p-4 gap-4">
-                    <div className="w-20 h-20 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
-                      <Image src={item.imageUrl || "https://picsum.photos/seed/lost/200/200"} alt={item.name} fill className="object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-headline font-bold text-sm truncate pr-2">{item.name}</h3>
-                        <Badge variant="outline" className="text-[8px] border-none px-2 py-0 bg-accent/10 text-accent">
-                          Lost Report
-                        </Badge>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+                {filterItems(activeLost).map((item) => (
+                  <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
+                    <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
+                      <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
+                        <Image src={item.imageUrl || "https://picsum.photos/seed/lost/200/200"} alt={item.name} fill className="object-cover" />
                       </div>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                        <MapPin className="h-3 w-3" /> {item.locationDescription}
-                      </p>
-                      <div className="flex items-center justify-end mt-3">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => setResolvingItem(item)}
-                          className="h-8 px-4 rounded-xl text-[10px] font-bold border-accent/20 text-accent hover:bg-accent/10"
-                        >
-                          Mark Returned
-                        </Button>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-accent/10 text-accent">
+                              Lost Report
+                            </Badge>
+                          </div>
+                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            <MapPin className="h-3 w-3" /> {item.locationDescription}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-end mt-3">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setResolvingItem(item)}
+                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-accent/20 text-accent hover:bg-accent/10"
+                          >
+                            Mark Returned
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                ))}
+              </div>
             ) : (
               <EmptyState icon={History} message="No active lost reports." />
             )}
           </TabsContent>
         </Tabs>
 
-        <div className="bg-primary/5 border border-primary/10 p-5 rounded-[28px] flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+        <div className="bg-primary/5 border border-primary/10 p-5 lg:p-10 rounded-[28px] lg:rounded-[48px] flex items-start gap-3 lg:gap-8">
+          <AlertCircle className="h-5 w-5 lg:h-8 lg:w-8 text-primary shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-xs font-bold text-primary">Guard Protocol</h4>
-            <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
-              For security, always log the student's Registration Number when handing back property.
+            <h4 className="text-xs lg:text-xl font-bold text-primary">Guard Protocol</h4>
+            <p className="text-[10px] lg:text-sm text-muted-foreground mt-1 leading-relaxed">
+              For security, always log the student's Registration Number when handing back property. Verification of the item's storage location is critical for building a reliable real-time campus map. If an item is found in a residential block, it should be logged in the corresponding block's security office.
             </p>
           </div>
         </div>
       </main>
 
-      {/* Verify Handover Modal */}
       <Dialog open={!!verifyingItem} onOpenChange={() => setVerifyingItem(null)}>
-        <DialogContent className="max-w-[360px] rounded-[32px] p-6">
+        <DialogContent className="max-w-[420px] rounded-[32px] p-8">
           <DialogHeader>
-            <DialogTitle className="font-headline font-bold text-lg flex items-center gap-2">
-              <Building className="h-5 w-5 text-primary" /> Log Storage
+            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
+              <Building className="h-6 w-6 text-primary" /> Log Storage
             </DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-sm">
               Where is this item being physically kept?
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Office / Building No.</Label>
               <Input 
@@ -344,7 +350,7 @@ export default function GuardDashboard() {
             <Button 
               onClick={handleApprove}
               disabled={!storageLocation}
-              className="w-full h-12 rounded-xl gradient-header font-bold text-xs"
+              className="w-full h-14 rounded-xl gradient-header font-bold text-sm"
             >
               Verify & Add to Map
             </Button>
@@ -352,18 +358,17 @@ export default function GuardDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Resolve Modal */}
       <Dialog open={!!resolvingItem} onOpenChange={() => setResolvingItem(null)}>
-        <DialogContent className="max-w-[360px] rounded-[32px] p-6">
+        <DialogContent className="max-w-[420px] rounded-[32px] p-8">
           <DialogHeader>
-            <DialogTitle className="font-headline font-bold text-lg flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-accent" /> Student Return
+            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
+              <UserCheck className="h-6 w-6 text-accent" /> Student Return
             </DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-sm">
               Enter the student's registration details to close this report.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Registration Number</Label>
               <Input 
@@ -378,7 +383,7 @@ export default function GuardDashboard() {
             <Button 
               onClick={handleResolve}
               disabled={!regNumber}
-              className="w-full h-12 rounded-xl gradient-accent font-bold text-xs"
+              className="w-full h-14 rounded-xl gradient-accent font-bold text-sm"
             >
               Confirm Return
             </Button>
@@ -391,9 +396,9 @@ export default function GuardDashboard() {
 
 function EmptyState({ icon: Icon, message }: { icon: any, message: string }) {
   return (
-    <div className="text-center py-16 bg-muted/10 rounded-[32px] border-2 border-dashed border-muted/50">
-      <Icon className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{message}</p>
+    <div className="text-center py-24 bg-muted/10 rounded-[32px] border-2 border-dashed border-muted/50">
+      <Icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+      <p className="text-[11px] lg:text-sm font-bold text-muted-foreground uppercase tracking-widest">{message}</p>
     </div>
   )
 }
