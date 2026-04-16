@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -14,8 +15,6 @@ import {
   ShieldCheck,
   User as UserIcon,
   Search,
-  Calendar,
-  Mail,
   ShieldAlert
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,7 +41,6 @@ import {
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { format } from "date-fns"
 
 const trafficData = [
   { name: "M", lost: 40, found: 24 },
@@ -128,7 +126,7 @@ export default function AdminDashboard() {
     { label: "Lost Items", value: lostCount.toString(), icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
     { label: "Found Items", value: foundCount.toString(), icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
     { label: "Total Students", value: allUsers?.length.toString() || "0", icon: Users, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Database Health", value: "99%", icon: ShieldCheck, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { label: "Health", value: "99%", icon: ShieldCheck, color: "text-purple-500", bg: "bg-purple-500/10" },
   ]
 
   return (

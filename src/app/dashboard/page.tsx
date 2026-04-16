@@ -17,10 +17,11 @@ import {
   User,
   LogOut,
   Loader2,
-  Clock
+  Clock,
+  ShieldAlert
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
-import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
 import { collection, query, orderBy, limit, doc, setDoc } from "firebase/firestore"
 import { formatDistanceToNow } from "date-fns"
+import { Badge } from "@/components/ui/badge"
 
 const menuItems = [
   {
@@ -89,10 +91,16 @@ export default function Dashboard() {
   const auth = useAuth()
   const db = useFirestore()
   const router = useRouter()
-  const { toast } = useToast()
   const [isSynced, setIsSynced] = useState(false)
 
-  // 1. Profile Sync - Ensures User "Container" exists in Firestore
+  // 1. Profile Sync & Fetch Current Role
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+
+  const { data: userData } = useDoc(userDocRef)
+
   useEffect(() => {
     if (user && db && !isSynced) {
       const userRef = doc(db, "users", user.uid)
@@ -147,8 +155,16 @@ export default function Dashboard() {
         </div>
         <div className="max-w-md mx-auto flex flex-col gap-4 relative z-10">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-white text-3xl font-headline font-bold">Lostify</h1>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <h1 className="text-white text-3xl font-headline font-bold">Lostify</h1>
+                {userData?.role === "GUARD" && (
+                  <Badge className="bg-secondary text-[8px] font-bold h-4">GUARD</Badge>
+                )}
+                {userData?.role === "ADMIN" && (
+                  <Badge className="bg-accent text-[8px] font-bold h-4">ADMIN</Badge>
+                )}
+              </div>
               <p className="text-white/80 text-xs font-medium">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'User'}</p>
             </div>
             <div className="flex gap-3">
@@ -209,17 +225,24 @@ export default function Dashboard() {
                     <span>Settings</span>
                   </DropdownMenuItem>
                   
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="font-headline font-bold text-[10px] text-muted-foreground uppercase tracking-widest px-2 py-1">Management</DropdownMenuLabel>
-                  
-                  <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer">
-                    <ShieldCheck className="mr-2 h-4 w-4 text-secondary" />
-                    <span>Guard Station</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl cursor-pointer">
-                    <LayoutDashboard className="mr-2 h-4 w-4 text-primary" />
-                    <span>Admin Console</span>
-                  </DropdownMenuItem>
+                  {(userData?.role === "GUARD" || userData?.role === "ADMIN") && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="font-headline font-bold text-[10px] text-muted-foreground uppercase tracking-widest px-2 py-1">Management</DropdownMenuLabel>
+                      
+                      <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer">
+                        <ShieldCheck className="mr-2 h-4 w-4 text-secondary" />
+                        <span>Guard Station</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+
+                  {userData?.role === "ADMIN" && (
+                    <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl cursor-pointer">
+                      <LayoutDashboard className="mr-2 h-4 w-4 text-primary" />
+                      <span>Admin Console</span>
+                    </DropdownMenuItem>
+                  )}
                   
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive">
