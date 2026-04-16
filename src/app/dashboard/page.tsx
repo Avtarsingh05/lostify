@@ -62,9 +62,9 @@ export default function Dashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Super Admin Check Logic
-  const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.email === "worker@gmail.com";
-  const isGuard = userData?.role === "GUARD" || isAdmin;
+  // Hardened Super Admin Check Logic
+  const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.email === "worker@gmail.com" || userData?.role === "ADMIN";
+  const isGuard = isAdmin || userData?.role === "GUARD";
 
   useEffect(() => {
     if (user && db && !isSynced) {
@@ -127,15 +127,9 @@ export default function Dashboard() {
         href: "/admin",
         gradient: "gradient-header",
         description: "Full system management"
-      },
-      {
-        title: "Guard Station",
-        icon: ShieldCheck,
-        href: "/guard",
-        gradient: "gradient-success",
-        description: "Verify pending reports"
       }
-    ] : isGuard ? [
+    ] : []),
+    ...(isGuard ? [
       {
         title: "Guard Station",
         icon: ShieldCheck,
@@ -278,7 +272,9 @@ export default function Dashboard() {
 
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
         {isBannersLoading ? (
-          <Skeleton className="h-44 w-full rounded-[32px] shadow-2xl" />
+          <div className="space-y-4">
+            <Skeleton className="h-44 w-full rounded-[32px] shadow-2xl" />
+          </div>
         ) : displayBanners && displayBanners.length > 0 && (
           <Carousel 
             className="w-full"

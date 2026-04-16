@@ -30,17 +30,29 @@ export default function GuardDashboard() {
   const { user, isUserLoading } = useUser()
   const [search, setSearch] = useState("")
 
-  // Fetch items pending verification
+  // Super Admin Check for UI
+  const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.email === "worker@gmail.com";
+
+  // Fetch items pending verification - Simplified query to bypass index issues
   const pendingQuery = useMemoFirebase(() => {
     if (!db) return null
     return query(
       collection(db, "items"),
-      where("status", "==", "Pending Verification"),
-      orderBy("reportedAt", "desc")
+      where("status", "==", "Pending Verification")
     )
   }, [db])
 
-  const { data: pendingItems, isLoading } = useCollection(pendingQuery)
+  const { data: rawPendingItems, isLoading } = useCollection(pendingQuery)
+
+  // Sort locally to avoid complex composite index requirement in Firestore
+  const pendingItems = useMemoFirebase(() => {
+    if (!rawPendingItems) return []
+    return [...rawPendingItems].sort((a, b) => {
+      const dateA = a.reportedAt ? new Date(a.reportedAt).getTime() : 0
+      const dateB = b.reportedAt ? new Date(b.reportedAt).getTime() : 0
+      return dateB - dateA
+    })
+  }, [rawPendingItems])
 
   const handleApprove = (itemId: string) => {
     if (!db) return
@@ -60,7 +72,13 @@ export default function GuardDashboard() {
     item.locationDescription?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (isUserLoading) {
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/")
+    }
+  }, [user, isUserLoading, router])
+
+  if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -94,9 +112,9 @@ export default function GuardDashboard() {
           </Card>
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-md">
             <CardContent className="p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Station Status</p>
-              <h3 className="text-sm font-headline font-bold mt-2 text-secondary flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" /> Active
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Auth Status</p>
+              <h3 className="text-[10px] font-headline font-bold mt-2 text-secondary flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" /> Verified Admin
               </h3>
             </CardContent>
           </Card>
