@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { useFirestore, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
+import { useFirestore, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc } from "@/firebase"
 import { collection, query, where, doc, orderBy } from "firebase/firestore"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
@@ -32,13 +32,13 @@ export default function GuardDashboard() {
 
   // Fetch items pending verification
   const pendingQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
+    if (!db) return null
     return query(
       collection(db, "items"),
       where("status", "==", "Pending Verification"),
       orderBy("reportedAt", "desc")
     )
-  }, [db, user])
+  }, [db])
 
   const { data: pendingItems, isLoading } = useCollection(pendingQuery)
 

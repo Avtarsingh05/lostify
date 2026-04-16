@@ -18,7 +18,8 @@ import {
   LogOut,
   Loader2,
   Clock,
-  Sparkles
+  Sparkles,
+  Settings
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -47,51 +48,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import Autoplay from "embla-carousel-autoplay"
 
-const menuItems = [
-  {
-    title: "Report Lost",
-    icon: Search,
-    href: "/report-lost",
-    gradient: "gradient-accent",
-    description: "Submit a missing report"
-  },
-  {
-    title: "Report Found",
-    icon: PlusCircle,
-    href: "/report-found",
-    gradient: "gradient-success",
-    description: "Help return an item"
-  },
-  {
-    title: "View Map",
-    icon: MapIcon,
-    href: "/map",
-    gradient: "bg-primary",
-    description: "Interactive browsing"
-  },
-  {
-    title: "My Items",
-    icon: Package,
-    href: "/my-items",
-    gradient: "bg-indigo-600",
-    description: "Manage your reports"
-  },
-  {
-    title: "Campus Shop",
-    icon: ShoppingBag,
-    href: "/shop",
-    gradient: "bg-blue-600",
-    description: "Premium marketplace"
-  },
-  {
-    title: "Auctions",
-    icon: Gavel,
-    href: "/auctions",
-    gradient: "bg-purple-600",
-    description: "Bid on items (INR)"
-  }
-]
-
 export default function Dashboard() {
   const { user, isUserLoading } = useUser()
   const auth = useAuth()
@@ -106,6 +62,10 @@ export default function Dashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
+  // Super Admin Check Logic
+  const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.email === "worker@gmail.com";
+  const isGuard = userData?.role === "GUARD" || isAdmin;
+
   useEffect(() => {
     if (user && db && !isSynced) {
       const userRef = doc(db, "users", user.uid)
@@ -114,11 +74,12 @@ export default function Dashboard() {
         email: user.email,
         username: user.displayName || user.email?.split('@')[0] || 'User',
         photoURL: user.photoURL || "",
+        role: isAdmin ? "ADMIN" : (userData?.role || "USER"),
         updatedAt: new Date().toISOString()
       }, { merge: true })
       setIsSynced(true)
     }
-  }, [user, db, isSynced])
+  }, [user, db, isSynced, isAdmin, userData?.role])
 
   const notifQuery = useMemoFirebase(() => {
     if (!db || !user) return null
@@ -136,7 +97,7 @@ export default function Dashboard() {
     return query(collection(db, "banners"), orderBy("createdAt", "desc"))
   }, [db])
 
-  const { data: customBanners, isLoading: isBannersLoading } = useCollection(bannersQuery)
+  const { data: displayBanners, isLoading: isBannersLoading } = useCollection(bannersQuery)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -149,9 +110,6 @@ export default function Dashboard() {
     router.push("/")
   }
 
-  const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.uid === "tkGcuQnwxGgC32WZrtinZifDrDI2" || user?.email === "worker@gmail.com";
-  const isGuard = userData?.role === "GUARD" || isAdmin;
-
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -160,7 +118,61 @@ export default function Dashboard() {
     )
   }
 
-  const displayBanners = customBanners || []
+  // Dynamic Menu Items based on Role
+  const menuItems = [
+    ...(isAdmin ? [
+      {
+        title: "Admin Console",
+        icon: LayoutDashboard,
+        href: "/admin",
+        gradient: "gradient-header",
+        description: "Full system management"
+      },
+      {
+        title: "Guard Station",
+        icon: ShieldCheck,
+        href: "/guard",
+        gradient: "gradient-success",
+        description: "Verify pending reports"
+      }
+    ] : isGuard ? [
+      {
+        title: "Guard Station",
+        icon: ShieldCheck,
+        href: "/guard",
+        gradient: "gradient-success",
+        description: "Verify pending reports"
+      }
+    ] : []),
+    {
+      title: "Report Lost",
+      icon: Search,
+      href: "/report-lost",
+      gradient: "gradient-accent",
+      description: "Submit a missing report"
+    },
+    {
+      title: "Report Found",
+      icon: PlusCircle,
+      href: "/report-found",
+      gradient: "bg-emerald-600",
+      description: "Help return an item"
+    },
+    {
+      title: "Interactive Map",
+      icon: MapIcon,
+      href: "/map",
+      gradient: "bg-primary",
+      description: "Browse campus matches"
+    },
+    {
+      title: "Campus Shop",
+      icon: ShoppingBag,
+      href: "/shop",
+      gradient: "bg-blue-600",
+      description: "Premium marketplace"
+    }
+  ]
 
   return (
     <div className="flex flex-col min-h-screen pb-32 bg-background">
@@ -179,7 +191,9 @@ export default function Dashboard() {
                   <Badge className="bg-secondary text-[8px] font-bold h-4">GUARD</Badge>
                 ) : null}
               </div>
-              <p className="text-white/80 text-xs font-medium">Welcome back, {userData?.username || user?.displayName || user?.email?.split('@')[0] || 'User'}</p>
+              <p className="text-white/80 text-xs font-medium truncate max-w-[200px]">
+                Welcome, {userData?.username || user?.displayName || user?.email?.split('@')[0]}
+              </p>
             </div>
             <div className="flex gap-3">
               <Popover>
@@ -193,27 +207,20 @@ export default function Dashboard() {
                 </PopoverTrigger>
                 <PopoverContent className="w-80 rounded-[28px] p-4 mt-2" align="end">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between px-1">
-                      <h4 className="font-headline font-bold text-sm">Notifications</h4>
-                      <Bell className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                    <h4 className="font-headline font-bold text-sm px-1">Notifications</h4>
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                       {notifications && notifications.length > 0 ? (
                         notifications.map((notif) => (
                           <div key={notif.id} className="p-3 bg-muted/30 rounded-2xl space-y-1">
                             <p className="text-xs font-bold leading-tight">{notif.title}</p>
                             <p className="text-[10px] text-muted-foreground leading-relaxed">{notif.message}</p>
-                            <div className="flex items-center gap-1 pt-1 opacity-50">
-                              <Clock className="h-2.5 w-2.5" />
-                              <span className="text-[8px] font-bold uppercase">{formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}</span>
-                            </div>
+                            <span className="text-[8px] font-bold uppercase opacity-50 block pt-1">
+                              {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
+                            </span>
                           </div>
                         ))
                       ) : (
-                        <div className="text-center py-8 opacity-40">
-                          <Bell className="h-8 w-8 mx-auto mb-2" />
-                          <p className="text-[10px] font-bold uppercase tracking-widest">No new alerts</p>
-                        </div>
+                        <p className="text-center py-8 text-[10px] font-bold uppercase opacity-40">No alerts</p>
                       )}
                     </div>
                   </div>
@@ -224,40 +231,30 @@ export default function Dashboard() {
                 <DropdownMenuTrigger asChild>
                   <button className="bg-white/20 p-0.5 rounded-full hover:bg-white/30 transition-colors">
                     <Avatar className="h-10 w-10 border-2 border-white/20">
-                      <AvatarImage src={userData?.photoURL || user?.photoURL || `https://picsum.photos/seed/${user?.uid}/200/200`} />
+                      <AvatarImage src={userData?.photoURL || user?.photoURL} />
                       <AvatarFallback className="bg-primary text-white text-xs">
-                        {userData?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+                        {userData?.username?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2" align="end">
-                  <DropdownMenuLabel className="font-headline font-bold">Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
+                    <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
-                  
                   {isGuard && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="font-headline font-bold text-[10px] text-muted-foreground uppercase tracking-widest px-2 py-1">Management</DropdownMenuLabel>
-                      
-                      <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer">
-                        <ShieldCheck className="mr-2 h-4 w-4 text-secondary" />
-                        <span>Guard Station</span>
-                      </DropdownMenuItem>
-                    </>
+                    <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer">
+                      <ShieldCheck className="mr-2 h-4 w-4 text-secondary" />
+                      <span>Guard Station</span>
+                    </DropdownMenuItem>
                   )}
-
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4 text-primary" />
                       <span>Admin Console</span>
                     </DropdownMenuItem>
                   )}
-                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -273,7 +270,7 @@ export default function Dashboard() {
               {notifications?.length || 0}
             </div>
             <p className="text-white text-xs font-medium truncate">
-              {notifications?.[0]?.title || "Stay alert for campus item matches!"}
+              {notifications?.[0]?.title || "Campus recovery is active!"}
             </p>
           </div>
         </div>
@@ -282,45 +279,39 @@ export default function Dashboard() {
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
         {isBannersLoading ? (
           <Skeleton className="h-44 w-full rounded-[32px] shadow-2xl" />
-        ) : displayBanners.length > 0 && (
+        ) : displayBanners && displayBanners.length > 0 && (
           <Carousel 
             className="w-full"
-            plugins={[
-              Autoplay({
-                delay: 5000,
-              }),
-            ]}
+            plugins={[Autoplay({ delay: 5000 })]}
           >
             <CarouselContent>
               {displayBanners.map((banner) => (
                 <CarouselItem key={banner.id}>
-                  <Link 
+                  <a 
                     href={banner.targetUrl || "#"} 
-                    target="_blank"
+                    target="_blank" 
                     rel="noopener noreferrer"
-                    className={banner.targetUrl ? "cursor-pointer" : "cursor-default"}
+                    className="block relative h-44 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10"
                   >
-                    <div className="relative h-44 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10">
-                      <Image 
-                        src={banner.imageUrl} 
-                        alt={banner.title} 
-                        fill 
-                        className="object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-6">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Sparkles className="h-4 w-4 text-accent animate-pulse" />
-                          <p className="text-[9px] font-bold text-accent uppercase tracking-[0.2em]">Featured</p>
-                        </div>
-                        <h2 className="text-white text-lg font-headline font-bold leading-tight">{banner.title}</h2>
-                        {banner.subtitle && (
-                          <p className="text-white/70 text-[10px] font-medium leading-relaxed max-w-[80%] mt-1">
-                            {banner.subtitle}
-                          </p>
-                        )}
+                    <Image 
+                      src={banner.imageUrl} 
+                      alt={banner.title} 
+                      fill 
+                      className="object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-6">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className="h-4 w-4 text-accent animate-pulse" />
+                        <p className="text-[9px] font-bold text-accent uppercase tracking-widest">Featured</p>
                       </div>
+                      <h2 className="text-white text-lg font-headline font-bold leading-tight">{banner.title}</h2>
+                      {banner.subtitle && (
+                        <p className="text-white/70 text-[10px] font-medium leading-relaxed max-w-[80%] mt-1">
+                          {banner.subtitle}
+                        </p>
+                      )}
                     </div>
-                  </Link>
+                  </a>
                 </CarouselItem>
               ))}
             </CarouselContent>

@@ -27,14 +27,13 @@ export function initiateEmailSignUp(authInstance: Auth, email: string, password:
         await updateProfile(user, { displayName });
       }
 
-      // 2. Sync to Firestore 'users' collection so Admin can see them
+      // 2. Sync to Firestore 'users' collection
+      // Auto-promote specific emails to ADMIN
+      const isAdminEmail = email === "worker@gmail.com" || email === "forigloohelp@gmail.com" || user.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02";
+      
       const db = getFirestore(user.app);
       const userRef = doc(db, "users", user.uid);
       
-      // Auto-promote specific emails to ADMIN
-      const isAdminEmail = email === "worker@gmail.com" || email === "forigloohelp@gmail.com";
-      
-      // We use setDoc to explicitly create the document and thus the collection (container)
       setDoc(userRef, {
         id: user.uid,
         username: displayName || email.split('@')[0],
