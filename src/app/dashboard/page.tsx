@@ -64,11 +64,13 @@ export default function Dashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
+  // Centralized Staff Logic
   const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
                   user?.uid === "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
                   user?.email === "worker@gmail.com" || 
                   user?.email === "avtarsingh9528972330@gmail.com" ||
                   userData?.role === "ADMIN";
+  
   const isGuard = isAdmin || userData?.role === "GUARD";
 
   useEffect(() => {
@@ -247,6 +249,7 @@ export default function Dashboard() {
                     <span>My Orders</span>
                   </DropdownMenuItem>
                   
+                  {/* Staff tools are strictly hidden for normal users */}
                   {isGuard && (
                     <>
                       <DropdownMenuSeparator />
