@@ -23,11 +23,10 @@ service cloud.firestore {
     }
 
     // Universal read access for all signed-in students
-    // This allows listing items, banners, shop items, and notifications
     match /items/{itemId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
+      allow update: if isSignedIn() && (isSuperAdmin() || resource.data.ownerId == request.auth.uid);
     }
 
     match /banners/{bannerId} {
@@ -44,11 +43,13 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && (isSuperAdmin() || request.auth.uid == userId);
     }
 
+    // Orders specific rules
     match /orders/{orderId} {
-      allow read: if isSignedIn() && (isSuperAdmin() || resource.data.userId == request.auth.uid);
+      // Explicitly allow get and list for owners and admins
+      allow get, list: if isSignedIn() && (isSuperAdmin() || (resource != null && resource.data.userId == request.auth.uid));
       allow create: if isSignedIn();
     }
 

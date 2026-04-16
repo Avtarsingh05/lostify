@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useRouter } from "next/navigation"
@@ -15,6 +14,7 @@ export default function OrderHistory() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
 
+  // Memoized query to prevent infinite loops and permission hurdles
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return query(
@@ -73,14 +73,14 @@ export default function OrderHistory() {
                   <div className="w-16 h-16 rounded-2xl overflow-hidden relative bg-muted shrink-0 border">
                     <Image 
                       src={order.itemImageUrl || "https://picsum.photos/seed/shop/200/200"} 
-                      alt={order.itemName} 
+                      alt={order.itemName || "Shop Item"} 
                       fill 
                       className="object-cover" 
                     />
                   </div>
                   <div className="flex-1 min-w-0 py-1">
                     <div className="flex justify-between items-start">
-                      <h3 className="font-headline font-bold text-sm truncate pr-2">{order.itemName}</h3>
+                      <h3 className="font-headline font-bold text-sm truncate pr-2">{order.itemName || "Unnamed Item"}</h3>
                       <p className="text-primary font-bold text-sm">₹{order.amount}</p>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
