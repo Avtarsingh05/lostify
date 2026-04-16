@@ -28,13 +28,6 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "GUARD");
     }
 
-    // Check for Admin role or higher
-    function isAdmin() {
-      return isSuperAdmin() || (isSignedIn() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "ADMIN"));
-    }
-
     // GLOBAL OVERRIDE: Super Admin allows everything
     match /{document=**} {
       allow read, write: if isSuperAdmin();
@@ -43,10 +36,10 @@ service cloud.firestore {
     // User Profile Rules
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if request.auth.uid == userId || isSuperAdmin();
+      allow write: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
     }
 
-    // Items Rules
+    // Items Rules - Allow listing for all authenticated students
     match /items/{itemId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
@@ -62,7 +55,7 @@ service cloud.firestore {
 
     // Chat Rules
     match /chats/{chatId} {
-      allow read, write: if isSuperAdmin() || (isSignedIn() && request.auth.uid in resource.data.participantIds);
+      allow read, write: if isSignedIn() && (isSuperAdmin() || request.auth.uid in resource.data.participantIds);
       allow create: if isSignedIn();
       
       match /messages/{messageId} {
