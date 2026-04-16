@@ -2,59 +2,63 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Check if user is signed in
+    // Core helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Absolute Admin check for specific UIDs and Email
+    // Master Admin check for the campus owner
     function isSuperAdmin() {
       return isSignedIn() && (
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
         request.auth.uid == "tkGcuQnwxGgC32WZrtinZifDrDI2" ||
-        request.auth.token.email == "worker@gmail.com"
+        request.auth.token.email == "worker@gmail.com" ||
+        request.auth.token.email == "forigloohelp@gmail.com"
       );
     }
 
-    // 1. MASTER RULE: Super Admins have absolute unrestricted access to everything
-    // This resolves 'method: list' and other permission errors for the admin account
+    // 1. MASTER RULE: Absolute unrestricted access for Super Admins
+    // This resolves all 'method: list' and permission blocks for the admin account
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }
 
-    // 2. Collection Specific Rules for Students
-    
+    // 2. USER PROFILE RULES
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
     }
 
+    // 3. ITEM REPORT RULES (Lost & Found)
     match /items/{itemId} {
-      // Students can list and get items for the map and dashboard
+      // Students can list and get items (for Map and Dashboard)
       allow read: if isSignedIn();
       allow create: if isSignedIn();
+      // Only owners or admins can update/delete
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isSuperAdmin());
       allow delete: if isSuperAdmin();
     }
 
+    // 4. SHOP & ORDER RULES
     match /shopItems/{itemId} {
       allow read: if isSignedIn();
       allow write: if isSuperAdmin();
     }
 
     match /orders/{orderId} {
-      // Students can only create orders and read their OWN orders
+      // Students can create orders and read their OWN orders
       allow create: if isSignedIn();
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isSuperAdmin());
     }
 
-    match /notifications/{notifId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isSuperAdmin());
+    // 5. SYSTEM & CAMPAIGN RULES
+    match /banners/{bannerId} {
+      allow read: if isSignedIn();
       allow write: if isSuperAdmin();
     }
 
-    match /banners/{bannerId} {
-      allow read: if isSignedIn();
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isSuperAdmin());
       allow write: if isSuperAdmin();
     }
 
