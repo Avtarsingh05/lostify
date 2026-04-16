@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -15,7 +15,10 @@ import {
   ShieldCheck,
   User as UserIcon,
   Search,
-  ShieldAlert
+  Image as ImageIcon,
+  Trash2,
+  Upload,
+  Sparkles
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -36,11 +39,13 @@ import {
   useCollection, 
   useMemoFirebase, 
   addDocumentNonBlocking, 
-  updateDocumentNonBlocking 
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking
 } from "@/firebase"
-import { collection, query, orderBy, limit, doc } from "firebase/firestore"
+import { collection, query, orderBy, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Image from "next/image"
 
 const trafficData = [
   { name: "M", lost: 40, found: 24 },
@@ -67,6 +72,12 @@ export default function AdminDashboard() {
   const [isPushing, setIsPushing] = useState(false)
   const [userSearch, setUserSearch] = useState("")
 
+  // Banner State
+  const [bannerTitle, setBannerTitle] = useState("")
+  const [bannerSub, setBannerSub] = useState("")
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+  const bannerFileRef = useRef<HTMLInputElement>(null)
+
   // Real-time data sync
   const itemsQuery = useMemoFirebase(() => collection(db, "items"), [db])
   const { data: allItems } = useCollection(itemsQuery)
@@ -74,6 +85,9 @@ export default function AdminDashboard() {
   const usersQuery = useMemoFirebase(() => 
     query(collection(db, "users"), orderBy("updatedAt", "desc")), [db])
   const { data: allUsers, isLoading: isUsersLoading } = useCollection(usersQuery)
+
+  const bannersQuery = useMemoFirebase(() => collection(db, "banners"), [db])
+  const { data: allBanners } = useCollection(bannersQuery)
 
   const lostCount = allItems?.filter(i => i.type === 'lost').length || 0
   const foundCount = allItems?.filter(i => i.type === 'found').length || 0
@@ -99,6 +113,65 @@ export default function AdminDashboard() {
       })
     }).finally(() => {
       setIsPushing(false)
+    })
+  }
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !bannerTitle) {
+      toast({
+        variant: "destructive",
+        title: "Incomplete Data",
+        description: "Please enter a title before selecting an image.",
+      })
+      return
+    }
+
+    setIsUploadingBanner(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("upload_preset", "admin_banner_upload")
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      
+      if (!res.ok) throw new Error("Cloudinary upload failed")
+      const data = await res.json()
+      
+      const bannersRef = collection(db, "banners")
+      await addDocumentNonBlocking(bannersRef, {
+        title: bannerTitle,
+        subtitle: bannerSub,
+        imageUrl: data.secure_url,
+        createdAt: new Date().toISOString()
+      })
+
+      setBannerTitle("")
+      setBannerSub("")
+      toast({
+        title: "Banner Added",
+        description: "Your new campaign banner is live.",
+      })
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: err.message,
+      })
+    } finally {
+      setIsUploadingBanner(false)
+    }
+  }
+
+  const handleDeleteBanner = (id: string) => {
+    const bannerRef = doc(db, "banners", id)
+    deleteDocumentNonBlocking(bannerRef)
+    toast({
+      title: "Banner Removed",
+      description: "The banner has been deleted from the rotation.",
     })
   }
 
@@ -145,9 +218,10 @@ export default function AdminDashboard() {
 
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6">
-            <TabsTrigger value="overview" className="rounded-xl font-bold text-[10px] uppercase">Overview</TabsTrigger>
-            <TabsTrigger value="users" className="rounded-xl font-bold text-[10px] uppercase">Students</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6">
+            <TabsTrigger value="overview" className="rounded-xl font-bold text-[9px] uppercase">Stats</TabsTrigger>
+            <TabsTrigger value="users" className="rounded-xl font-bold text-[9px] uppercase">Users</TabsTrigger>
+            <TabsTrigger value="banners" className="rounded-xl font-bold text-[9px] uppercase">Banners</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -263,6 +337,77 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="banners" className="space-y-4">
+            <Card className="border-none shadow-md rounded-[32px] overflow-hidden">
+              <CardHeader className="px-6 pt-6 pb-2">
+                <CardTitle className="font-headline font-bold text-lg flex items-center gap-2">
+                  <Upload className="h-5 w-5 text-secondary" /> Add Banner
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-6 pb-6 space-y-4">
+                <div className="space-y-3">
+                  <Input 
+                    placeholder="Banner Title" 
+                    className="rounded-xl h-11 text-xs"
+                    value={bannerTitle}
+                    onChange={(e) => setBannerTitle(e.target.value)}
+                  />
+                  <Input 
+                    placeholder="Subtext (Optional)" 
+                    className="rounded-xl h-11 text-xs"
+                    value={bannerSub}
+                    onChange={(e) => setBannerSub(e.target.value)}
+                  />
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    ref={bannerFileRef} 
+                    accept="image/*"
+                    onChange={handleBannerUpload}
+                  />
+                  <Button 
+                    onClick={() => bannerFileRef.current?.click()}
+                    className="w-full rounded-xl gradient-success font-bold text-xs h-11"
+                    disabled={isUploadingBanner || !bannerTitle}
+                  >
+                    {isUploadingBanner ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ImageIcon className="h-4 w-4 mr-2" />}
+                    Upload to Cloudinary
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-3 pb-12">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Active Banners</h3>
+              {allBanners && allBanners.length > 0 ? allBanners.map((banner) => (
+                <Card key={banner.id} className="border-none shadow-sm rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
+                  <div className="flex h-20">
+                    <div className="w-24 h-full relative">
+                      <Image src={banner.imageUrl} alt={banner.title} fill className="object-cover" />
+                    </div>
+                    <div className="flex-1 p-3 flex items-center justify-between">
+                      <div className="min-w-0">
+                        <h4 className="text-[10px] font-bold truncate leading-tight">{banner.title}</h4>
+                        <p className="text-[8px] text-muted-foreground truncate">{banner.subtitle}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteBanner(banner.id)}
+                        className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              )) : (
+                <div className="text-center py-12 opacity-30">
+                  <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                  <p className="text-[10px] font-bold uppercase">No Custom Banners</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
