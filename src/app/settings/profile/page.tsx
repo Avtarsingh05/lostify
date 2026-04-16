@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, User, Mail, Phone, Save, Loader2, Camera, UserCircle } from "lucide-react"
+import { ArrowLeft, User, Mail, Phone, Save, Loader2, Camera, UserCircle, UploadCloud } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,6 +24,7 @@ export default function ProfileSettings() {
   const [nickname, setNickname] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -46,6 +47,7 @@ export default function ProfileSettings() {
   useEffect(() => {
     if (userData) {
       setPhoneNumber(userData.phoneNumber || "")
+      if (userData.photoURL) setPreviewUrl(userData.photoURL)
     }
   }, [userData])
 
@@ -63,10 +65,11 @@ export default function ProfileSettings() {
 
     setIsLoading(true)
     try {
-      let photoURL = auth.currentUser.photoURL || ""
+      let photoURL = userData?.photoURL || auth.currentUser.photoURL || ""
 
       // Upload to Cloudinary if a new image is selected
       if (imageFile) {
+        setIsUploading(true)
         const formData = new FormData()
         formData.append("file", imageFile)
         formData.append("upload_preset", "admin_banner_upload")
@@ -79,15 +82,10 @@ export default function ProfileSettings() {
         if (!res.ok) throw new Error("Image upload failed")
         const data = await res.json()
         photoURL = data.secure_url
+        setIsUploading(false)
       }
 
-      // 1. Update Firebase Auth Profile
-      await updateProfile(auth.currentUser, {
-        displayName: nickname,
-        photoURL: photoURL
-      })
-
-      // 2. Update Firestore User Document
+      // 1. Update Firestore User Document (Primary for our UI)
       const userRef = doc(db, "users", auth.currentUser.uid)
       updateDocumentNonBlocking(userRef, {
         username: nickname,
@@ -96,11 +94,17 @@ export default function ProfileSettings() {
         updatedAt: new Date().toISOString()
       })
 
+      // 2. Update Firebase Auth Profile (Secondary, non-critical)
+      updateProfile(auth.currentUser, {
+        displayName: nickname,
+        photoURL: photoURL
+      }).catch(err => console.error("Auth profile update failed:", err))
+
       toast({
-        title: "Profile Updated",
-        description: "Your changes have been saved successfully.",
+        title: "Profile Saved",
+        description: "Your details have been updated instantly.",
       })
-      router.back()
+      router.push("/dashboard")
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -109,6 +113,7 @@ export default function ProfileSettings() {
       })
     } finally {
       setIsLoading(false)
+      setIsUploading(false)
     }
   }
 
@@ -120,7 +125,7 @@ export default function ProfileSettings() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="text-2xl font-headline font-bold">Edit Profile</h1>
-          <div className="w-9" /> {/* Spacer */}
+          <div className="w-9" />
         </div>
 
         <div className="relative inline-block">
@@ -201,8 +206,22 @@ export default function ProfileSettings() {
             disabled={isLoading || isDocLoading}
             className="w-full h-14 rounded-2xl gradient-header font-bold text-md shadow-xl flex items-center justify-center gap-2"
           >
-            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-            Save Profile
+            {isUploading ? (
+              <>
+                <UploadCloud className="h-5 w-5 animate-bounce" />
+                Uploading Photo...
+              </>
+            ) : isLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Saving Changes...
+              </>
+            ) : (
+              <>
+                <Save className="h-5 w-5" />
+                Save Profile
+              </>
+            )}
           </Button>
         </form>
       </main>

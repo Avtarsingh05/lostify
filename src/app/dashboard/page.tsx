@@ -22,7 +22,7 @@ import {
   Sparkles
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
-import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
+import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +37,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { collection, query, orderBy, limit, doc, setDoc } from "firebase/firestore"
+import { collection, query, orderBy, limit, doc } from "firebase/firestore"
 import { formatDistanceToNow } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -109,15 +109,14 @@ export default function Dashboard() {
   useEffect(() => {
     if (user && db && !isSynced) {
       const userRef = doc(db, "users", user.uid)
-      setDoc(userRef, {
+      setDocumentNonBlocking(userRef, {
         id: user.uid,
         email: user.email,
         username: user.displayName || user.email?.split('@')[0] || 'User',
         photoURL: user.photoURL || "",
         updatedAt: new Date().toISOString()
       }, { merge: true })
-      .then(() => setIsSynced(true))
-      .catch((err) => console.warn("Sync error:", err))
+      setIsSynced(true)
     }
   }, [user, db, isSynced])
 
@@ -150,7 +149,7 @@ export default function Dashboard() {
     router.push("/")
   }
 
-  const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.uid === "tkGcuQnwxGgC32WZrtinZifDrDI2" || user?.email === "worker@gmail.com";
+  const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.email === "worker@gmail.com";
   const isGuard = userData?.role === "GUARD" || isAdmin;
 
   if (isUserLoading || !user) {
@@ -188,7 +187,7 @@ export default function Dashboard() {
                   <Badge className="bg-secondary text-[8px] font-bold h-4">GUARD</Badge>
                 ) : null}
               </div>
-              <p className="text-white/80 text-xs font-medium">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'User'}</p>
+              <p className="text-white/80 text-xs font-medium">Welcome back, {userData?.username || user?.displayName || user?.email?.split('@')[0] || 'User'}</p>
             </div>
             <div className="flex gap-3">
               <Popover>
@@ -233,9 +232,9 @@ export default function Dashboard() {
                 <DropdownMenuTrigger asChild>
                   <button className="bg-white/20 p-0.5 rounded-full hover:bg-white/30 transition-colors">
                     <Avatar className="h-10 w-10 border-2 border-white/20">
-                      <AvatarImage src={user?.photoURL || `https://picsum.photos/seed/${user?.uid}/200/200`} />
+                      <AvatarImage src={userData?.photoURL || user?.photoURL || `https://picsum.photos/seed/${user?.uid}/200/200`} />
                       <AvatarFallback className="bg-primary text-white text-xs">
-                        {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+                        {userData?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
                   </button>
@@ -289,7 +288,6 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
-        {/* Dynamic Carousel Banner */}
         <Carousel 
           className="w-full"
           plugins={[
