@@ -3,28 +3,40 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * LOSTIFY GLOBAL SECURITY RULES - REWRITTEN FOR PROJECT: studio-8346545449-2bbf4
+     * LOSTIFY GLOBAL SECURITY RULES - COMPREHENSIVE OVERHAUL
+     * PROJECT ID: studio-8346545449-2bbf4
      */
 
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Comprehensive Admin check - Explicitly whitelists YOUR account
-    function isAdmin() {
+    // SUPER ADMIN - Explicitly whitelist your account to fix ALL permission errors for you
+    function isSuperAdmin() {
       return isSignedIn() && (
         request.auth.uid == "tkGcuQnwxGgC32WZrtinZifDrDI2" || 
-        request.auth.token.email == "worker@gmail.com" ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "ADMIN")
+        request.auth.token.email == "worker@gmail.com"
       );
     }
 
-    // Guard check (includes Admins)
+    // Check for Guard role or higher
     function isGuard() {
-      return isAdmin() || (isSignedIn() && 
+      return isSuperAdmin() || (isSignedIn() && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "GUARD");
+    }
+
+    // Check for Admin role or higher
+    function isAdmin() {
+      return isSuperAdmin() || (isSignedIn() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "ADMIN");
+    }
+
+    // GLOBAL OVERRIDE: If you are the Super Admin, allow everything.
+    // This is the definitive fix for permission errors on your account.
+    match /{document=**} {
+      allow read, write: if isSuperAdmin();
     }
 
     // User Profile Rules
@@ -56,7 +68,7 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if isSignedIn();
         allow create: if isSignedIn();
-        allow update, delete: if isAdmin() || resource.data.senderId == request.auth.uid;
+        allow update, delete: if isAdmin() || (isSignedIn() && resource.data.senderId == request.auth.uid);
       }
     }
 
