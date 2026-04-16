@@ -18,7 +18,7 @@ import {
   Image as ImageIcon,
   Trash2,
   Upload,
-  Sparkles
+  Link as LinkIcon
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -75,6 +75,7 @@ export default function AdminDashboard() {
   // Banner State
   const [bannerTitle, setBannerTitle] = useState("")
   const [bannerSub, setBannerSub] = useState("")
+  const [bannerLink, setBannerLink] = useState("")
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const bannerFileRef = useRef<HTMLInputElement>(null)
 
@@ -145,12 +146,14 @@ export default function AdminDashboard() {
       await addDocumentNonBlocking(bannersRef, {
         title: bannerTitle,
         subtitle: bannerSub,
+        targetUrl: bannerLink,
         imageUrl: data.secure_url,
         createdAt: new Date().toISOString()
       })
 
       setBannerTitle("")
       setBannerSub("")
+      setBannerLink("")
       toast({
         title: "Banner Added",
         description: "Your new campaign banner is live.",
@@ -361,6 +364,15 @@ export default function AdminDashboard() {
                     value={bannerSub}
                     onChange={(e) => setBannerSub(e.target.value)}
                   />
+                  <div className="relative">
+                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Destination Link (e.g. /auctions)" 
+                      className="rounded-xl h-11 text-xs pl-9"
+                      value={bannerLink}
+                      onChange={(e) => setBannerLink(e.target.value)}
+                    />
+                  </div>
                   <input 
                     type="file" 
                     className="hidden" 
@@ -392,6 +404,9 @@ export default function AdminDashboard() {
                       <div className="min-w-0">
                         <h4 className="text-[10px] font-bold truncate leading-tight">{banner.title}</h4>
                         <p className="text-[8px] text-muted-foreground truncate">{banner.subtitle}</p>
+                        {banner.targetUrl && (
+                           <p className="text-[7px] text-primary truncate font-bold mt-1">Link: {banner.targetUrl}</p>
+                        )}
                       </div>
                       <button 
                         onClick={() => handleDeleteBanner(banner.id)}
