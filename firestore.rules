@@ -8,33 +8,47 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Check if user is a Super Admin
+    // Absolute Admin check for the user's UIDs and Email
     function isSuperAdmin() {
       return isSignedIn() && (
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
-        request.auth.uid == "tkGcuQnwxGgC32WZrtinZifDrDI2" || 
+        request.auth.uid == "tkGcuQnwxGgC32WZrtinZifDrDI2" ||
         request.auth.token.email == "worker@gmail.com"
       );
     }
 
-    // Universal Rule: Any signed-in user can read anything.
-    // Super Admins can write anything.
+    // Allow Super Admins to do everything across all collections
     match /{document=**} {
-      allow read: if isSignedIn();
-      allow write: if isSuperAdmin();
+      allow read, write: if isSuperAdmin();
     }
 
-    // Specific permissions for Students
-    match /users/{userId} {
-      allow write: if isSignedIn() && request.auth.uid == userId;
-    }
-
+    // Universal read access for all signed-in students
+    // This allows listing items, banners, shop items, and notifications
     match /items/{itemId} {
+      allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
     }
 
+    match /banners/{bannerId} {
+      allow read: if isSignedIn();
+    }
+
+    match /shopItems/{itemId} {
+      allow read: if isSignedIn();
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isSignedIn();
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
     match /orders/{orderId} {
+      allow read: if isSignedIn() && (isSuperAdmin() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
     }
   }

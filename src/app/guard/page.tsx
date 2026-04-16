@@ -8,16 +8,13 @@ import {
   ShieldCheck, 
   Package, 
   Search, 
-  Filter, 
   CheckCircle2, 
   Clock, 
   MapPin, 
-  User, 
-  ChevronRight,
-  AlertCircle,
-  Loader2
+  Loader2,
+  AlertCircle
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,7 +28,7 @@ export default function GuardDashboard() {
   const router = useRouter()
   const { toast } = useToast()
   const db = useFirestore()
-  const { user } = useUser()
+  const { user, isUserLoading } = useUser()
   const [search, setSearch] = useState("")
 
   // Fetch items pending verification
@@ -63,6 +60,14 @@ export default function GuardDashboard() {
     item.name?.toLowerCase().includes(search.toLowerCase()) ||
     item.locationDescription?.toLowerCase().includes(search.toLowerCase())
   )
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -109,13 +114,14 @@ export default function GuardDashboard() {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-sm font-headline font-bold flex items-center gap-2 px-2">
-            <Clock className="h-4 w-4 text-primary" /> Incoming Handovers
+          <h2 className="text-sm font-headline font-bold flex items-center gap-2 px-2 text-primary uppercase tracking-widest">
+            <Clock className="h-4 w-4" /> Incoming Handovers
           </h2>
           
           {isLoading ? (
-            <div className="flex justify-center p-12">
+            <div className="flex flex-col items-center justify-center p-12 gap-2">
               <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
+              <p className="text-[10px] font-bold text-muted-foreground uppercase">Syncing Security Feed...</p>
             </div>
           ) : filteredItems && filteredItems.length > 0 ? (
             filteredItems.map((item) => (
