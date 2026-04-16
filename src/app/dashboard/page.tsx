@@ -18,7 +18,8 @@ import {
   Sparkles,
   Settings,
   History,
-  Info
+  Info,
+  ChevronRight
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -63,6 +64,7 @@ export default function Dashboard() {
 
   // Staff Authorization Logic
   const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
+                  user?.uid === "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
                   user?.email === "worker@gmail.com" || 
                   user?.email === "avtarsingh9528972330@gmail.com" ||
                   userData?.role === "ADMIN";
@@ -120,7 +122,6 @@ export default function Dashboard() {
     )
   }
 
-  // User Menu Items (Staff panels removed from grid cards)
   const menuItems = [
     {
       title: "Report Lost",
@@ -344,6 +345,41 @@ export default function Dashboard() {
             </Link>
           ))}
         </div>
+
+        {isGuard && (
+          <section className="pt-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-2 mb-3">Staff Control Center</h3>
+            <div className="space-y-3">
+              <Link href="/guard" className="flex items-center justify-between p-4 bg-secondary/10 rounded-[28px] group hover:bg-secondary/20 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="bg-secondary p-2.5 rounded-2xl shadow-lg shadow-secondary/20">
+                    <ShieldCheck className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-headline font-bold">Guard Station</p>
+                    <p className="text-[10px] text-muted-foreground">Verify handovers & map pins</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              </Link>
+
+              {isAdmin && (
+                <Link href="/admin" className="flex items-center justify-between p-4 bg-primary/10 rounded-[28px] group hover:bg-primary/20 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary p-2.5 rounded-2xl shadow-lg shadow-primary/20">
+                      <LayoutDashboard className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-headline font-bold">Admin Console</p>
+                      <p className="text-[10px] text-muted-foreground">Global settings & analytics</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                </Link>
+              )}
+            </div>
+          </section>
+        )}
 
         <div className="pt-12 pb-8 text-center space-y-2 opacity-50">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
