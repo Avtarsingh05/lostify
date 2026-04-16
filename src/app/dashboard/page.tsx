@@ -8,18 +8,17 @@ import {
   Search, 
   PlusCircle, 
   Map as MapIcon, 
-  Package, 
   ShoppingBag, 
-  Gavel, 
   LayoutDashboard,
   ShieldCheck,
   Bell,
   User,
   LogOut,
   Loader2,
-  Clock,
   Sparkles,
-  Settings
+  Settings,
+  History,
+  Info
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -62,7 +61,7 @@ export default function Dashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Hardened Super Admin Check Logic
+  // Staff Authorization Logic
   const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
                   user?.email === "worker@gmail.com" || 
                   user?.email === "avtarsingh9528972330@gmail.com" ||
@@ -121,26 +120,8 @@ export default function Dashboard() {
     )
   }
 
-  // Dynamic Menu Items based on Role
+  // User Menu Items (Staff panels removed from grid cards)
   const menuItems = [
-    ...(isAdmin ? [
-      {
-        title: "Admin Console",
-        icon: LayoutDashboard,
-        href: "/admin",
-        gradient: "gradient-header",
-        description: "Full system management"
-      }
-    ] : []),
-    ...(isGuard ? [
-      {
-        title: "Guard Station",
-        icon: ShieldCheck,
-        href: "/guard",
-        gradient: "gradient-success",
-        description: "Verify pending reports"
-      }
-    ] : []),
     {
       title: "Report Lost",
       icon: Search,
@@ -168,6 +149,20 @@ export default function Dashboard() {
       href: "/shop",
       gradient: "bg-blue-600",
       description: "Premium marketplace"
+    },
+    {
+      title: "My Reports",
+      icon: History,
+      href: "/my-items",
+      gradient: "bg-purple-600",
+      description: "Track your submissions"
+    },
+    {
+      title: "Help Center",
+      icon: Info,
+      href: "/help",
+      gradient: "bg-slate-600",
+      description: "Support & documentation"
     }
   ]
 
@@ -183,7 +178,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <h1 className="text-white text-3xl font-headline font-bold">Lostify</h1>
                 {isAdmin ? (
-                  <Badge className="bg-accent text-[8px] font-bold h-4">SUPER ADMIN</Badge>
+                  <Badge className="bg-accent text-[8px] font-bold h-4">ADMIN</Badge>
                 ) : isGuard ? (
                   <Badge className="bg-secondary text-[8px] font-bold h-4">GUARD</Badge>
                 ) : null}
@@ -236,24 +231,36 @@ export default function Dashboard() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2" align="end">
+                  <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-3">Account</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/orders')} className="rounded-xl cursor-pointer">
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    <span>My Orders</span>
+                  </DropdownMenuItem>
+                  
                   {isGuard && (
-                    <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer">
-                      <ShieldCheck className="mr-2 h-4 w-4 text-secondary" />
-                      <span>Guard Station</span>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-secondary px-3">Staff Tools</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer">
+                        <ShieldCheck className="mr-2 h-4 w-4 text-secondary" />
+                        <span>Guard Station</span>
+                      </DropdownMenuItem>
+                    </>
                   )}
+                  
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4 text-primary" />
                       <span>Admin Console</span>
                     </DropdownMenuItem>
                   )}
+                  
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive">
+                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive font-bold">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
