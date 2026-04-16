@@ -1,8 +1,10 @@
+
 "use client"
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { 
   Search, 
   PlusCircle, 
@@ -16,7 +18,8 @@ import {
   User,
   LogOut,
   Loader2,
-  Clock
+  Clock,
+  Sparkles
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
@@ -100,7 +103,6 @@ export default function Dashboard() {
   useEffect(() => {
     if (user && db && !isSynced) {
       const userRef = doc(db, "users", user.uid)
-      // Robust profile sync to ensure user container exists in Firestore
       setDoc(userRef, {
         id: user.uid,
         email: user.email,
@@ -135,7 +137,6 @@ export default function Dashboard() {
     router.push("/")
   }
 
-  // Force Admin role for your UID for the prototype dashboard view
   const isAdmin = userData?.role === "ADMIN" || user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || user?.uid === "tkGcuQnwxGgC32WZrtinZifDrDI2" || user?.email === "worker@gmail.com";
   const isGuard = userData?.role === "GUARD" || isAdmin;
 
@@ -265,6 +266,27 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md mx-auto px-4 -mt-10 w-full space-y-6">
+        {/* New Featured Banner */}
+        <div className="relative h-44 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10">
+          <Image 
+            src="https://picsum.photos/seed/lpu-recovery/800/400" 
+            alt="Campus Recovery Campaign" 
+            fill 
+            className="object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
+            data-ai-hint="campus university"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="h-4 w-4 text-accent animate-pulse" />
+              <p className="text-[9px] font-bold text-accent uppercase tracking-[0.2em]">Live Campaign</p>
+            </div>
+            <h2 className="text-white text-lg font-headline font-bold leading-tight">Campus Recovery 2024</h2>
+            <p className="text-white/70 text-[10px] font-medium leading-relaxed max-w-[80%] mt-1">
+              Help your peers find their belongings. High-reputation students earn exclusive campus rewards.
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
