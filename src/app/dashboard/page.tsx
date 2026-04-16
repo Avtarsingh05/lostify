@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -19,7 +20,8 @@ import {
   Settings,
   History,
   Info,
-  ChevronRight
+  ChevronRight,
+  Package
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -124,11 +126,11 @@ export default function Dashboard() {
 
   const menuItems = [
     {
-      title: "Report Lost",
-      icon: Search,
-      href: "/report-lost",
-      gradient: "gradient-accent",
-      description: "Submit a missing report"
+      title: "Campus Gallery",
+      icon: Package,
+      href: "/gallery",
+      gradient: "gradient-header",
+      description: "Browse found & lost items"
     },
     {
       title: "Report Found",
