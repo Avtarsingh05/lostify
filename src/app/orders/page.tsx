@@ -14,7 +14,7 @@ export default function OrderHistory() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
 
-  // Memoized query to prevent infinite loops and permission hurdles
+  // Simplified query that matches the security rules perfectly
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return query(
@@ -27,8 +27,10 @@ export default function OrderHistory() {
   const { data: orders, isLoading } = useCollection(ordersQuery)
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const s = status?.toUpperCase()
+    switch (s) {
       case "SUCCESS":
+      case "PAID":
         return <Badge className="bg-secondary text-white border-none gap-1"><CheckCircle2 className="h-3 w-3" /> Paid</Badge>
       case "PENDING":
       case "MOCK_PENDING":
@@ -36,7 +38,7 @@ export default function OrderHistory() {
       case "FAILED":
         return <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" /> Failed</Badge>
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="outline">{status || "Unknown"}</Badge>
     }
   }
 
@@ -98,8 +100,8 @@ export default function OrderHistory() {
                     <p className="text-[10px] font-mono font-medium truncate max-w-[180px]">{order.id}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Delivery</p>
-                    <p className="text-[10px] font-medium">{order.deliveryPhone}</p>
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">Delivery Info</p>
+                    <p className="text-[10px] font-medium">{order.deliveryPhone || "N/A"}</p>
                   </div>
                 </div>
               </CardContent>
