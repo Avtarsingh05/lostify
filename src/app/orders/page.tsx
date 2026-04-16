@@ -1,7 +1,17 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ArrowLeft, ShoppingBag, Clock, CreditCard, ChevronRight, Package, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { 
+  ArrowLeft, 
+  ShoppingBag, 
+  Clock, 
+  CreditCard, 
+  ChevronRight, 
+  Package, 
+  Loader2, 
+  CheckCircle2, 
+  AlertCircle 
+} from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
@@ -17,6 +27,8 @@ export default function OrderHistory() {
   // Simplified query that matches the security rules perfectly
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null
+    // We filter by userId to ensure the security rule "resource.data.userId == request.auth.uid" is satisfied
+    // Admins can also run this query.
     return query(
       collection(db, "orders"),
       where("userId", "==", user.uid),
