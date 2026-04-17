@@ -1,0 +1,209 @@
+
+"use client"
+
+import { useState, use } from "react"
+import { useRouter } from "next/navigation"
+import { 
+  ArrowLeft, 
+  MapPin, 
+  Clock, 
+  ShieldCheck, 
+  Download,
+  Loader2,
+  Lock,
+  Trash2,
+  CheckCircle2
+} from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
+import { doc } from "firebase/firestore"
+import Image from "next/image"
+import { format } from "date-fns"
+import { QRCodeSVG } from "qrcode.react"
+import { useToast } from "@/hooks/use-toast"
+
+export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: string }> }) {
+  const { itemId } = use(params)
+  const router = useRouter()
+  const db = useFirestore()
+  const { toast } = useToast()
+  
+  const [isCollectOpen, setIsCollectOpen] = useState(false)
+  const [otpInput, setOtpInput] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const docRef = useMemoFirebase(() => {
+    if (!db) return null
+    return doc(db, "clockRoomItems", itemId)
+  }, [db, itemId])
+
+  const { data: item, isLoading } = useDoc(docRef)
+
+  const handleCollect = async () => {
+    if (!item || !db) return
+    if (otpInput !== item.otp) {
+      toast({ variant: "destructive", title: "Invalid OTP", description: "Please check the OTP on this screen." })
+      return
+    }
+
+    setIsProcessing(true)
+    const itemRef = doc(db, "clockRoomItems", item.id)
+    updateDocumentNonBlocking(itemRef, {
+      status: "collected",
+      collectedAt: new Date().toISOString()
+    })
+
+    setTimeout(() => {
+      setIsProcessing(false)
+      setIsCollectOpen(false)
+      toast({ title: "Item Collected Successfully" })
+      router.push("/clock-room")
+    }, 1500)
+  }
+
+  if (isLoading || !item) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  const isStored = item.status === 'stored'
+
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      <div className="gradient-header pt-12 pb-24 px-4 rounded-b-[48px] shadow-xl text-white">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <h1 className="text-xl font-headline font-bold">Storage Receipt</h1>
+          </div>
+          <Badge className="bg-white/20 text-white border-none font-bold">
+            {item.status.toUpperCase()}
+          </Badge>
+        </div>
+      </div>
+
+      <main className="max-w-md mx-auto px-4 -mt-10 space-y-4">
+        <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none">
+          <div className="aspect-video relative overflow-hidden">
+            <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
+          </div>
+          <CardContent className="p-8 space-y-8">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-headline font-bold">{item.itemType}</h2>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <MapPin className="h-4 w-4 text-primary" /> Rack {item.rackNumber}, Slot {item.slotNumber}
+                </p>
+              </div>
+              <div className="w-4 h-4 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-[32px] border-2 border-dashed gap-4">
+               <div className="bg-white p-4 rounded-2xl shadow-xl">
+                 <QRCodeSVG value={`lostify-luggage-${item.id}`} size={160} />
+               </div>
+               <div className="text-center space-y-1">
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Digital Token ID</p>
+                 <p className="text-xs font-mono font-bold">{item.id.substring(0, 12)}</p>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+               <div className="p-4 bg-muted/20 rounded-2xl space-y-1">
+                 <p className="text-[8px] font-bold text-muted-foreground uppercase">Stored On</p>
+                 <p className="text-[10px] font-bold">{format(new Date(item.createdAt), 'MMM dd, HH:mm')}</p>
+               </div>
+               <div className="p-4 bg-muted/20 rounded-2xl space-y-1">
+                 <p className="text-[8px] font-bold text-muted-foreground uppercase">Expected Back</p>
+                 <p className="text-[10px] font-bold">{item.expectedReturnDate ? format(new Date(item.expectedReturnDate), 'MMM dd') : "N/A"}</p>
+               </div>
+            </div>
+
+            <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                 <Lock className="h-5 w-5 text-primary" />
+                 <div>
+                   <p className="text-xs font-bold">Release OTP</p>
+                   <p className="text-[10px] text-muted-foreground">Show this to the guard</p>
+                 </div>
+               </div>
+               <span className="text-2xl font-headline font-bold text-primary tracking-widest">{item.otp}</span>
+            </div>
+
+            {isStored && (
+              <Button 
+                onClick={() => setIsCollectOpen(true)}
+                className="w-full h-14 rounded-2xl gradient-header font-bold text-sm shadow-xl flex items-center justify-center gap-2"
+              >
+                <Trash2 className="h-5 w-5" /> Check-out & Collect
+              </Button>
+            )}
+
+            {!isStored && (
+              <div className="bg-secondary/10 p-4 rounded-2xl border border-secondary/20 flex items-center gap-3">
+                 <CheckCircle2 className="h-6 w-6 text-secondary" />
+                 <div>
+                    <p className="text-xs font-bold text-secondary">Collected</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {item.collectedAt ? format(new Date(item.collectedAt), 'PPp') : ""}
+                    </p>
+                 </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
+
+      <Dialog open={isCollectOpen} onOpenChange={setIsCollectOpen}>
+        <DialogContent className="max-w-[400px] rounded-[32px] p-8">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
+              <ShieldCheck className="h-6 w-6 text-primary" /> Security Verification
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Enter the 4-digit OTP shown on your storage receipt to confirm collection.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Verification OTP</Label>
+              <Input 
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value)}
+                placeholder="0000"
+                maxLength={4}
+                className="rounded-xl h-14 text-center text-2xl font-bold tracking-[1em]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={handleCollect}
+              disabled={isProcessing || otpInput.length < 4}
+              className="w-full h-14 rounded-xl gradient-header font-bold text-sm"
+            >
+              {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirm Collection"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

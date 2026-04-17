@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -20,7 +21,8 @@ import {
   Info,
   ChevronRight,
   Package,
-  AlertCircle
+  AlertCircle,
+  Briefcase
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -48,12 +50,14 @@ import {
 } from "@/components/ui/carousel"
 import { Skeleton } from "@/components/ui/skeleton"
 import Autoplay from "embla-carousel-autoplay"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser()
   const auth = useAuth()
   const db = useFirestore()
   const router = useRouter()
+  const { toast } = useToast()
   const [isSynced, setIsSynced] = useState(false)
 
   const userDocRef = useMemoFirebase(() => {
@@ -63,7 +67,6 @@ export default function Dashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Centralized Staff Logic
   const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
                   user?.uid === "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
                   user?.email === "worker@gmail.com" || 
@@ -161,11 +164,11 @@ export default function Dashboard() {
       description: "Browse found & lost items"
     },
     {
-      title: "Help Center",
-      icon: Info,
-      href: "/help",
-      gradient: "bg-slate-600",
-      description: "Support & documentation"
+      title: "Clock Room",
+      icon: Briefcase,
+      href: "/clock-room",
+      gradient: "bg-slate-800",
+      description: "Luggage storage & tracking"
     }
   ]
 
@@ -243,6 +246,13 @@ export default function Dashboard() {
                     <ShoppingBag className="mr-2 h-4 w-4" />
                     <span>My Orders</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    toast({ description: "Opening Clock Room Storage..." });
+                    router.push('/clock-room');
+                  }} className="rounded-xl cursor-pointer">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    <span>Clock Room Storage</span>
+                  </DropdownMenuItem>
                   
                   {isGuard && (
                     <>
@@ -275,65 +285,10 @@ export default function Dashboard() {
               </DropdownMenu>
             </div>
           </div>
-          
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-3 w-fit">
-            <div className="bg-white rounded-lg px-2 py-1 text-primary text-xs font-bold shadow-sm">
-              {notifications?.length || 0}
-            </div>
-            <p className="text-white text-xs font-medium truncate max-w-[250px] lg:max-w-md">
-              {notifications?.[0]?.title || "Campus recovery is active!"}
-            </p>
-          </div>
         </div>
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-16 w-full space-y-6 lg:space-y-12">
-        <div className="w-full max-w-5xl mx-auto">
-          {isBannersLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-44 lg:h-[400px] w-full rounded-[32px] shadow-2xl" />
-            </div>
-          ) : displayBanners && displayBanners.length > 0 && (
-            <Carousel 
-              className="w-full"
-              plugins={[Autoplay({ delay: 5000 })]}
-            >
-              <CarouselContent>
-                {displayBanners.map((banner) => (
-                  <CarouselItem key={banner.id}>
-                    <a 
-                      href={banner.targetUrl || "#"} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block relative h-44 lg:h-[400px] rounded-[32px] overflow-hidden shadow-2xl group border border-white/10"
-                    >
-                      <Image 
-                        src={banner.imageUrl} 
-                        alt={banner.title} 
-                        fill 
-                        priority
-                        className="object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-6 lg:p-12">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="h-4 w-4 text-accent animate-pulse" />
-                          <p className="text-[9px] lg:text-[11px] font-bold text-accent uppercase tracking-widest">Featured</p>
-                        </div>
-                        <h2 className="text-white text-lg lg:text-4xl font-headline font-bold leading-tight">{banner.title}</h2>
-                        {banner.subtitle && (
-                          <p className="text-white/70 text-[10px] lg:text-lg font-medium leading-relaxed max-w-[80%] mt-2">
-                            {banner.subtitle}
-                          </p>
-                        )}
-                      </div>
-                    </a>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          )}
-        </div>
-
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
@@ -353,46 +308,6 @@ export default function Dashboard() {
               </ThreeDCard>
             </Link>
           ))}
-        </div>
-
-        {isGuard && (
-          <section className="pt-4 lg:pt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h3 className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground px-2 mb-3 lg:mb-6">Staff Control Center</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
-              <Link href="/guard" className="flex items-center justify-between p-4 lg:p-8 bg-secondary/10 rounded-[28px] group hover:bg-secondary/20 transition-all">
-                <div className="flex items-center gap-3 lg:gap-6">
-                  <div className="bg-secondary p-2.5 lg:p-4 rounded-2xl shadow-lg shadow-secondary/20">
-                    <ShieldCheck className="h-5 w-5 lg:h-8 lg:w-8 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm lg:text-lg font-headline font-bold">Guard Station</p>
-                    <p className="text-[10px] lg:text-sm text-muted-foreground">Verify handovers & map pins</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </Link>
-
-              {isAdmin && (
-                <Link href="/admin" className="flex items-center justify-between p-4 lg:p-8 bg-primary/10 rounded-[28px] group hover:bg-primary/20 transition-all">
-                  <div className="flex items-center gap-3 lg:gap-6">
-                    <div className="bg-primary p-2.5 lg:p-4 rounded-2xl shadow-lg shadow-primary/20">
-                      <LayoutDashboard className="h-5 w-5 lg:h-8 lg:w-8 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm lg:text-lg font-headline font-bold">Admin Console</p>
-                      <p className="text-[10px] lg:text-sm text-muted-foreground">Global settings & analytics</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                </Link>
-              )}
-            </div>
-          </section>
-        )}
-
-        <div className="pt-12 pb-8 text-center space-y-2 opacity-50">
-          <p className="text-[11px] lg:text-sm font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
-          <p className="text-[10px] lg:text-xs font-medium">Powered by Igloo Enterprises</p>
         </div>
       </main>
     </div>

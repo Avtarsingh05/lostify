@@ -18,141 +18,40 @@
       },
       "required": ["id", "username", "email", "createdAt"]
     },
-    "Item": {
+    "ClockRoomItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Item",
+      "title": "ClockRoomItem",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "ownerId": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" },
+        "userId": { "type": "string" },
         "imageUrl": { "type": "string", "format": "uri" },
-        "category": { "type": "string" },
-        "type": { "type": "string" },
-        "status": { "type": "string" },
-        "latitude": { "type": "number" },
-        "longitude": { "type": "number" },
-        "locationDescription": { "type": "string" },
-        "eventDate": { "type": "string", "format": "date-time" },
-        "storageInfo": { "type": "string" },
-        "reportedAt": { "type": "string", "format": "date-time" },
-        "lastUpdatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "ownerId", "name", "imageUrl", "category", "type", "status", "reportedAt"]
-    },
-    "ShopItem": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ShopItem",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
+        "itemType": { "type": "string" },
+        "color": { "type": "string" },
         "description": { "type": "string" },
-        "price": { "type": "number" },
-        "imageUrl": { "type": "string", "format": "uri" },
-        "category": { "type": "string" },
-        "status": { "type": "string", "enum": ["available", "sold"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "name", "price", "imageUrl", "status"]
-    },
-    "SystemConfig": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SystemConfig",
-      "type": "object",
-      "properties": {
-        "appLogo": { "type": "string", "format": "uri" },
-        "appName": { "type": "string" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Auction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Auction",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "itemId": { "type": "string" },
-        "sellerId": { "type": "string" },
-        "startPrice": { "type": "number" },
-        "currentBid": { "type": "number" },
-        "highestBidderId": { "type": "string" },
-        "startTime": { "type": "string", "format": "date-time" },
-        "endTime": { "type": "string", "format": "date-time" },
-        "status": { "type": "string" },
+        "rackNumber": { "type": "string" },
+        "slotNumber": { "type": "string" },
+        "status": { "type": "string", "enum": ["stored", "collected"] },
+        "otp": { "type": "string" },
+        "expectedReturnDate": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "collectedAt": { "type": "string", "format": "date-time" },
+        "guardId": { "type": "string" }
       },
-      "required": ["id", "itemId", "sellerId", "startPrice", "currentBid", "startTime", "endTime", "status", "createdAt"]
-    },
-    "Order": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Order",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "itemId": { "type": "string" },
-        "itemName": { "type": "string" },
-        "itemImageUrl": { "type": "string" },
-        "amount": { "type": "number" },
-        "currency": { "type": "string" },
-        "paymentStatus": { "type": "string" },
-        "cfOrderId": { "type": "string" },
-        "deliveryEmail": { "type": "string" },
-        "deliveryPhone": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "userId", "itemId", "amount", "currency", "paymentStatus"]
-    },
-    "Notification": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Notification",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "title", "message", "createdAt"]
+      "required": ["id", "userId", "imageUrl", "itemType", "status", "rackNumber", "slotNumber", "createdAt"]
     }
   },
   "auth": {
     "providers": ["password", "anonymous"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "Stores user profiles." }
-      },
-      {
-        "path": "/items/{itemId}",
-        "definition": { "entityName": "Item", "schema": { "$ref": "#/backend/entities/Item" }, "description": "Reported items." }
-      },
-      {
-        "path": "/shopItems/{itemId}",
-        "definition": { "entityName": "ShopItem", "schema": { "$ref": "#/backend/entities/ShopItem" }, "description": "Items for sale in shop." }
-      },
-      {
-        "path": "/system/config",
-        "definition": { "entityName": "SystemConfig", "schema": { "$ref": "#/backend/entities/SystemConfig" }, "description": "Global app configuration." }
-      },
-      {
-        "path": "/orders/{orderId}",
-        "definition": { "entityName": "Order", "schema": { "$ref": "#/backend/entities/Order" }, "description": "Payment orders." }
-      },
-      {
-        "path": "/auctions/{auctionId}",
-        "definition": { "entityName": "Auction", "schema": { "$ref": "#/backend/entities/Auction" }, "description": "Auction listings." }
-      },
-      {
-        "path": "/notifications/{notificationId}",
-        "definition": { "entityName": "Notification", "schema": { "$ref": "#/backend/entities/Notification" }, "description": "System notifications." }
-      }
-    ]
+    "/users/{userId}": {
+      "schema": "#/backend/entities/User",
+      "description": "Stores user profiles."
+    },
+    "/clockRoomItems/{itemId}": {
+      "schema": "#/backend/entities/ClockRoomItem",
+      "description": "Luggage stored in the university clock room."
+    }
   }
 }
