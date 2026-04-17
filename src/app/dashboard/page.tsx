@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -22,7 +21,8 @@ import {
   ChevronRight,
   Package,
   AlertCircle,
-  Briefcase
+  Briefcase,
+  Megaphone
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -288,7 +288,63 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-16 w-full space-y-6 lg:space-y-12">
+      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-20 w-full space-y-6 lg:space-y-12">
+        {/* Message Strip */}
+        {notifications && notifications.length > 0 && (
+          <div className="bg-white/90 dark:bg-card/90 backdrop-blur-xl rounded-2xl p-3 shadow-xl border border-white/20 flex items-center gap-3 animate-in slide-in-from-top-4 duration-500">
+            <div className="bg-primary/10 p-2 rounded-xl shrink-0">
+              <Megaphone className="h-4 w-4 text-primary animate-bounce" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary truncate">{notifications[0].title}</p>
+              <p className="text-xs text-muted-foreground truncate">{notifications[0].message}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </div>
+        )}
+
+        {/* Banner Carousel */}
+        <section className="w-full">
+          <Carousel 
+            plugins={[Autoplay({ delay: 4000 })]} 
+            className="w-full"
+          >
+            <CarouselContent>
+              {isBannersLoading ? (
+                <CarouselItem>
+                  <Skeleton className="w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px]" />
+                </CarouselItem>
+              ) : displayBanners && displayBanners.length > 0 ? (
+                displayBanners.map((banner) => (
+                  <CarouselItem key={banner.id}>
+                    <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl group">
+                      <Image 
+                        src={banner.imageUrl} 
+                        alt="Promo Banner" 
+                        fill 
+                        className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 lg:p-12 text-white">
+                         <Badge className="w-fit mb-2 bg-white/20 backdrop-blur-md border-none text-[8px] lg:text-xs">CAMPUS UPDATES</Badge>
+                         <h3 className="text-lg lg:text-3xl font-headline font-bold">Stay Updated with Uni Events</h3>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))
+              ) : (
+                <CarouselItem>
+                   <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl bg-muted flex items-center justify-center">
+                      <div className="text-center opacity-30">
+                        <Sparkles className="h-12 w-12 mx-auto mb-2" />
+                        <p className="font-headline font-bold text-xs uppercase tracking-widest">No Banners Active</p>
+                      </div>
+                   </div>
+                </CarouselItem>
+              )}
+            </CarouselContent>
+          </Carousel>
+        </section>
+
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">

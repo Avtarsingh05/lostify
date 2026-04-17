@@ -1,9 +1,8 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, User, Mail, Phone, Save, Loader2, Camera, UserCircle, UploadCloud } from "lucide-react"
+import { ArrowLeft, User, Mail, Phone, Save, Loader2, Camera, UserCircle, UploadCloud, IdentificationCard } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,6 +22,7 @@ export default function ProfileSettings() {
   
   const [nickname, setNickname] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
+  const [registrationNumber, setRegistrationNumber] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -47,6 +47,7 @@ export default function ProfileSettings() {
   useEffect(() => {
     if (userData) {
       setPhoneNumber(userData.phoneNumber || "")
+      setRegistrationNumber(userData.registrationNumber || "")
       if (userData.photoURL) setPreviewUrl(userData.photoURL)
     }
   }, [userData])
@@ -90,6 +91,7 @@ export default function ProfileSettings() {
       updateDocumentNonBlocking(userRef, {
         username: nickname,
         phoneNumber: phoneNumber,
+        registrationNumber: registrationNumber,
         photoURL: photoURL,
         updatedAt: new Date().toISOString()
       })
@@ -173,6 +175,21 @@ export default function ProfileSettings() {
               </div>
 
               <div className="space-y-1.5">
+                <Label htmlFor="registrationNumber" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Registration Number</Label>
+                <div className="relative">
+                  <Input 
+                    id="registrationNumber" 
+                    value={registrationNumber} 
+                    onChange={(e) => setRegistrationNumber(e.target.value)}
+                    placeholder="e.g. 12200000"
+                    className="rounded-xl h-12 pl-10"
+                    required
+                  />
+                  <IdentificationCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Phone Number</Label>
                 <div className="relative">
                   <Input 
@@ -181,6 +198,7 @@ export default function ProfileSettings() {
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="+91 9876543210"
                     className="rounded-xl h-12 pl-10"
+                    required
                   />
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>

@@ -1,9 +1,8 @@
-
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText } from "lucide-react"
+import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,15 +13,21 @@ import { foundItemAIDetails, type FoundItemAIDetailsOutput } from "@/ai/flows/fo
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
-import { collection } from "firebase/firestore"
+import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase"
+import { collection, doc } from "firebase/firestore"
 
 export default function ReportFound() {
   const router = useRouter()
   const { toast } = useToast()
-  const { user } = useUser()
+  const { user, isUserLoading } = useUser()
   const db = useFirestore()
   
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+  const { data: userData, isLoading: isDocLoading } = useDoc(userDocRef)
+
   const [isScanning, setIsScanning] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
@@ -38,6 +43,12 @@ export default function ReportFound() {
   const [securityPost, setSecurityPost] = useState("")
   
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const hasCompleteProfile = userData?.registrationNumber && userData?.phoneNumber;
+
+  useEffect(() => {
+    if (!isUserLoading && !user) router.push("/")
+  }, [user, isUserLoading, router])
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -75,7 +86,7 @@ export default function ReportFound() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !db) return
+    if (!user || !db || !hasCompleteProfile) return
 
     setIsSubmitting(true)
     
@@ -88,7 +99,7 @@ export default function ReportFound() {
       locationDescription: location,
       eventDate: new Date().toISOString(),
       type: "found",
-      status: "Pending Verification", // New workflow status
+      status: "Pending Verification",
       latitude: 0,
       longitude: 0,
       imageUrl: previewImage || "https://picsum.photos/seed/found/600/400",
@@ -109,6 +120,29 @@ export default function ReportFound() {
       .finally(() => {
         setIsSubmitting(false)
       })
+  }
+
+  if (isUserLoading || isDocLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>
+  }
+
+  if (!hasCompleteProfile) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center space-y-6">
+        <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center">
+          <AlertTriangle className="h-10 w-10 text-accent" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-headline font-bold">Profile Incomplete</h2>
+          <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+            You must provide your <strong>Registration Number</strong> and <strong>Phone Number</strong> in your profile before filing a report.
+          </p>
+        </div>
+        <Button onClick={() => router.push("/settings/profile")} className="rounded-xl h-12 px-8 gradient-header font-bold">
+          Complete Profile
+        </Button>
+      </div>
+    )
   }
 
   if (step === 3) {
