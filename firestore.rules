@@ -65,5 +65,10 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isSuperAdmin());
     }
+
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
   }
 }

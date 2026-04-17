@@ -56,6 +56,18 @@
         "completedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["itemId", "verificationCode", "status", "createdAt"]
+    },
+    "Banner": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Banner",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "link": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["imageUrl", "createdAt"]
     }
   },
   "auth": {
@@ -73,6 +85,10 @@
     "/handovers/{handoverId}": {
       "schema": "#/backend/entities/Handover",
       "description": "Secure item handover sessions."
+    },
+    "/banners/{bannerId}": {
+      "schema": "#/backend/entities/Banner",
+      "description": "Promotional banners for the dashboard."
     }
   }
 }
