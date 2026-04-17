@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -14,7 +15,8 @@ import {
   Archive,
   Building,
   UserCheck,
-  History
+  History,
+  AlertTriangle
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -34,6 +36,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useFirestore, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, doc, orderBy, limit } from "firebase/firestore"
 import Image from "next/image"
+import { isBefore, subDays } from "date-fns"
 
 export default function GuardDashboard() {
   const router = useRouter()
@@ -57,6 +60,8 @@ export default function GuardDashboard() {
   }, [db])
 
   const { data: allItems, isLoading } = useCollection(itemsQuery)
+
+  const thirtyDaysAgo = subDays(new Date(), 30)
 
   const pendingFound = useMemo(() => {
     return allItems?.filter(i => i.type === 'found' && i.status === 'Pending Verification') || []
@@ -194,37 +199,45 @@ export default function GuardDashboard() {
               </div>
             ) : filterItems(pendingFound).length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
-                {filterItems(pendingFound).map((item) => (
-                  <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
-                    <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
-                      <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
-                        <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
-                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-secondary/10 text-secondary">
-                              Handover
-                            </Badge>
+                {filterItems(pendingFound).map((item) => {
+                  const reportDate = item.reportedAt ? new Date(item.reportedAt) : new Date()
+                  const isExpired = isBefore(reportDate, thirtyDaysAgo)
+                  
+                  return (
+                    <Card key={item.id} className={`border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm ${isExpired ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                      <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
+                        <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
+                          <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-secondary/10 text-secondary">
+                                  Handover
+                                </Badge>
+                                {isExpired && <Badge className="bg-destructive text-[8px] font-bold h-4">EXPIRED</Badge>}
+                              </div>
+                            </div>
+                            <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <MapPin className="h-3 w-3" /> {item.locationDescription}
+                            </p>
                           </div>
-                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <MapPin className="h-3 w-3" /> {item.locationDescription}
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-end mt-3">
-                          <Button 
-                            size="sm" 
-                            onClick={() => setVerifyingItem(item)}
-                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-primary active:scale-95 transition-transform"
-                          >
-                            Verify Handover
-                          </Button>
+                          <div className="flex items-center justify-end mt-3">
+                            <Button 
+                              size="sm" 
+                              onClick={() => setVerifyingItem(item)}
+                              className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-primary active:scale-95 transition-transform"
+                            >
+                              Verify Handover
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  )
+                })}
               </div>
             ) : (
               <EmptyState icon={CheckCircle2} message="No handovers pending." />
@@ -234,38 +247,46 @@ export default function GuardDashboard() {
           <TabsContent value="office" className="space-y-4">
             {filterItems(inOfficeFound).length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
-                {filterItems(inOfficeFound).map((item) => (
-                  <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
-                    <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
-                      <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
-                        <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
-                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-primary/10 text-primary">
-                              In Office
-                            </Badge>
+                {filterItems(inOfficeFound).map((item) => {
+                  const reportDate = item.reportedAt ? new Date(item.reportedAt) : new Date()
+                  const isExpired = isBefore(reportDate, thirtyDaysAgo)
+
+                  return (
+                    <Card key={item.id} className={`border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm ${isExpired ? 'opacity-60' : ''}`}>
+                      <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
+                        <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
+                          <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-primary/10 text-primary">
+                                  In Office
+                                </Badge>
+                                {isExpired && <Badge className="bg-destructive text-[8px] font-bold h-4">STALE</Badge>}
+                              </div>
+                            </div>
+                            <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <Building className="h-3 w-3" /> {item.storageOffice}
+                            </p>
                           </div>
-                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <Building className="h-3 w-3" /> {item.storageOffice}
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-end mt-3">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setResolvingItem(item)}
-                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-primary/20 text-primary hover:bg-primary/10"
-                          >
-                            Mark Claimed
-                          </Button>
+                          <div className="flex items-center justify-end mt-3">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setResolvingItem(item)}
+                              className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-primary/20 text-primary hover:bg-primary/10"
+                            >
+                              Mark Claimed
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  )
+                })}
               </div>
             ) : (
               <EmptyState icon={Archive} message="No items in custody." />
@@ -275,38 +296,46 @@ export default function GuardDashboard() {
           <TabsContent value="lost" className="space-y-4">
             {filterItems(activeLost).length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
-                {filterItems(activeLost).map((item) => (
-                  <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm">
-                    <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
-                      <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
-                        <Image src={item.imageUrl || "https://picsum.photos/seed/lost/200/200"} alt={item.name} fill className="object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
-                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-accent/10 text-accent">
-                              Lost Report
-                            </Badge>
+                {filterItems(activeLost).map((item) => {
+                  const reportDate = item.reportedAt ? new Date(item.reportedAt) : new Date()
+                  const isExpired = isBefore(reportDate, thirtyDaysAgo)
+
+                  return (
+                    <Card key={item.id} className={`border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm ${isExpired ? 'opacity-50' : ''}`}>
+                      <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
+                        <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
+                          <Image src={item.imageUrl || "https://picsum.photos/seed/lost/200/200"} alt={item.name} fill className="object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-accent/10 text-accent">
+                                  Lost Report
+                                </Badge>
+                                {isExpired && <Badge className="bg-destructive text-[8px] font-bold h-4">EXPIRED</Badge>}
+                              </div>
+                            </div>
+                            <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <MapPin className="h-3 w-3" /> {item.locationDescription}
+                            </p>
                           </div>
-                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <MapPin className="h-3 w-3" /> {item.locationDescription}
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-end mt-3">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setResolvingItem(item)}
-                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-accent/20 text-accent hover:bg-accent/10"
-                          >
-                            Mark Returned
-                          </Button>
+                          <div className="flex items-center justify-end mt-3">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setResolvingItem(item)}
+                              className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-accent/20 text-accent hover:bg-accent/10"
+                            >
+                              Mark Returned
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  )
+                })}
               </div>
             ) : (
               <EmptyState icon={History} message="No active lost reports." />
@@ -315,11 +344,11 @@ export default function GuardDashboard() {
         </Tabs>
 
         <div className="bg-primary/5 border border-primary/10 p-5 lg:p-10 rounded-[28px] lg:rounded-[48px] flex items-start gap-3 lg:gap-8">
-          <AlertCircle className="h-5 w-5 lg:h-8 lg:w-8 text-primary shrink-0 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 lg:h-8 lg:w-8 text-primary shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-xs lg:text-xl font-bold text-primary">Guard Protocol</h4>
+            <h4 className="text-xs lg:text-xl font-bold text-primary">Expiry Protocol</h4>
             <p className="text-[10px] lg:text-sm text-muted-foreground mt-1 leading-relaxed">
-              For security, always log the student's Registration Number when handing back property. Verification of the item's storage location is critical for building a reliable real-time campus map. If an item is found in a residential block, it should be logged in the corresponding block's security office.
+              Reports older than 30 days are automatically hidden from the public gallery and map. Items in office marked as "Stale" should be considered for transfer to the central administrative repository. Always verify registration numbers when resolving expired reports.
             </p>
           </div>
         </div>

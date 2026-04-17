@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query } from "firebase/firestore"
 import Image from "next/image"
+import { isBefore, subDays } from "date-fns"
 
 // LPU Campus Landmarks Mapping (Optimized for 31.2555, 75.7051 center)
 const LPU_LOCATION_MAP: Record<string, { x: number, y: number }> = {
@@ -66,11 +67,18 @@ export default function MapScreen() {
   // Filter approved items only and apply search
   const items = useMemo(() => {
     if (!rawItems) return []
+    const thirtyDaysAgo = subDays(new Date(), 30)
+
     return rawItems.filter(item => {
-      // Only show approved items or reported lost items
+      // 1. Basic Status Filter
       const isVisible = item.status === "In Custody" || item.type === "lost" || item.status === "Active"
       if (!isVisible) return false
 
+      // 2. 30-Day Auto Expiry
+      const reportDate = item.reportedAt ? new Date(item.reportedAt) : new Date()
+      if (isBefore(reportDate, thirtyDaysAgo)) return false
+
+      // 3. Search Filter
       if (!searchQuery.trim()) return true
       const search = searchQuery.toLowerCase()
       return (
@@ -160,7 +168,7 @@ export default function MapScreen() {
             <Search className="h-4 w-4 text-muted-foreground mr-2" />
             <input 
               type="text" 
-              placeholder="Search items, blocks, or category..." 
+              placeholder="Search active items..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent border-none outline-none w-full text-xs font-bold"

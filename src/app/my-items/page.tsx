@@ -2,7 +2,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Package, Clock, CheckCircle2, History, Loader2, Search } from "lucide-react"
+import { ArrowLeft, Package, Clock, CheckCircle2, History, Loader2, Search, AlertTriangle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,7 +10,7 @@ import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import Image from "next/image"
 import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, where } from "firebase/firestore"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow, isBefore, subDays } from "date-fns"
 import { useMemo } from "react"
 
 export default function MyItems() {
@@ -37,43 +37,51 @@ export default function MyItems() {
     })
   }, [rawItems])
 
+  const thirtyDaysAgo = subDays(new Date(), 30)
+
   const lostItems = items.filter(i => i.type === 'lost')
   const foundItems = items.filter(i => i.type === 'found')
-  const claimedItems = items.filter(i => i.status === 'Returned' || i.status === 'Claimed' || i.status === 'In Custody')
+  const claimedItems = items.filter(i => i.status === 'Returned' || i.status === 'Claimed' || i.status === 'Resolved' || i.status === 'In Custody')
 
-  const ItemCard = ({ item }: { item: any }) => (
-    <ThreeDCard className="p-0 overflow-hidden mb-3 border-none shadow-lg bg-card/80 backdrop-blur-sm">
-      <div className="flex h-28">
-        <div className="w-28 h-full relative shrink-0">
-          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
-          <div className="absolute top-1 left-1">
-             <Badge className={`text-[8px] h-4 px-1 border-none shadow-sm ${item.type === 'lost' ? 'bg-accent' : 'bg-secondary'}`}>
-                {item.type}
-             </Badge>
-          </div>
-        </div>
-        <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-          <div className="space-y-1">
-            <div className="flex justify-between items-start gap-2">
-              <h3 className="font-headline font-bold text-xs truncate leading-tight">{item.name}</h3>
-              <Badge variant="outline" className="text-[7px] font-bold h-4 px-1 border-primary/20 bg-primary/5">
-                {item.status}
-              </Badge>
+  const ItemCard = ({ item }: { item: any }) => {
+    const reportDate = item.reportedAt ? new Date(item.reportedAt) : new Date()
+    const isExpired = isBefore(reportDate, thirtyDaysAgo) && (item.status !== 'Resolved' && item.status !== 'Returned')
+    
+    return (
+      <ThreeDCard className={`p-0 overflow-hidden mb-3 border-none shadow-lg bg-card/80 backdrop-blur-sm ${isExpired ? 'opacity-70 grayscale-[0.3]' : ''}`}>
+        <div className="flex h-28">
+          <div className="w-28 h-full relative shrink-0">
+            <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+            <div className="absolute top-1 left-1 flex flex-col gap-1">
+               <Badge className={`text-[8px] h-4 px-1 border-none shadow-sm ${item.type === 'lost' ? 'bg-accent' : 'bg-secondary'}`}>
+                  {item.type}
+               </Badge>
+               {isExpired && <Badge className="bg-destructive text-white text-[7px] h-3 px-1 border-none">EXPIRED</Badge>}
             </div>
-            <p className="text-[9px] text-muted-foreground flex items-center gap-1">
-              <Clock className="h-2.5 w-2.5" /> {item.reportedAt ? formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true }) : "now"}
-            </p>
           </div>
-          <div className="flex justify-between items-end">
-             <p className="text-[8px] text-muted-foreground truncate italic w-2/3">{item.locationDescription}</p>
-             <button className="text-primary text-[9px] font-bold uppercase tracking-widest hover:opacity-70">
-                Details
-             </button>
+          <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+            <div className="space-y-1">
+              <div className="flex justify-between items-start gap-2">
+                <h3 className="font-headline font-bold text-xs truncate leading-tight">{item.name}</h3>
+                <Badge variant="outline" className={`text-[7px] font-bold h-4 px-1 ${isExpired ? 'border-destructive text-destructive' : 'border-primary/20 bg-primary/5'}`}>
+                  {isExpired ? 'Expired' : item.status}
+                </Badge>
+              </div>
+              <p className="text-[9px] text-muted-foreground flex items-center gap-1">
+                <Clock className="h-2.5 w-2.5" /> {item.reportedAt ? formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true }) : "now"}
+              </p>
+            </div>
+            <div className="flex justify-between items-end">
+               <p className="text-[8px] text-muted-foreground truncate italic w-2/3">{item.locationDescription}</p>
+               <button className="text-primary text-[9px] font-bold uppercase tracking-widest hover:opacity-70">
+                  Details
+               </button>
+            </div>
           </div>
         </div>
-      </div>
-    </ThreeDCard>
-  )
+      </ThreeDCard>
+    )
+  }
 
   if (isUserLoading) {
     return (

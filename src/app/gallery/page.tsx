@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo } from "react"
@@ -10,7 +11,8 @@ import {
   ShieldCheck, 
   Package, 
   Info,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -19,7 +21,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy } from "firebase/firestore"
 import Image from "next/image"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow, isBefore, subDays } from "date-fns"
 
 export default function GalleryPage() {
   const router = useRouter()
@@ -35,10 +37,20 @@ export default function GalleryPage() {
 
   const galleryItems = useMemo(() => {
     if (!allItems) return []
+    
+    // 30 Days Expiry Threshold
+    const thirtyDaysAgo = subDays(new Date(), 30)
+
     return allItems.filter(item => {
+      // 1. Basic Status Filter
       const isVisible = item.status === "In Custody" || item.status === "Active"
       if (!isVisible) return false
       
+      // 2. Expiry Filter: Only show if reported within 30 days
+      const reportDate = item.reportedAt ? new Date(item.reportedAt) : new Date()
+      if (isBefore(reportDate, thirtyDaysAgo)) return false
+
+      // 3. Search Filter
       const searchStr = search.toLowerCase()
       return (
         item.name?.toLowerCase().includes(searchStr) ||
@@ -65,9 +77,12 @@ export default function GalleryPage() {
             <Package className="h-5 w-5 lg:h-8 lg:w-8" />
           </div>
         </div>
-        <p className="max-w-md lg:max-w-6xl mx-auto text-[10px] lg:text-sm font-bold uppercase tracking-[0.15em] opacity-80 px-1">
-          Browse verified found items held by security
-        </p>
+        <div className="max-w-md lg:max-w-6xl mx-auto flex items-center gap-2">
+           <Badge className="bg-white/20 text-white border-none text-[8px] uppercase tracking-widest font-bold">30-Day Auto Expiry Active</Badge>
+           <p className="text-[10px] lg:text-sm font-bold uppercase tracking-[0.15em] opacity-80 px-1">
+            Browse verified found items held by security
+          </p>
+        </div>
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6 lg:space-y-12">
@@ -176,11 +191,11 @@ export default function GalleryPage() {
         </Tabs>
 
         <div className="bg-primary/5 border border-primary/10 p-5 lg:p-10 rounded-[28px] lg:rounded-[48px] flex items-start gap-3 lg:gap-6">
-          <Info className="h-5 w-5 lg:h-8 lg:w-8 text-primary shrink-0 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 lg:h-8 lg:w-8 text-primary shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-xs lg:text-xl font-bold text-primary">How to claim?</h4>
+            <h4 className="text-xs lg:text-xl font-bold text-primary">Expiry Notice</h4>
             <p className="text-[10px] lg:text-sm text-muted-foreground mt-1 leading-relaxed">
-              Found your item? Visit the specific Security Post mentioned in the item details. You must bring your Student ID and be prepared to unlock or describe the item in detail to the officer. If the item was found in a specific block, the nearest security office will usually hold it for 48 hours before transferring it to the central repository.
+              Items are listed in this gallery for exactly 30 days. After 30 days, unclaimed property is transferred to the university's permanent repository or the administrative auction module. Always bring your Student ID when visiting a Security Post for verification.
             </p>
           </div>
         </div>
