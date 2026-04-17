@@ -26,9 +26,10 @@ service cloud.firestore {
     }
 
     match /clockRoomItems/{itemId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      // Reordered to check isSuperAdmin() first to allow listing all items for admins
+      allow read: if isSignedIn() && (isSuperAdmin() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow update: if isSignedIn() && (isSuperAdmin() || resource.data.userId == request.auth.uid);
       allow delete: if isSuperAdmin();
     }
 
