@@ -19,7 +19,9 @@ import {
   UserCheck,
   Camera,
   Sparkles,
-  UploadCloud
+  UploadCloud,
+  Trash2,
+  Clock
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -33,13 +35,15 @@ import {
   addDocumentNonBlocking, 
   updateDocumentNonBlocking,
   setDocumentNonBlocking,
+  deleteDocumentNonBlocking,
   useDoc
 } from "@/firebase"
 import { collection, query, orderBy, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
-import { Label } from "@/components/ui/label"
+import { formatDistanceToNow } from "date-fns"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -72,6 +76,10 @@ export default function AdminDashboard() {
   const configRef = useMemoFirebase(() => doc(db, "system", "config"), [db])
   const { data: systemConfig } = useDoc(configRef)
 
+  const notificationsQuery = useMemoFirebase(() => 
+    query(collection(db, "notifications"), orderBy("createdAt", "desc")), [db])
+  const { data: notifications } = useCollection(notificationsQuery)
+
   const handlePushNotification = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!notifTitle || !notifMessage) return
@@ -91,6 +99,12 @@ export default function AdminDashboard() {
     }).finally(() => {
       setIsPushing(false)
     })
+  }
+
+  const handleDeleteNotification = (id: string) => {
+    const notifRef = doc(db, "notifications", id)
+    deleteDocumentNonBlocking(notifRef)
+    toast({ title: "Broadcast Removed" })
   }
 
   const handleToggleRole = (userId: string, currentRole: string) => {
@@ -223,11 +237,45 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <div className="hidden lg:flex flex-col justify-center items-center p-12 bg-primary/5 rounded-[48px] border-4 border-dashed border-primary/10">
-                 <ShieldCheck className="h-20 w-20 text-primary mb-4" />
-                 <h4 className="text-2xl font-headline font-bold text-primary">System Secure</h4>
-                 <p className="text-sm text-center text-muted-foreground mt-2 px-8">All transactions and reports are monitored and logged for university safety protocols.</p>
-              </div>
+              <Card className="border-none shadow-md rounded-[32px] overflow-hidden bg-muted/20">
+                <CardHeader className="px-6 pt-6 pb-2 lg:px-10 lg:pt-10">
+                  <CardTitle className="font-headline font-bold text-lg lg:text-2xl flex items-center gap-2">
+                    <Clock className="h-5 w-5 lg:h-8 lg:w-8 text-muted-foreground" /> Broadcast History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-6 pb-6 lg:px-10 lg:pb-10">
+                  <ScrollArea className="h-[300px] pr-4">
+                    <div className="space-y-3">
+                      {notifications && notifications.length > 0 ? (
+                        notifications.map((notif) => (
+                          <div key={notif.id} className="bg-card p-4 rounded-2xl border flex items-center justify-between group">
+                            <div className="space-y-1 min-w-0">
+                              <p className="text-xs font-bold truncate">{notif.title}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{notif.message}</p>
+                              <span className="text-[8px] font-bold uppercase opacity-50 block pt-1">
+                                {notif.createdAt ? formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true }) : "recently"}
+                              </span>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleDeleteNotification(notif.id)}
+                              className="text-destructive hover:bg-destructive/10 rounded-xl shrink-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-20 opacity-30">
+                          <Bell className="h-10 w-10 mb-2" />
+                          <p className="text-[10px] font-bold uppercase">No broadcasts sent</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
