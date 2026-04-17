@@ -11,12 +11,15 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, errorEmitter } from "@/firebase"
+import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, errorEmitter, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { doc } from "firebase/firestore"
+import Image from "next/image"
 
 export default function LoginPage() {
   const router = useRouter()
   const auth = useAuth()
+  const db = useFirestore()
   const { user, isUserLoading } = useUser()
   const { toast } = useToast()
   
@@ -25,6 +28,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [nickname, setNickname] = useState("")
+
+  // Branding Integration
+  const configRef = useMemoFirebase(() => doc(db, "system", "config"), [db])
+  const { data: systemConfig } = useDoc(configRef)
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -104,8 +111,17 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6 animate-in fade-in zoom-in duration-500">
         
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-16 h-16 rounded-2xl gradient-header shadow-xl flex items-center justify-center text-white mb-2 rotate-2 hover:rotate-0 transition-transform duration-300">
-            <Sparkles className="h-8 w-8" />
+          <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-[32px] gradient-header shadow-2xl flex items-center justify-center text-white mb-2 rotate-2 hover:rotate-0 transition-transform duration-300 relative overflow-hidden">
+            {systemConfig?.appLogo ? (
+              <Image 
+                src={systemConfig.appLogo} 
+                alt="University Logo" 
+                fill 
+                className="object-cover"
+              />
+            ) : (
+              <Sparkles className="h-10 w-10 lg:h-12 lg:w-12" />
+            )}
           </div>
           <div>
             <h1 className="text-3xl font-headline font-bold text-primary">Lostify</h1>

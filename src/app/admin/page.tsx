@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -15,7 +16,10 @@ import {
   Search,
   ShoppingBag,
   Building,
-  UserCheck
+  UserCheck,
+  Camera,
+  Sparkles,
+  UploadCloud
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -27,12 +31,15 @@ import {
   useCollection, 
   useMemoFirebase, 
   addDocumentNonBlocking, 
-  updateDocumentNonBlocking
+  updateDocumentNonBlocking,
+  setDocumentNonBlocking,
+  useDoc
 } from "@/firebase"
 import { collection, query, orderBy, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
+import { Label } from "@/components/ui/label"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -45,6 +52,12 @@ export default function AdminDashboard() {
   const [userSearch, setUserSearch] = useState("")
   const [itemSearch, setItemSearch] = useState("")
 
+  // Logo Upload State
+  const [isUploading, setIsUploading] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState("")
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
   const itemsQuery = useMemoFirebase(() => collection(db, "items"), [db])
   const { data: allItems } = useCollection(itemsQuery)
   
@@ -55,6 +68,9 @@ export default function AdminDashboard() {
   const shopItemsQuery = useMemoFirebase(() => 
     query(collection(db, "shopItems"), orderBy("createdAt", "desc")), [db])
   const { data: shopItems } = useCollection(shopItemsQuery)
+
+  const configRef = useMemoFirebase(() => doc(db, "system", "config"), [db])
+  const { data: systemConfig } = useDoc(configRef)
 
   const handlePushNotification = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,6 +98,52 @@ export default function AdminDashboard() {
     const userRef = doc(db, "users", userId)
     updateDocumentNonBlocking(userRef, { role: newRole, updatedAt: new Date().toISOString() })
     toast({ title: "Role Updated" })
+  }
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setLogoFile(file)
+      setLogoPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleSaveLogo = async () => {
+    if (!logoFile || !db) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", logoFile)
+      formData.append("upload_preset", "admin_banner_upload")
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      
+      if (!res.ok) throw new Error("Logo upload failed")
+      const data = await res.json()
+      
+      setDocumentNonBlocking(configRef, {
+        appLogo: data.secure_url,
+        updatedAt: new Date().toISOString()
+      }, { merge: true })
+
+      toast({
+        title: "Branding Updated",
+        description: "New logo will appear on the login page.",
+      })
+      setLogoFile(null)
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: error.message || "Could not upload logo.",
+      })
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const filteredUsers = allUsers?.filter(u => 
@@ -118,9 +180,10 @@ export default function AdminDashboard() {
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6 lg:space-y-12">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 max-w-2xl mx-auto lg:max-w-none">
+          <TabsList className="grid w-full grid-cols-5 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 max-w-2xl mx-auto lg:max-w-none">
             <TabsTrigger value="overview" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Stats</TabsTrigger>
             <TabsTrigger value="users" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Users</TabsTrigger>
+            <TabsTrigger value="branding" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Branding</TabsTrigger>
             <TabsTrigger value="audit" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Audit</TabsTrigger>
             <TabsTrigger value="shop" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Shop</TabsTrigger>
           </TabsList>
@@ -166,6 +229,76 @@ export default function AdminDashboard() {
                  <p className="text-sm text-center text-muted-foreground mt-2 px-8">All transactions and reports are monitored and logged for university safety protocols.</p>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="branding" className="space-y-6 lg:space-y-12">
+            <Card className="border-none shadow-xl rounded-[40px] overflow-hidden bg-card/80 backdrop-blur-sm max-w-2xl mx-auto">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="font-headline font-bold text-2xl flex items-center gap-3">
+                  <Sparkles className="h-8 w-8 text-primary" /> Login Branding
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 space-y-8">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="relative group">
+                    <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-[40px] gradient-header shadow-2xl flex items-center justify-center text-white overflow-hidden border-4 border-white/20">
+                      {logoPreview || systemConfig?.appLogo ? (
+                        <Image 
+                          src={logoPreview || systemConfig?.appLogo} 
+                          alt="App Logo" 
+                          fill 
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Sparkles className="h-16 w-16 lg:h-24 lg:w-24" />
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => logoInputRef.current?.click()}
+                      className="absolute -bottom-2 -right-2 bg-white text-primary p-3 rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all border border-primary/10"
+                    >
+                      <Camera className="h-6 w-6" />
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={logoInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleLogoChange} 
+                    />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-bold">University Logo</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Replaces the default Sparkles icon on login</p>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleSaveLogo} 
+                  disabled={!logoFile || isUploading}
+                  className="w-full h-14 rounded-2xl gradient-header font-bold text-sm shadow-xl flex items-center justify-center gap-2"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Uploading Branding...
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="h-5 w-5" />
+                      Update University Logo
+                    </>
+                  )}
+                </Button>
+
+                {systemConfig?.appLogo && (
+                  <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-center gap-3">
+                    <Badge className="bg-primary text-white">LIVE</Badge>
+                    <p className="text-[10px] font-bold text-muted-foreground">Current logo is active on the portal login page.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4 lg:space-y-8">
