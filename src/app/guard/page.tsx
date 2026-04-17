@@ -16,7 +16,9 @@ import {
   Building,
   UserCheck,
   History,
-  AlertTriangle
+  AlertTriangle,
+  QrCode,
+  Smartphone
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -33,10 +35,18 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { useFirestore, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
+import { 
+  useFirestore, 
+  useUser, 
+  useCollection, 
+  useMemoFirebase, 
+  updateDocumentNonBlocking,
+  addDocumentNonBlocking
+} from "@/firebase"
 import { collection, query, doc, orderBy, limit } from "firebase/firestore"
 import Image from "next/image"
 import { isBefore, subDays } from "date-fns"
+import { QRCodeSVG } from "qrcode.react"
 
 export default function GuardDashboard() {
   const router = useRouter()
@@ -49,6 +59,10 @@ export default function GuardDashboard() {
   const [resolvingItem, setResolvingItem] = useState<any | null>(null)
   const [storageLocation, setStorageLocation] = useState("")
   const [regNumber, setRegNumber] = useState("")
+
+  // Secure Handover State
+  const [handoverSession, setHandoverSession] = useState<any | null>(null)
+  const [isHandoverLoading, setIsHandoverLoading] = useState(false)
 
   const itemsQuery = useMemoFirebase(() => {
     if (!db) return null
@@ -108,6 +122,35 @@ export default function GuardDashboard() {
     })
     setResolvingItem(null)
     setRegNumber("")
+  }
+
+  const handleInitiateHandover = async (item: any) => {
+    if (!db || !user) return
+    setIsHandoverLoading(true)
+
+    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString()
+    const handoverData = {
+      itemId: item.id,
+      itemName: item.name,
+      itemImageUrl: item.imageUrl,
+      guardId: user.uid,
+      guardName: user.displayName || user.email?.split('@')[0] || "Guard",
+      verificationCode,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes
+    }
+
+    try {
+      const docRef = await addDocumentNonBlocking(collection(db, "handovers"), handoverData)
+      if (docRef) {
+        setHandoverSession({ ...handoverData, id: docRef.id })
+      }
+    } catch (error) {
+      toast({ variant: "destructive", title: "Handover Failed", description: "Could not initiate secure session." })
+    } finally {
+      setIsHandoverLoading(false)
+    }
   }
 
   const filterItems = (list: any[]) => {
@@ -272,7 +315,16 @@ export default function GuardDashboard() {
                               <Building className="h-3 w-3" /> {item.storageOffice}
                             </p>
                           </div>
-                          <div className="flex items-center justify-end mt-3">
+                          <div className="flex items-center gap-2 mt-3 justify-end">
+                            <Button 
+                              size="sm" 
+                              variant="secondary"
+                              onClick={() => handleInitiateHandover(item)}
+                              disabled={isHandoverLoading}
+                              className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold shadow-md flex items-center gap-1.5"
+                            >
+                              <QrCode className="h-3 w-3" /> Secure Handover
+                            </Button>
                             <Button 
                               size="sm" 
                               variant="outline"
@@ -346,9 +398,9 @@ export default function GuardDashboard() {
         <div className="bg-primary/5 border border-primary/10 p-5 lg:p-10 rounded-[28px] lg:rounded-[48px] flex items-start gap-3 lg:gap-8">
           <AlertTriangle className="h-5 w-5 lg:h-8 lg:w-8 text-primary shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-xs lg:text-xl font-bold text-primary">Expiry Protocol</h4>
+            <h4 className="text-xs lg:text-xl font-bold text-primary">Handover Protocol</h4>
             <p className="text-[10px] lg:text-sm text-muted-foreground mt-1 leading-relaxed">
-              Reports older than 30 days are automatically hidden from the public gallery and map. Items in office marked as "Stale" should be considered for transfer to the central administrative repository. Always verify registration numbers when resolving expired reports.
+              Use "Secure Handover" for verified items in office. The system generates a 4-digit verification code and a QR token valid for 5 minutes. The student must scan or enter this code on their device to confirm receipt, ensuring a digital audit trail.
             </p>
           </div>
         </div>
@@ -415,6 +467,53 @@ export default function GuardDashboard() {
               className="w-full h-14 rounded-xl gradient-accent font-bold text-sm"
             >
               Confirm Return
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!handoverSession} onOpenChange={() => setHandoverSession(null)}>
+        <DialogContent className="max-w-[420px] rounded-[48px] p-8 bg-card border-none shadow-2xl">
+          <DialogHeader className="items-center text-center">
+            <DialogTitle className="font-headline font-bold text-2xl">Verify Handover</DialogTitle>
+            <DialogDescription className="text-xs uppercase tracking-widest font-bold text-muted-foreground">
+              Scan QR or use manual code
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center gap-8 py-4">
+            <div className="bg-white p-6 rounded-[40px] shadow-inner shadow-black/5 border-2 border-dashed border-primary/20">
+              <QRCodeSVG 
+                value={`${window.location.origin}/handover/${handoverSession?.id}`} 
+                size={200}
+                includeMargin
+              />
+            </div>
+
+            <div className="text-center space-y-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Verification Code</p>
+              <div className="bg-primary/10 px-8 py-4 rounded-3xl border border-primary/20">
+                <span className="text-5xl font-headline font-black text-primary tracking-[0.2em]">
+                  {handoverSession?.verificationCode}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-secondary/10 p-4 rounded-2xl flex items-center gap-3 w-full border border-secondary/20">
+              <Smartphone className="h-5 w-5 text-secondary" />
+              <p className="text-[10px] font-bold text-secondary-foreground leading-tight">
+                Student should open Lostify on their phone and scan this QR or enter the 4-digit code.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              onClick={() => setHandoverSession(null)}
+              variant="outline"
+              className="w-full h-14 rounded-2xl font-bold text-xs"
+            >
+              Close Session
             </Button>
           </DialogFooter>
         </DialogContent>

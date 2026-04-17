@@ -1,15 +1,16 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, MapPin, Plus, Settings, ShoppingBag } from "lucide-react"
+import { Home, MapPin, Plus, Settings, ShoppingBag, QrCode } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { icon: Home, label: "Home", href: "/dashboard" },
   { icon: MapPin, label: "Map", href: "/map" },
-  { icon: Plus, label: "Report", href: "/report-lost", central: true },
+  { icon: QrCode, label: "Receive", href: "/handover", central: true },
   { icon: ShoppingBag, label: "Shop", href: "/shop" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ]

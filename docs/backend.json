@@ -39,6 +39,23 @@
         "guardId": { "type": "string" }
       },
       "required": ["id", "userId", "imageUrl", "itemType", "status", "rackNumber", "slotNumber", "createdAt"]
+    },
+    "Handover": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Handover",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "userId": { "type": "string" },
+        "guardId": { "type": "string" },
+        "guardName": { "type": "string" },
+        "verificationCode": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["itemId", "verificationCode", "status", "createdAt"]
     }
   },
   "auth": {
@@ -52,6 +69,10 @@
     "/clockRoomItems/{itemId}": {
       "schema": "#/backend/entities/ClockRoomItem",
       "description": "Luggage stored in the university clock room."
+    },
+    "/handovers/{handoverId}": {
+      "schema": "#/backend/entities/Handover",
+      "description": "Secure item handover sessions."
     }
   }
 }

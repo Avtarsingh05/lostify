@@ -39,6 +39,13 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    match /handovers/{handoverId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSuperAdmin();
+    }
+
     match /system/config {
       allow read: if true;
       allow write: if isSuperAdmin();
