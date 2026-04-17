@@ -171,7 +171,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen pb-32 bg-background">
-      <div className="gradient-header pt-12 pb-20 px-4 rounded-b-[48px] shadow-xl relative overflow-hidden">
+      <div className="gradient-header pt-12 pb-24 px-4 rounded-b-[48px] shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
           <MapIcon size={160} />
         </div>
@@ -287,7 +287,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 w-full space-y-6 lg:space-y-12">
+      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-16 w-full space-y-6 lg:space-y-12">
         <div className="w-full max-w-5xl mx-auto">
           {isBannersLoading ? (
             <div className="space-y-4">
