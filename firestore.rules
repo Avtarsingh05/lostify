@@ -37,7 +37,7 @@ service cloud.firestore {
       allow read, write: if isMasterAdmin();
     }
 
-    // --- Collection Rules (for regular Students and Staff) ---
+    // --- Collection Rules ---
 
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -45,21 +45,23 @@ service cloud.firestore {
     }
 
     match /clockRoomItems/{itemId} {
-      allow read: if isSignedIn() && (getRole() == "GUARD" || getRole() == "ADMIN" || resource.data.userId == request.auth.uid);
+      // Allow list if staff, or if querying own items
+      allow list: if isSignedIn() && (isStaff() || (resource == null || resource.data.userId == request.auth.uid));
+      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create, update: if isSignedIn();
-      allow delete: if getRole() == "ADMIN";
+      allow delete: if isStaff();
     }
 
     match /handovers/{handoverId} {
-      allow read: if isSignedIn() && (getRole() == "GUARD" || getRole() == "ADMIN" || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
+      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
       allow create, update: if isSignedIn();
-      allow delete: if getRole() == "ADMIN";
+      allow delete: if isStaff();
     }
 
     match /items/{itemId} {
       allow read: if isSignedIn();
       allow create, update: if isSignedIn();
-      allow delete: if getRole() == "ADMIN";
+      allow delete: if isStaff();
     }
 
     match /banners/{bannerId} {
@@ -78,7 +80,7 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read: if isSignedIn() && (getRole() == "ADMIN" || resource.data.userId == request.auth.uid);
+      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create, update: if isSignedIn();
     }
 
