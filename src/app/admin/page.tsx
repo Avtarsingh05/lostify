@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef } from "react"
@@ -21,7 +22,8 @@ import {
   Trash2,
   Clock,
   Image as ImageIcon,
-  Plus
+  Plus,
+  Package
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +46,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/dialog"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -68,7 +81,7 @@ export default function AdminDashboard() {
   const [bannerPreview, setBannerPreview] = useState("")
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
-  const itemsQuery = useMemoFirebase(() => collection(db, "items"), [db])
+  const itemsQuery = useMemoFirebase(() => query(collection(db, "items"), orderBy("reportedAt", "desc")), [db])
   const { data: allItems } = useCollection(itemsQuery)
   
   const usersQuery = useMemoFirebase(() => 
@@ -115,6 +128,12 @@ export default function AdminDashboard() {
     const notifRef = doc(db, "notifications", id)
     deleteDocumentNonBlocking(notifRef)
     toast({ title: "Broadcast Removed" })
+  }
+
+  const handleDeleteItem = (id: string) => {
+    const itemRef = doc(db, "items", id)
+    deleteDocumentNonBlocking(itemRef)
+    toast({ title: "Item Record Deleted", description: "This action is permanent." })
   }
 
   const handleToggleRole = (userId: string, currentRole: string) => {
@@ -525,6 +544,14 @@ export default function AdminDashboard() {
                         <Badge variant="outline" className="text-[8px] lg:text-[10px] h-4 mt-1">{item.status}</Badge>
                       </div>
                     </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="text-destructive hover:bg-destructive/10 rounded-xl shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-4">
                     <div className="bg-muted/30 p-2 lg:p-3 rounded-xl border border-dashed">
@@ -542,6 +569,12 @@ export default function AdminDashboard() {
                   </div>
                 </Card>
               ))}
+              {(!filteredItems || filteredItems.length === 0) && (
+                <div className="col-span-full py-24 text-center opacity-30 border-2 border-dashed rounded-[40px]">
+                   <Package className="h-12 w-12 mx-auto mb-2" />
+                   <p className="text-[10px] font-bold uppercase">No item records found</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
