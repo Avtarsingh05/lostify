@@ -4,28 +4,25 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * MASTER AUTHORITY BYPASS
-     * Direct root access for super administrators.
-     */
-    function isMasterAdmin() {
-      return request.auth != null && (
-        request.auth.token.email.lower() == "worker@gmail.com" ||
-        request.auth.token.email.lower() == "forigloohelp@gmail.com" ||
-        request.auth.token.email.lower() == "avtarsingh9528972330@gmail.com" ||
-        request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" ||
-        request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1"
-      );
-    }
-
-    match /{document=**} {
-      allow read, write: if isMasterAdmin();
-    }
-
-    /**
      * CORE HELPERS
      */
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    /**
+     * MASTER AUTHORITY BYPASS
+     * Direct root access for super administrators.
+     * Uses UIDs first for performance and reliability.
+     */
+    function isMasterAdmin() {
+      return isSignedIn() && (
+        request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" ||
+        request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
+        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "worker@gmail.com") ||
+        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "forigloohelp@gmail.com") ||
+        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "avtarsingh9528972330@gmail.com")
+      );
     }
 
     function getUserData() {
@@ -37,6 +34,13 @@ service cloud.firestore {
         isMasterAdmin() || 
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getUserData().role == "GUARD" || getUserData().role == "ADMIN"))
       );
+    }
+
+    /**
+     * GLOBAL BYPASS
+     */
+    match /{document=**} {
+      allow read, write: if isMasterAdmin();
     }
 
     // --- COLLECTION RULES ---
@@ -81,14 +85,14 @@ service cloud.firestore {
     }
 
     match /clockRoomHandovers/{handoverId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isStaff();
       allow update: if isSignedIn();
       allow delete: if isStaff();
     }
 
     match /handovers/{handoverId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isStaff();
       allow update: if isSignedIn();
       allow delete: if isStaff();
