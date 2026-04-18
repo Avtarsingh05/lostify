@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, User, Mail, Phone, Save, Loader2, Camera, UserCircle, UploadCloud, IdentificationCard } from "lucide-react"
+import { ArrowLeft, User, Mail, Phone, Save, Loader2, Camera, UserCircle, UploadCloud, CreditCard } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -185,7 +185,7 @@ export default function ProfileSettings() {
                     className="rounded-xl h-12 pl-10"
                     required
                   />
-                  <IdentificationCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
 
