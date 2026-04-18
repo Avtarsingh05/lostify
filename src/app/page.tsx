@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mail, Lock, ArrowRight, Sparkles, UserIcon, Loader2, Info } from "lucide-react"
+import { Mail, Lock, ArrowRight, Sparkles, UserIcon, Loader2, Info, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -28,6 +28,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [nickname, setNickname] = useState("")
+  const [registrationNumber, setRegistrationNumber] = useState("")
 
   // Branding Integration
   const configRef = useMemoFirebase(() => doc(db, "system", "config"), [db])
@@ -88,16 +89,27 @@ export default function LoginPage() {
       })
       return
     }
+
+    if (isSignup && (!nickname || !registrationNumber)) {
+        toast({
+          variant: "destructive",
+          title: "Missing Info",
+          description: "All fields are mandatory for registration.",
+        })
+        return
+    }
     
     setIsLoading(true)
     if (isSignup) {
-      initiateEmailSignUp(auth, email, password, nickname)
+      // Store temporary data for the dashboard sync effect
+      localStorage.setItem('pending_nickname', nickname)
+      localStorage.setItem('pending_regno', registrationNumber)
+      initiateEmailSignUp(auth, email, password)
     } else {
       initiateEmailSignIn(auth, email, password)
     }
   }
 
-  // Robust loading state to prevent flicker
   if (isUserLoading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -137,22 +149,23 @@ export default function LoginPage() {
                </h2>
             </div>
             
-            <Tabs defaultValue="email" className="w-full">
+            <Tabs defaultValue="email" className="w-full" onValueChange={(v) => setIsSignup(v === 'signup')}>
               <TabsList className="grid w-full grid-cols-2 rounded-xl p-1 bg-muted h-10">
-                <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Email</TabsTrigger>
-                <TabsTrigger value="phone" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Phone</TabsTrigger>
+                <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Login</TabsTrigger>
+                <TabsTrigger value="signup" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Signup</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="email" className="pt-4 space-y-4">
+              <div className="pt-4 space-y-4">
                 <form onSubmit={handleEmailAuth} className="space-y-4">
                   {isSignup && (
+                    <>
                     <div className="space-y-1">
-                      <Label htmlFor="nickname" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Nickname</Label>
+                      <Label htmlFor="nickname" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Full Name</Label>
                       <div className="relative group">
                         <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input 
                           id="nickname" 
-                          placeholder="What should we call you?" 
+                          placeholder="Your campus name" 
                           className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
                           value={nickname}
                           onChange={(e) => setNickname(e.target.value)}
@@ -160,6 +173,21 @@ export default function LoginPage() {
                         />
                       </div>
                     </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="regno" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Registration No.</Label>
+                      <div className="relative group">
+                        <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Input 
+                          id="regno" 
+                          placeholder="e.g. 12200000" 
+                          className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
+                          value={registrationNumber}
+                          onChange={(e) => setRegistrationNumber(e.target.value)}
+                          required 
+                        />
+                      </div>
+                    </div>
+                    </>
                   )}
 
                   <div className="space-y-1">
@@ -201,13 +229,7 @@ export default function LoginPage() {
                     {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
                 </form>
-              </TabsContent>
-
-              <TabsContent value="phone" className="pt-4 space-y-4">
-                <div className="text-center p-4">
-                   <p className="text-xs text-muted-foreground">Phone authentication is temporarily restricted to staff.</p>
-                </div>
-              </TabsContent>
+              </div>
             </Tabs>
           </CardHeader>
           

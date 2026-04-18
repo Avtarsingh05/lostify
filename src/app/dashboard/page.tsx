@@ -76,18 +76,27 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user && db && !isSynced) {
+      const pendingNickname = localStorage.getItem('pending_nickname')
+      const pendingRegNo = localStorage.getItem('pending_regno')
+
       const userRef = doc(db, "users", user.uid)
       setDocumentNonBlocking(userRef, {
         id: user.uid,
         email: user.email,
-        username: user.displayName || user.email?.split('@')[0] || 'User',
+        username: pendingNickname || userData?.username || user.displayName || user.email?.split('@')[0] || 'User',
+        registrationNumber: pendingRegNo || userData?.registrationNumber || "",
         photoURL: user.photoURL || "",
         role: isAdmin ? "ADMIN" : (userData?.role || "USER"),
         updatedAt: new Date().toISOString()
       }, { merge: true })
+
+      // Clear pending data after sync
+      if (pendingNickname) localStorage.removeItem('pending_nickname')
+      if (pendingRegNo) localStorage.removeItem('pending_regno')
+      
       setIsSynced(true)
     }
-  }, [user, db, isSynced, isAdmin, userData?.role])
+  }, [user, db, isSynced, isAdmin, userData?.role, userData?.username, userData?.registrationNumber])
 
   const bannersQuery = useMemoFirebase(() => {
     if (!db) return null

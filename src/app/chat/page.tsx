@@ -10,7 +10,8 @@ import {
   User, 
   MessageSquare,
   AlertTriangle,
-  Info
+  Info,
+  Lock
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -63,13 +64,13 @@ export default function CommunityChat() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!message.trim() || !user || !db) return
+    if (!message.trim() || !user || !db || !userData?.registrationNumber) return
 
     const msgData = {
       content: message.trim(),
       senderId: user.uid,
       senderName: userData?.username || user.displayName || user.email?.split('@')[0],
-      senderRegNo: userData?.registrationNumber || "Guest",
+      senderRegNo: userData?.registrationNumber,
       senderPhoto: userData?.photoURL || user.photoURL || "",
       createdAt: new Date().toISOString()
     }
@@ -109,11 +110,17 @@ export default function CommunityChat() {
       </div>
 
       {!hasRegNo && (
-        <div className="p-3 bg-amber-500/10 border-b border-amber-500/20 flex items-center gap-3">
-           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-           <p className="text-[10px] font-bold text-amber-600">
-             Identity Warning: Please update your Registration Number in settings to show your official status.
+        <div className="p-4 bg-amber-500/10 border-b border-amber-500/20 flex flex-col items-center gap-3 text-center">
+           <div className="flex items-center gap-2">
+             <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+             <p className="text-xs font-bold text-amber-700 uppercase tracking-tight">Access Restricted</p>
+           </div>
+           <p className="text-[10px] font-medium text-amber-600 max-w-xs">
+             To participate in the Community Hub, you must provide your official Campus Registration Number in your profile settings.
            </p>
+           <Button onClick={() => router.push('/settings/profile')} size="sm" variant="outline" className="h-8 rounded-xl border-amber-500/30 text-amber-700 font-bold text-[10px]">
+             Verify Identity Now
+           </Button>
         </div>
       )}
 
@@ -167,16 +174,23 @@ export default function CommunityChat() {
 
       {/* Input Area */}
       <div className="p-4 bg-background border-t pb-10 lg:pb-6">
-        <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto flex gap-2">
+        <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto flex gap-2 relative">
+          {!hasRegNo && (
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
+               <Lock className="h-4 w-4 text-muted-foreground mr-2" />
+               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Verify identity to chat</span>
+            </div>
+          )}
           <Input 
             placeholder="Type your message..." 
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            disabled={!hasRegNo}
             className="rounded-2xl h-14 bg-muted/30 border-none px-6 focus-visible:ring-1"
           />
           <Button 
             type="submit" 
-            disabled={!message.trim()}
+            disabled={!message.trim() || !hasRegNo}
             className="h-14 w-14 rounded-2xl gradient-header shadow-lg shadow-primary/20 shrink-0"
           >
             <Send className="h-5 w-5" />
