@@ -33,13 +33,10 @@ export default function ClockRoomMain() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Master Authority Identifiers
-  const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
-  const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
-
   const isAuthorized = useMemo(() => {
     if (!user) return false;
-    const isMaster = adminEmails.includes(user.email?.toLowerCase() || "") || adminUIDs.includes(user.uid);
+    const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
+    const isMaster = adminEmails.includes(user.email?.toLowerCase() || "");
     const hasRole = userData?.role === "ADMIN" || userData?.role === "GUARD";
     return isMaster || hasRole;
   }, [user, userData]);
@@ -47,8 +44,7 @@ export default function ClockRoomMain() {
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
     
-    // For Staff/Admins, we can show all items or filter differently.
-    // For Students, we MUST filter by userId to satisfy security rules.
+    // Admin/Staff view all, students view their own
     if (isAuthorized) {
       return query(
         collection(db, "clockRoomItems"),

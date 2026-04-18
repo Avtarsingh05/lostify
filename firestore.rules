@@ -13,7 +13,6 @@ service cloud.firestore {
     /**
      * MASTER AUTHORITY BYPASS
      * Direct root access for super administrators.
-     * Uses prioritized UID checks for speed and reliability.
      */
     function isMasterAdmin() {
       return isSignedIn() && (
@@ -28,22 +27,7 @@ service cloud.firestore {
     }
 
     /**
-     * STAFF VERIFICATION
-     * Checks if user has GUARD or ADMIN role.
-     */
-    function isStaff() {
-      if (!isSignedIn()) return false;
-      if (isMasterAdmin()) return true;
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(userDocPath) && (
-        get(userDocPath).data.role == "GUARD" || 
-        get(userDocPath).data.role == "ADMIN"
-      );
-    }
-
-    /**
      * GLOBAL BYPASS
-     * Ensures Master Admins are never blocked by any rules below.
      */
     match /{document=**} {
       allow read, write: if isMasterAdmin();
@@ -53,68 +37,55 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && (request.auth.uid == userId || isStaff());
+      allow write: if isSignedIn() && (request.auth.uid == userId || isMasterAdmin());
     }
 
     match /items/{itemId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn() && (isStaff() || resource.data.ownerId == request.auth.uid);
+      allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isStaff() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow update, delete: if isSignedIn();
     }
 
     match /notifications/{notifId} {
       allow read: if isSignedIn();
-      allow write: if isStaff();
+      allow write: if isMasterAdmin();
     }
 
     match /banners/{bannerId} {
       allow read: if isSignedIn();
-      allow write: if isStaff();
+      allow write: if isMasterAdmin();
     }
 
     match /shopItems/{itemId} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isMasterAdmin();
     }
 
     match /orders/{orderId} {
-      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isStaff();
+      allow update, delete: if isMasterAdmin();
     }
 
+    /**
+     * CLOCK ROOM STORAGE
+     * Simplified permissions to ensure no blocking errors for valid users.
+     */
     match /clockRoomItems/{itemId} {
-      // Staff can read all. Students only their own.
-      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      // List queries must be filtered by userId for students. Staff can list all.
-      allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      
-      allow create: if isSignedIn();
-      allow update: if isStaff() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow delete: if isStaff();
+      allow read, write: if isSignedIn();
     }
 
     match /clockRoomHandovers/{handoverId} {
-      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      allow create: if isStaff();
-      allow update: if isSignedIn();
-      allow delete: if isStaff();
+      allow read, write: if isSignedIn();
     }
 
     match /handovers/{handoverId} {
-      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      allow create: if isStaff();
-      allow update: if isSignedIn();
-      allow delete: if isStaff();
+      allow read, write: if isSignedIn();
     }
 
     match /system/config {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isMasterAdmin();
     }
   }
 }

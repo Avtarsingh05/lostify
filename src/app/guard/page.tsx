@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -70,18 +70,14 @@ export default function GuardDashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Master Authority Identifiers
-  const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
-  const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
-
   const isAuthorized = useMemo(() => {
     if (!user) return false;
-    const isMaster = adminEmails.includes(user.email?.toLowerCase() || "") || adminUIDs.includes(user.uid);
+    const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
+    const isMaster = adminEmails.includes(user.email?.toLowerCase() || "");
     const hasRole = userData?.role === "ADMIN" || userData?.role === "GUARD";
     return isMaster || hasRole;
   }, [user, userData]);
 
-  // General Items Query - Only runs for authorized staff
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
     return query(
@@ -93,7 +89,6 @@ export default function GuardDashboard() {
 
   const { data: allItems, isLoading } = useCollection(itemsQuery)
 
-  // Clock Room Items Query - Only runs for authorized staff
   const clockRoomQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
     return query(
@@ -191,9 +186,8 @@ export default function GuardDashboard() {
 
   const filterItems = (list: any[]) => {
     return list.filter(item => 
-      item.name?.toLowerCase().includes(search.toLowerCase()) ||
-      item.locationDescription?.toLowerCase().includes(search.toLowerCase()) ||
-      item.itemType?.toLowerCase().includes(search.toLowerCase())
+      (item.name || item.itemType)?.toLowerCase().includes(search.toLowerCase()) ||
+      item.locationDescription?.toLowerCase().includes(search.toLowerCase())
     )
   }
 
@@ -201,19 +195,6 @@ export default function GuardDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  if (!isAuthorized && !isUserLoading && userData) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-        </div>
-        <h2 className="text-xl font-headline font-bold">Access Denied</h2>
-        <p className="text-sm text-muted-foreground">Unauthorized Access.</p>
-        <Button onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
       </div>
     )
   }
