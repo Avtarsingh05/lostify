@@ -22,11 +22,9 @@ import {
   ChevronRight,
   Package,
   AlertCircle,
-  Megaphone,
   Archive,
   Briefcase,
-  MessageSquare,
-  Volume2
+  MessageSquare
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -106,19 +104,6 @@ export default function Dashboard() {
   }, [db])
 
   const { data: displayBanners, isLoading: isBannersLoading } = useCollection(bannersQuery)
-
-  const notificationsQuery = useMemoFirebase(() => {
-    if (!db) return null
-    return query(
-      collection(db, "notifications"), 
-      where("userId", "==", "all"),
-      orderBy("createdAt", "desc"),
-      limit(1)
-    )
-  }, [db])
-
-  const { data: globalNotifs } = useCollection(notificationsQuery)
-  const latestBroadcast = globalNotifs?.[0]
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -267,25 +252,6 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-24 w-full space-y-6 lg:space-y-12">
-        {/* Broadcast Message Strip - Positioned ABOVE Banner */}
-        {latestBroadcast && (
-          <div className="animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
-            <div className="bg-accent/20 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-5 flex items-center gap-4 shadow-2xl overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-1 opacity-10">
-                <Volume2 size={48} className="text-accent" />
-              </div>
-              <div className="bg-accent p-3 rounded-2xl text-white shadow-lg shrink-0">
-                <Megaphone className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent leading-none mb-1.5">Campus Announcement</p>
-                <h4 className="text-sm font-headline font-bold truncate leading-tight">{latestBroadcast.title}</h4>
-                <p className="text-[11px] text-muted-foreground truncate leading-relaxed">{latestBroadcast.message}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Banner Carousel */}
         <section className="w-full">
           <Carousel 
