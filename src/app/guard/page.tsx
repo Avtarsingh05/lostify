@@ -62,11 +62,9 @@ export default function GuardDashboard() {
   const [storageLocation, setStorageLocation] = useState("")
   const [regNumber, setRegNumber] = useState("")
 
-  // Secure Handover State
   const [handoverSession, setHandoverSession] = useState<any | null>(null)
   const [isHandoverLoading, setIsHandoverLoading] = useState(false)
 
-  // Authorization Check (Mirroring Dashboard logic for consistency)
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null
     return doc(db, "users", user.uid)
@@ -74,6 +72,7 @@ export default function GuardDashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
+  // Master Authority Sync
   const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
   const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
 
@@ -83,7 +82,6 @@ export default function GuardDashboard() {
   
   const isAuthorized = isAdmin || userData?.role === "GUARD";
 
-  // Gated Queries: Only fetch if user is authorized to prevent permission errors
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
     return query(
@@ -170,20 +168,15 @@ export default function GuardDashboard() {
       verificationCode,
       status: "pending",
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
     }
 
-    try {
-      const colRef = collection(db, "handovers");
-      addDocumentNonBlocking(colRef, handoverData).then((docRef) => {
-         setHandoverSession({ ...handoverData, id: docRef?.id || "session_pending" });
-         toast({ title: "Session Initiated", description: "Show the QR code to the student." });
-      });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Handover Failed", description: "Could not initiate secure session." })
-    } finally {
-      setIsHandoverLoading(false)
-    }
+    const colRef = collection(db, "handovers");
+    addDocumentNonBlocking(colRef, handoverData).then((docRef) => {
+       setHandoverSession({ ...handoverData, id: docRef?.id || "session_pending" });
+       toast({ title: "Session Initiated", description: "Show the QR code to the student." });
+       setIsHandoverLoading(false)
+    });
   }
 
   const filterItems = (list: any[]) => {

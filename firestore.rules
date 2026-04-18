@@ -9,96 +9,82 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getRole() {
-      // Safely fetch the role from the users collection
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-
-    function isSuperAdmin() {
+    function isMasterAdmin() {
       return isSignedIn() && (
-        // 1. Hardcoded UIDs for Master Authority
+        // Master Authority identities (UIDs and Emails)
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
         request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
-        // 2. Official Administrator Emails
         request.auth.token.email == "worker@gmail.com" ||
         request.auth.token.email == "forigloohelp@gmail.com" ||
-        request.auth.token.email == "avtarsingh9528972330@gmail.com" ||
-        // 3. Dynamic Role Check (Set via Admin Console)
-        getRole() == "ADMIN"
+        request.auth.token.email == "avtarsingh9528972330@gmail.com"
       );
     }
 
-    function isGuard() {
-      // Guards can be either Admins or users explicitly assigned the GUARD role
-      return isSignedIn() && (
-        isSuperAdmin() || 
-        getRole() == "GUARD"
-      );
+    function getRole() {
+      // Safely fetch the role from the users collection
+      let userDoc = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userDoc) ? get(userDoc).data.role : "USER";
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function isStaff() {
+      // Staff includes Master Admins and users with ADMIN/GUARD roles
+      return isMasterAdmin() || getRole() == "ADMIN" || getRole() == "GUARD";
     }
 
-    // --- Collection Rules ---
+    // --- GLOBAL BYPASS FOR MASTER ADMINS ---
+    // This allows root access to all collections for development and master oversight
+    match /{document=**} {
+      allow read, write: if isMasterAdmin();
+    }
+
+    // --- Collection Rules (for regular Students and Staff) ---
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isSuperAdmin() || isOwner(userId);
+      allow write: if request.auth.uid == userId;
     }
 
     match /clockRoomItems/{itemId} {
-      // Separate global read from ownership read to support collection-wide 'list'
-      allow read: if isSignedIn() && isGuard();
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (isGuard() || resource.data.userId == request.auth.uid);
-      allow delete: if isSuperAdmin();
+      allow read: if isSignedIn() && (getRole() == "GUARD" || getRole() == "ADMIN" || resource.data.userId == request.auth.uid);
+      allow create, update: if isSignedIn();
+      allow delete: if getRole() == "ADMIN";
+    }
+
+    match /handovers/{handoverId} {
+      allow read: if isSignedIn() && (getRole() == "GUARD" || getRole() == "ADMIN" || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
+      allow create, update: if isSignedIn();
+      allow delete: if getRole() == "ADMIN";
     }
 
     match /items/{itemId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isGuard());
-      allow delete: if isSuperAdmin();
-    }
-
-    match /handovers/{handoverId} {
-      // Global read for Guards/Admins (supports auditing)
-      allow read: if isSignedIn() && isGuard();
-      // Specific read for involved Student/Guard
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
-      
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSuperAdmin();
-    }
-
-    match /system/config {
-      allow read: if true;
-      allow write: if isSuperAdmin();
-    }
-    
-    match /notifications/{notifId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isSuperAdmin();
-    }
-    
-    match /shopItems/{itemId} {
-      allow read: if isSignedIn();
-      allow write: if isSuperAdmin();
-    }
-    
-    match /orders/{orderId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn() && isSuperAdmin();
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create, update: if isSignedIn();
+      allow delete: if getRole() == "ADMIN";
     }
 
     match /banners/{bannerId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow write: if isStaff();
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /shopItems/{itemId} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (getRole() == "ADMIN" || resource.data.userId == request.auth.uid);
+      allow create, update: if isSignedIn();
+    }
+
+    match /system/config {
+      allow read: if true;
+      allow write: if isStaff();
     }
   }
 }
