@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -47,13 +48,18 @@
       "properties": {
         "id": { "type": "string" },
         "itemId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "itemImageUrl": { "type": "string", "format": "uri" },
         "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string", "format": "email" },
         "guardId": { "type": "string" },
         "guardName": { "type": "string" },
         "verificationCode": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "completed"] },
         "createdAt": { "type": "string", "format": "date-time" },
-        "completedAt": { "type": "string", "format": "date-time" }
+        "completedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" }
       },
       "required": ["itemId", "verificationCode", "status", "createdAt"]
     },

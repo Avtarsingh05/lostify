@@ -41,7 +41,8 @@ service cloud.firestore {
     }
 
     match /handovers/{handoverId} {
-      allow read: if isSignedIn();
+      // Allow listing all handovers for admins, otherwise only own handovers
+      allow read: if isSignedIn() && (isSuperAdmin() || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSuperAdmin();
