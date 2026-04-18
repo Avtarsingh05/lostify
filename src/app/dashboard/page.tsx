@@ -270,17 +270,17 @@ export default function Dashboard() {
         {/* Broadcast Message Strip - Positioned Above Banner */}
         {latestBroadcast && (
           <div className="animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
-            <div className="bg-accent/15 backdrop-blur-md border border-accent/20 rounded-2xl p-4 flex items-center gap-3 shadow-xl overflow-hidden relative">
+            <div className="bg-accent/20 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-5 flex items-center gap-4 shadow-2xl overflow-hidden relative">
               <div className="absolute top-0 right-0 p-1 opacity-10">
-                <Volume2 size={40} className="text-accent" />
+                <Volume2 size={48} className="text-accent" />
               </div>
-              <div className="bg-accent p-2 rounded-xl text-white shadow-lg shrink-0">
-                <Megaphone className="h-4 w-4" />
+              <div className="bg-accent p-3 rounded-2xl text-white shadow-lg shrink-0">
+                <Megaphone className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-widest text-accent leading-none mb-1">Campus Announcement</p>
-                <h4 className="text-xs font-bold truncate leading-tight">{latestBroadcast.title}</h4>
-                <p className="text-[10px] text-muted-foreground truncate leading-relaxed">{latestBroadcast.message}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent leading-none mb-1.5">Campus Announcement</p>
+                <h4 className="text-sm font-headline font-bold truncate leading-tight">{latestBroadcast.title}</h4>
+                <p className="text-[11px] text-muted-foreground truncate leading-relaxed">{latestBroadcast.message}</p>
               </div>
             </div>
           </div>
