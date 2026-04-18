@@ -36,14 +36,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { collection, query, orderBy, limit, doc } from "firebase/firestore"
-import { formatDistanceToNow } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import {
   Carousel,
@@ -93,17 +87,6 @@ export default function Dashboard() {
       setIsSynced(true)
     }
   }, [user, db, isSynced, isAdmin, userData?.role])
-
-  const notifQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
-    return query(
-      collection(db, "notifications"),
-      orderBy("createdAt", "desc"),
-      limit(10)
-    )
-  }, [db, user])
-
-  const { data: notifications } = useCollection(notifQuery)
 
   const bannersQuery = useMemoFirebase(() => {
     if (!db) return null
@@ -159,11 +142,11 @@ export default function Dashboard() {
       description: "Browse campus matches"
     },
     {
-      title: "Clock Room",
-      icon: Briefcase,
-      href: "/clock-room",
-      gradient: "bg-orange-600",
-      description: "Secure digital luggage storage"
+      title: "Campus Gallery",
+      icon: Package,
+      href: "/gallery",
+      gradient: "bg-rose-500",
+      description: "Browse found & lost items"
     },
     {
       title: "Campus Shop",
@@ -173,11 +156,11 @@ export default function Dashboard() {
       description: "Premium marketplace"
     },
     {
-      title: "Campus Gallery",
-      icon: Package,
-      href: "/gallery",
-      gradient: "bg-rose-500",
-      description: "Browse found & lost items"
+      title: "Clock Room",
+      icon: Briefcase,
+      href: "/clock-room",
+      gradient: "bg-orange-600",
+      description: "Secure digital luggage storage"
     }
   ]
 
@@ -203,37 +186,6 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-colors relative">
-                    <Bell className="text-white h-5 w-5" />
-                    {notifications && notifications.length > 0 && (
-                      <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-accent rounded-full border-2 border-primary animate-pulse" />
-                    )}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 rounded-[28px] p-4 mt-2" align="end">
-                  <div className="space-y-4">
-                    <h4 className="font-headline font-bold text-sm px-1">Notifications</h4>
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                      {notifications && notifications.length > 0 ? (
-                        notifications.map((notif) => (
-                          <div key={notif.id} className="p-3 bg-muted/30 rounded-2xl space-y-1">
-                            <p className="text-xs font-bold leading-tight">{notif.title}</p>
-                            <p className="text-[10px] text-muted-foreground leading-relaxed">{notif.message}</p>
-                            <span className="text-[8px] font-bold uppercase opacity-50 block pt-1">
-                              {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-center py-8 text-[10px] font-bold uppercase opacity-40">No alerts</p>
-                      )}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="bg-white/20 p-0.5 rounded-full hover:bg-white/30 transition-colors">
@@ -295,20 +247,6 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-24 w-full space-y-6 lg:space-y-12">
-        {/* Message Strip */}
-        {notifications && notifications.length > 0 && (
-          <div className="bg-white/90 dark:bg-card/90 backdrop-blur-xl rounded-2xl p-3 shadow-xl border border-white/20 flex items-center gap-3 animate-in slide-in-from-top-4 duration-500">
-            <div className="bg-primary/10 p-2 rounded-xl shrink-0">
-              <Megaphone className="h-4 w-4 text-primary animate-bounce" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-primary truncate">{notifications[0].title}</p>
-              <p className="text-xs text-muted-foreground truncate">{notifications[0].message}</p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-          </div>
-        )}
-
         {/* Banner Carousel */}
         <section className="w-full">
           <Carousel 
