@@ -79,24 +79,28 @@ export default function Dashboard() {
       const pendingNickname = localStorage.getItem('pending_nickname')
       const pendingRegNo = localStorage.getItem('pending_regno')
 
-      const userRef = doc(db, "users", user.uid)
-      setDocumentNonBlocking(userRef, {
-        id: user.uid,
-        email: user.email,
-        username: pendingNickname || userData?.username || user.displayName || user.email?.split('@')[0] || 'User',
-        registrationNumber: pendingRegNo || userData?.registrationNumber || "",
-        photoURL: user.photoURL || "",
-        role: isAdmin ? "ADMIN" : (userData?.role || "USER"),
-        updatedAt: new Date().toISOString()
-      }, { merge: true })
+      // ONLY SYNC if we have pending data or if the user record is confirmed to need updating.
+      // We check for truthy values to avoid overwriting existing Firestore data with empty strings.
+      if (pendingNickname || pendingRegNo || (userData && !userData.registrationNumber)) {
+        const userRef = doc(db, "users", user.uid)
+        setDocumentNonBlocking(userRef, {
+          id: user.uid,
+          email: user.email,
+          username: pendingNickname || userData?.username || user.displayName || user.email?.split('@')[0] || 'User',
+          registrationNumber: pendingRegNo || userData?.registrationNumber || "",
+          photoURL: user.photoURL || "",
+          role: isAdmin ? "ADMIN" : (userData?.role || "USER"),
+          updatedAt: new Date().toISOString()
+        }, { merge: true })
 
-      // Clear pending data after sync
-      if (pendingNickname) localStorage.removeItem('pending_nickname')
-      if (pendingRegNo) localStorage.removeItem('pending_regno')
+        // Clear pending data after sync
+        if (pendingNickname) localStorage.removeItem('pending_nickname')
+        if (pendingRegNo) localStorage.removeItem('pending_regno')
+      }
       
       setIsSynced(true)
     }
-  }, [user, db, isSynced, isAdmin, userData?.role, userData?.username, userData?.registrationNumber])
+  }, [user, db, isSynced, isAdmin, userData])
 
   const bannersQuery = useMemoFirebase(() => {
     if (!db) return null

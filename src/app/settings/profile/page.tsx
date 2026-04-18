@@ -28,6 +28,8 @@ export default function ProfileSettings() {
   const [isUploading, setIsUploading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState("")
+  const [isInitialized, setIsInitialized] = useState(false)
+  
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch current user data from Firestore
@@ -38,20 +40,20 @@ export default function ProfileSettings() {
 
   const { data: userData, isLoading: isDocLoading } = useDoc(userDocRef)
 
+  // Initialize state from userData only ONCE to prevent overwriting user typing
   useEffect(() => {
-    if (user) {
-      setNickname(user.displayName || "")
-      setPreviewUrl(user.photoURL || "")
-    }
-  }, [user])
-
-  useEffect(() => {
-    if (userData) {
+    if (userData && !isInitialized) {
+      setNickname(userData.username || user?.displayName || "")
       setPhoneNumber(userData.phoneNumber || "")
       setRegistrationNumber(userData.registrationNumber || "")
       if (userData.photoURL) setPreviewUrl(userData.photoURL)
+      setIsInitialized(true)
+    } else if (user && !isInitialized && !userData) {
+      // Fallback if userData hasn't loaded yet but user object is here
+      setNickname(user.displayName || "")
+      setPreviewUrl(user.photoURL || "")
     }
-  }, [userData])
+  }, [userData, user, isInitialized])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -77,7 +79,7 @@ export default function ProfileSettings() {
 
     setIsLoading(true)
     try {
-      let photoURL = userData?.photoURL || auth.currentUser.photoURL || ""
+      let photoURL = previewUrl || userData?.photoURL || auth.currentUser.photoURL || ""
 
       // Upload to Cloudinary if a new image is selected
       if (imageFile) {
@@ -97,7 +99,7 @@ export default function ProfileSettings() {
         setIsUploading(false)
       }
 
-      // 1. Update Firestore User Document (Using set to ensure creation/update)
+      // 1. Update Firestore User Document
       const userRef = doc(db, "users", auth.currentUser.uid)
       setDocumentNonBlocking(userRef, {
         id: auth.currentUser.uid,
@@ -119,7 +121,9 @@ export default function ProfileSettings() {
         title: "Profile Saved",
         description: "Your details have been updated instantly.",
       })
-      router.push("/dashboard")
+      
+      // Navigate back to dashboard to trigger any sync listeners there
+      setTimeout(() => router.push("/dashboard"), 500)
     } catch (error: any) {
       toast({
         variant: "destructive",
