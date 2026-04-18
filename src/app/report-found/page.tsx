@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -93,6 +94,7 @@ export default function ReportFound() {
     const itemsRef = collection(db, "items")
     const itemData = {
       ownerId: user.uid,
+      reporterRegNo: userData?.registrationNumber || "N/A",
       name: itemName || aiData?.itemName || "Found Item",
       category: category || aiData?.category || "Other",
       description: description || aiData?.attributes?.join(", ") || "",

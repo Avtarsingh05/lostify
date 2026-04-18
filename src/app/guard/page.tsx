@@ -159,9 +159,15 @@ export default function GuardDashboard() {
   }
 
   const filterItems = (list: any[]) => {
+    const s = search.toLowerCase();
     return list.filter(item => 
-      (item.name || item.itemType || item.registrationNumber || item.studentName)?.toLowerCase().includes(search.toLowerCase()) ||
-      item.locationDescription?.toLowerCase().includes(search.toLowerCase())
+      item.name?.toLowerCase().includes(s) ||
+      item.itemType?.toLowerCase().includes(s) ||
+      item.registrationNumber?.toLowerCase().includes(s) ||
+      item.reporterRegNo?.toLowerCase().includes(s) ||
+      item.claimerRegNo?.toLowerCase().includes(s) ||
+      item.studentName?.toLowerCase().includes(s) ||
+      item.locationDescription?.toLowerCase().includes(s)
     )
   }
 
@@ -533,7 +539,7 @@ export default function GuardDashboard() {
 
 function EmptyState({ icon: Icon, message }: { icon: any, message: string }) {
   return (
-    <div className="text-center py-24 bg-muted/10 rounded-[32px] border-2 border-dashed border-muted/50">
+    <div className="text-center py-24 bg-muted/10 rounded-[32px] border-2 border-dashed border-muted-foreground/50">
       <Icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
       <p className="text-[11px] lg:text-sm font-bold text-muted-foreground uppercase tracking-widest">{message}</p>
     </div>

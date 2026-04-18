@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -100,6 +101,7 @@ export default function ReportLost() {
     const itemsRef = collection(db, "items")
     const itemData = {
       ownerId: user.uid,
+      reporterRegNo: userData?.registrationNumber || "N/A",
       name: formData.name,
       category: formData.category,
       description: formData.description,
