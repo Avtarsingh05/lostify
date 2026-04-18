@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -42,7 +43,6 @@ export default function StoreItemPage() {
   const [description, setDescription] = useState("")
   const [returnDate, setReturnDate] = useState("")
   
-  // New verification & manual detail fields
   const [contentsVerification, setContentsVerification] = useState("")
   const [itemCondition, setItemCondition] = useState("")
   const [brandMarkings, setBrandMarkings] = useState("")
@@ -85,9 +85,7 @@ export default function StoreItemPage() {
 
     setIsSubmitting(true)
     
-    // Auto-assign random Rack & Slot for MVP
-    const rack = Math.floor(Math.random() * 10) + 1
-    const slot = String.fromCharCode(65 + Math.floor(Math.random() * 6)) + (Math.floor(Math.random() * 20) + 1)
+    // Default location to Uni Mall until guard updates it
     const otp = Math.floor(1000 + Math.random() * 9000).toString()
 
     const itemData = {
@@ -100,8 +98,8 @@ export default function StoreItemPage() {
       itemCondition,
       brandMarkings,
       imageUrl: previewImage,
-      rackNumber: String(rack),
-      slotNumber: slot,
+      rackNumber: "Uni Mall",
+      slotNumber: "Reception",
       status: "stored",
       otp,
       expectedReturnDate: returnDate ? new Date(returnDate).toISOString() : null,
@@ -111,7 +109,7 @@ export default function StoreItemPage() {
     try {
       await addDocumentNonBlocking(collection(db, "clockRoomItems"), itemData)
       setIsSuccess(true)
-      toast({ title: "Item stored successfully" })
+      toast({ title: "Item logged at Uni Mall", description: "Guard will assign a rack shortly." })
       setTimeout(() => router.push("/clock-room"), 2500)
     } finally {
       setIsSubmitting(false)
@@ -124,9 +122,9 @@ export default function StoreItemPage() {
         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-500 shadow-xl shadow-primary/20">
           <CheckCircle2 className="h-12 w-12 text-primary" />
         </div>
-        <h2 className="text-3xl font-headline font-bold mb-2">Securely Stored</h2>
+        <h2 className="text-3xl font-headline font-bold mb-2">Check-in Complete</h2>
         <p className="text-muted-foreground text-sm mb-8 max-w-xs">
-          Your luggage check-in is complete. Redirecting to your dashboard...
+          Your luggage is logged at Uni Mall. A guard will assign your rack number now.
         </p>
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
@@ -170,7 +168,6 @@ export default function StoreItemPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* --- Section: Student Identity --- */}
               <div className="space-y-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                   <CreditCard className="h-3 w-3" /> Student Identity
@@ -187,7 +184,6 @@ export default function StoreItemPage() {
                 </div>
               </div>
 
-              {/* --- Section: Basic Details --- */}
               <div className="space-y-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                   <Package className="h-3 w-3" /> Basic Description
@@ -228,7 +224,6 @@ export default function StoreItemPage() {
                 </div>
               </div>
 
-              {/* --- Section: Enhanced Details (Manual Questions) --- */}
               <div className="space-y-4 pt-2">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                   <ShieldCheck className="h-3 w-3" /> Verification Questions
@@ -292,12 +287,12 @@ export default function StoreItemPage() {
         <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-3xl flex items-start gap-4">
           <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <p className="text-[10px] text-muted-foreground leading-relaxed">
-            <strong>Security Notice:</strong> Providing accurate details for the "Verification Question" is critical. You will be asked to identify these contents upon retrieval to confirm ownership.
+            <strong>Security Notice:</strong> After submission, show your luggage to the guard at Uni Mall. They will place it in a secure rack and update your digital receipt location.
           </p>
         </div>
 
         <div className="pt-4 pb-8 text-center space-y-1 opacity-40">
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em]">Secure Storage Protocol v3.1</p>
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em]">Secure Storage Protocol v3.2</p>
           <p className="text-[8px] font-medium">Verified by Campus Security</p>
         </div>
       </main>

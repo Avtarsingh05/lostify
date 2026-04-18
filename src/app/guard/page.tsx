@@ -21,7 +21,8 @@ import {
   Briefcase,
   Info,
   Tag,
-  ChevronRight
+  ChevronRight,
+  LayoutGrid
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -62,8 +63,13 @@ export default function GuardDashboard() {
   const [verifyingItem, setVerifyingItem] = useState<any | null>(null)
   const [resolvingItem, setResolvingItem] = useState<any | null>(null)
   const [viewingLuggage, setViewingLuggage] = useState<any | null>(null)
+  const [assigningRack, setAssigningRack] = useState<any | null>(null)
+  
   const [storageLocation, setStorageLocation] = useState("")
   const [regNumber, setRegNumber] = useState("")
+  
+  const [rackInput, setRackInput] = useState("")
+  const [slotInput, setSlotInput] = useState("")
 
   const [handoverSession, setHandoverSession] = useState<any | null>(null)
   const [isHandoverLoading, setIsHandoverLoading] = useState(false)
@@ -130,6 +136,20 @@ export default function GuardDashboard() {
     setStorageLocation("")
   }
 
+  const handleUpdateRack = () => {
+    if (!db || !assigningRack || !rackInput || !slotInput) return
+    const itemRef = doc(db, "clockRoomItems", assigningRack.id)
+    updateDocumentNonBlocking(itemRef, {
+      rackNumber: rackInput,
+      slotNumber: slotInput,
+      lastUpdatedAt: new Date().toISOString()
+    })
+    toast({ title: "Storage Rack Assigned", description: `Rack ${rackInput}, Slot ${slotInput}` })
+    setAssigningRack(null)
+    setRackInput("")
+    setSlotInput("")
+  }
+
   const handleResolve = () => {
     if (!db || !resolvingItem || !regNumber) return
     const itemRef = doc(db, "items", resolvingItem.id)
@@ -192,7 +212,8 @@ export default function GuardDashboard() {
   const filterItems = (list: any[]) => {
     return list.filter(item => 
       (item.name || item.itemType || item.registrationNumber)?.toLowerCase().includes(search.toLowerCase()) ||
-      item.locationDescription?.toLowerCase().includes(search.toLowerCase())
+      item.locationDescription?.toLowerCase().includes(search.toLowerCase()) ||
+      item.rackNumber?.toLowerCase().includes(search.toLowerCase())
     )
   }
 
@@ -362,8 +383,8 @@ export default function GuardDashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {filterItems(clockItems || []).map((item) => (
                   <Card key={item.id} className="border-none shadow-xl rounded-[28px] overflow-hidden bg-card/90 backdrop-blur-sm group hover:scale-[1.01] transition-transform">
-                    <div className="flex h-36">
-                      <div className="w-36 relative overflow-hidden shrink-0 bg-muted">
+                    <div className="flex h-40">
+                      <div className="w-40 relative overflow-hidden shrink-0 bg-muted">
                         <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
                         <div className="absolute top-2 left-2">
                            <Badge className={item.status === 'stored' ? 'bg-orange-500' : 'bg-secondary'}>
@@ -378,26 +399,41 @@ export default function GuardDashboard() {
                              <div className="w-3 h-3 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />
                            </div>
                            <p className="text-[10px] font-bold text-primary mt-1 truncate">Reg: {item.registrationNumber}</p>
-                           <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                             <MapPin className="h-3 w-3" /> Rack {item.rackNumber}, Slot {item.slotNumber}
-                           </p>
+                           <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-muted-foreground bg-muted/40 p-1.5 rounded-lg border border-dashed">
+                             <Building className="h-3 w-3" />
+                             {item.slotNumber === 'Reception' ? (
+                               <span className="text-accent animate-pulse">Awaiting Rack...</span>
+                             ) : (
+                               <span className="text-primary">Rack {item.rackNumber}, Slot {item.slotNumber}</span>
+                             )}
+                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                           <Button 
-                             size="sm" 
-                             variant="outline" 
-                             onClick={() => setViewingLuggage(item)}
-                             className="h-8 rounded-xl text-[10px] font-bold flex-1"
-                           >
-                             <Info className="h-3 w-3 mr-1" /> Answers
-                           </Button>
+                        <div className="flex flex-col gap-1.5 mt-2">
+                           <div className="flex gap-1.5">
+                             <Button 
+                               size="sm" 
+                               variant="outline" 
+                               onClick={() => setViewingLuggage(item)}
+                               className="h-8 rounded-xl text-[10px] font-bold flex-1"
+                             >
+                               Answers
+                             </Button>
+                             <Button 
+                               size="sm" 
+                               variant="secondary"
+                               onClick={() => setAssigningRack(item)}
+                               className="h-8 rounded-xl text-[10px] font-bold flex-1"
+                             >
+                               Set Rack
+                             </Button>
+                           </div>
                            {item.status === 'stored' && (
                              <Button 
                                size="sm" 
                                onClick={() => handleInitiateClockHandover(item)}
-                               className="h-8 rounded-xl text-[10px] font-bold flex-1 gradient-header"
+                               className="h-8 rounded-xl text-[10px] font-bold w-full gradient-header"
                              >
-                               <QrCode className="h-3 w-3 mr-1" /> Pickup
+                               <QrCode className="h-3 w-3 mr-1" /> Secure Pickup
                              </Button>
                            )}
                         </div>
@@ -410,6 +446,37 @@ export default function GuardDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* --- RACK ASSIGNMENT DIALOG --- */}
+      <Dialog open={!!assigningRack} onOpenChange={() => setAssigningRack(null)}>
+        <DialogContent className="max-w-[420px] rounded-[32px] p-8">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
+              <LayoutGrid className="h-6 w-6 text-primary" /> Assign Storage Rack
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Specify the physical location for this item.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Rack Number</Label>
+                <Input value={rackInput} onChange={(e) => setRackInput(e.target.value)} placeholder="e.g. 05" className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Slot ID</Label>
+                <Input value={slotInput} onChange={(e) => setSlotInput(e.target.value)} placeholder="e.g. B-12" className="rounded-xl h-12" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleUpdateRack} disabled={!rackInput || !slotInput} className="w-full h-14 rounded-xl gradient-header font-bold text-sm">
+              Confirm Storage Location
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* --- CLOCK ROOM DETAILS DIALOG --- */}
       <Dialog open={!!viewingLuggage} onOpenChange={() => setViewingLuggage(null)}>

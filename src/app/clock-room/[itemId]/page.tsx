@@ -18,7 +18,8 @@ import {
   UserCheck,
   Tag,
   Archive,
-  Info
+  Info,
+  Building
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -88,6 +89,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
   }
 
   const isStored = item.status === 'stored'
+  const isAwaitingRack = item.slotNumber === 'Reception'
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -114,11 +116,16 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-2xl font-headline font-bold">{item.itemType}</h2>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <MapPin className="h-4 w-4 text-primary" /> Rack {item.rackNumber}, Slot {item.slotNumber}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                   <div className="bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5 border border-primary/20">
+                     <Building className="h-3.5 w-3.5 text-primary" />
+                     <span className={`text-xs font-bold ${isAwaitingRack ? 'text-accent' : 'text-primary'}`}>
+                       {isAwaitingRack ? "Uni Mall (Reception)" : `Rack ${item.rackNumber}, Slot ${item.slotNumber}`}
+                     </span>
+                   </div>
+                </div>
                 {item.registrationNumber && (
-                  <p className="text-xs font-bold text-primary flex items-center gap-1.5 mt-2">
+                  <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 mt-3">
                     <CreditCard className="h-3.5 w-3.5" /> Student Reg: {item.registrationNumber}
                   </p>
                 )}
@@ -126,7 +133,15 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
               <div className="w-4 h-4 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />
             </div>
 
-            {/* --- VERIFICATION DETAILS SUMMARY --- */}
+            {isAwaitingRack && (
+              <div className="bg-accent/10 p-4 rounded-2xl border border-accent/20 flex items-start gap-3">
+                 <Info className="h-5 w-5 text-accent shrink-0" />
+                 <p className="text-[10px] text-muted-foreground leading-relaxed">
+                   <strong>Processing:</strong> A guard is currently placing your item in a secure rack. Your storage location will update here automatically.
+                 </p>
+              </div>
+            )}
+
             <div className="space-y-4 pt-2 border-t border-b py-6 border-dashed">
                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Verification Details</p>
                <div className="space-y-3">
