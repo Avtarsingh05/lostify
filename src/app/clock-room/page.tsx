@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useRouter } from "next/navigation"
@@ -33,30 +32,17 @@ export default function ClockRoomMain() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  const isAuthorized = useMemo(() => {
-    if (!user) return false;
-    const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
-    const isMaster = adminEmails.includes(user.email?.toLowerCase() || "");
-    const hasRole = userData?.role === "ADMIN" || userData?.role === "GUARD";
-    return isMaster || hasRole;
-  }, [user, userData]);
-
+  // As requested, all users can now access the full list like guards/admins
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
     
-    if (isAuthorized) {
-      return query(
-        collection(db, "clockRoomItems"),
-        orderBy("createdAt", "desc")
-      )
-    }
-
+    // Returning all items for everyone to satisfy the "access like guard/admin" requirement
+    // This also helps avoid permission errors related to filtered user queries
     return query(
       collection(db, "clockRoomItems"),
-      where("userId", "==", user.uid),
       orderBy("createdAt", "desc")
     )
-  }, [db, user?.uid, isAuthorized])
+  }, [db, user?.uid])
 
   const { data: storedItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
 
@@ -67,6 +53,8 @@ export default function ClockRoomMain() {
       </div>
     )
   }
+
+  const isAdminOrGuard = userData?.role === "ADMIN" || userData?.role === "GUARD";
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-x-hidden">
@@ -87,7 +75,7 @@ export default function ClockRoomMain() {
             <p className="text-white/80 text-[10px] sm:text-xs font-medium uppercase tracking-widest">
               Uni Mall Luggage Storage
             </p>
-            {isAuthorized && <Badge className="bg-white/20 text-white border-none text-[8px]">STAFF</Badge>}
+            {isAdminOrGuard && <Badge className="bg-white/20 text-white border-none text-[8px]">STAFF</Badge>}
           </div>
         </div>
       </div>
@@ -95,7 +83,7 @@ export default function ClockRoomMain() {
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center px-1">
           <h2 className="text-[10px] sm:text-sm font-headline font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Clock className="h-3 w-3 sm:h-4 sm:w-4" /> {isAuthorized ? "All Active Records" : "My Stored Items"}
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4" /> All Active Records
           </h2>
           <Button 
             onClick={() => router.push('/clock-room/store')}
@@ -111,8 +99,8 @@ export default function ClockRoomMain() {
           </div>
         ) : error ? (
           <div className="p-8 text-center bg-destructive/10 rounded-[32px] border border-destructive/20">
-            <p className="text-sm font-bold text-destructive">Authorization Error</p>
-            <p className="text-[10px] text-muted-foreground mt-1">Profile sync pending.</p>
+            <p className="text-sm font-bold text-destructive">Permission Error</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Please try refreshing or contact admin.</p>
           </div>
         ) : storedItems && storedItems.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -139,6 +127,9 @@ export default function ClockRoomMain() {
                       </div>
                       <p className="text-[9px] sm:text-xs text-muted-foreground flex items-center gap-1 mt-1">
                         <MapPin className="h-3 w-3" /> Rack {item.rackNumber}
+                      </p>
+                      <p className="text-[8px] font-bold text-primary mt-0.5 truncate uppercase tracking-tighter">
+                        {item.studentName}
                       </p>
                     </div>
                     <div className="flex justify-between items-end">
