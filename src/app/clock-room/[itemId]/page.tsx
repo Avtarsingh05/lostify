@@ -114,7 +114,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
             {!isCollected && (
               <div className="flex flex-col items-center justify-center p-6 bg-primary/5 rounded-[32px] border-2 border-dashed border-primary/20 gap-4">
                  <div className="bg-white p-4 rounded-2xl shadow-xl">
-                   <QRCodeSVG value={`lostify-luggage-${itemId}-${item.status}`} size={160} />
+                   <QRCodeSVG value={activeOtp} size={160} />
                  </div>
                  <div className="text-center space-y-2">
                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Verification Token</p>
