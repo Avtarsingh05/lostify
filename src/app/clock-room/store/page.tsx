@@ -17,7 +17,9 @@ import {
   FileText,
   ShieldCheck,
   AlertCircle,
-  Hash
+  Hash,
+  User,
+  Phone
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,6 +40,8 @@ export default function StoreItemPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   
+  const [studentName, setStudentName] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
   const [registrationNumber, setRegistrationNumber] = useState("")
   const [itemType, setItemType] = useState("")
   const [color, setColor] = useState("")
@@ -57,8 +61,10 @@ export default function StoreItemPage() {
   const { data: userData } = useDoc(userDocRef)
 
   useEffect(() => {
-    if (userData?.registrationNumber) {
-      setRegistrationNumber(userData.registrationNumber)
+    if (userData) {
+      if (userData.username) setStudentName(userData.username)
+      if (userData.registrationNumber) setRegistrationNumber(userData.registrationNumber)
+      if (userData.phoneNumber) setPhoneNumber(userData.phoneNumber)
     }
   }, [userData])
 
@@ -92,6 +98,8 @@ export default function StoreItemPage() {
 
     const itemData = {
       userId: user.uid,
+      studentName,
+      phoneNumber,
       registrationNumber,
       itemType,
       color,
@@ -175,15 +183,39 @@ export default function StoreItemPage() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                   <CreditCard className="h-3 w-3" /> Student Identity
                 </p>
-                <div className="relative">
-                  <Input 
-                    placeholder="University Registration No." 
-                    className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
-                    value={registrationNumber}
-                    onChange={(e) => setRegistrationNumber(e.target.value)}
-                    required 
-                  />
-                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="relative">
+                    <Input 
+                      placeholder="Full Name" 
+                      className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
+                      required 
+                    />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="relative">
+                      <Input 
+                        placeholder="Registration No." 
+                        className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
+                        value={registrationNumber}
+                        onChange={(e) => setRegistrationNumber(e.target.value)}
+                        required 
+                      />
+                      <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="relative">
+                      <Input 
+                        placeholder="Phone Number" 
+                        className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        required 
+                      />
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </div>
                 </div>
               </div>
 

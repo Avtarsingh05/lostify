@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo } from "react"
@@ -25,7 +26,9 @@ import {
   Key,
   Smartphone,
   Calendar,
-  CreditCard
+  CreditCard,
+  User,
+  Phone
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -157,7 +160,7 @@ export default function GuardDashboard() {
 
   const filterItems = (list: any[]) => {
     return list.filter(item => 
-      (item.name || item.itemType || item.registrationNumber)?.toLowerCase().includes(search.toLowerCase()) ||
+      (item.name || item.itemType || item.registrationNumber || item.studentName)?.toLowerCase().includes(search.toLowerCase()) ||
       item.locationDescription?.toLowerCase().includes(search.toLowerCase())
     )
   }
@@ -253,7 +256,7 @@ export default function GuardDashboard() {
                       <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
                         <div>
                            <h3 className="font-headline font-bold text-sm truncate">{item.itemType}</h3>
-                           <p className="text-[10px] font-bold text-muted-foreground truncate mt-0.5">Reg: {item.registrationNumber}</p>
+                           <p className="text-[10px] font-bold text-muted-foreground truncate mt-0.5">{item.studentName || "Student"}</p>
                            <p className="text-[9px] font-bold text-primary flex items-center gap-1 mt-1">
                              <Building className="h-3 w-3" /> {item.rackNumber === 'Awaiting Assignment' ? "Pending Handshake" : `Rack ${item.rackNumber}, Slot ${item.slotNumber}`}
                            </p>
@@ -353,9 +356,17 @@ export default function GuardDashboard() {
                   <div className="flex justify-between items-start">
                     <div className="space-y-1">
                        <h2 className="text-2xl font-headline font-bold">{viewingClockItem.itemType}</h2>
-                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                         <CreditCard className="h-3 w-3" /> Reg: {viewingClockItem.registrationNumber}
-                       </p>
+                       <div className="space-y-1 pt-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                            <User className="h-3 w-3" /> {viewingClockItem.studentName}
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                            <CreditCard className="h-3 w-3" /> Reg: {viewingClockItem.registrationNumber}
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                            <Phone className="h-3 w-3" /> {viewingClockItem.phoneNumber}
+                          </p>
+                       </div>
                     </div>
                     <div className="w-5 h-5 rounded-full border shadow-sm" style={{ backgroundColor: viewingClockItem.color }} />
                   </div>
@@ -429,7 +440,7 @@ export default function GuardDashboard() {
                  </div>
                  <div>
                    <p className="text-sm font-bold">{processingLuggage.itemType} ({processingLuggage.color})</p>
-                   <p className="text-[10px] text-muted-foreground uppercase font-bold">Reg: {processingLuggage.registrationNumber}</p>
+                   <p className="text-[10px] text-muted-foreground uppercase font-bold">{processingLuggage.studentName}</p>
                  </div>
                </div>
 
