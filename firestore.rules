@@ -11,7 +11,6 @@ service cloud.firestore {
 
     function isMasterAdmin() {
       return isSignedIn() && (
-        // Master Authority identities (UIDs and Emails)
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
         request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
         request.auth.token.email == "worker@gmail.com" ||
@@ -26,7 +25,7 @@ service cloud.firestore {
     }
 
     function isStaff() {
-      return isMasterAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getRole() == "ADMIN" || getRole() == "GUARD"));
+      return isMasterAdmin() || (isSignedIn() && (getRole() == "ADMIN" || getRole() == "GUARD"));
     }
 
     // --- GLOBAL BYPASS FOR MASTER ADMINS ---
@@ -42,10 +41,15 @@ service cloud.firestore {
     }
 
     match /handovers/{handoverId} {
-      allow read: if isSignedIn() && (isStaff() || (resource == null || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid));
+      allow read: if isSignedIn() && (isStaff() || (resource != null && resource.data.userId == request.auth.uid));
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
-      allow delete: if isStaff();
+      allow update: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+    }
+
+    match /clockRoomItems/{itemId} {
+      allow read: if isSignedIn() && (isStaff() || (resource != null && resource.data.userId == request.auth.uid));
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
     }
 
     match /items/{itemId} {
@@ -70,8 +74,9 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read: if isSignedIn() && (isStaff() || (resource == null || resource.data.userId == request.auth.uid));
-      allow create, update: if isSignedIn();
+      allow read: if isSignedIn() && (isStaff() || (resource != null && resource.data.userId == request.auth.uid));
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isStaff();
     }
 
     match /system/config {

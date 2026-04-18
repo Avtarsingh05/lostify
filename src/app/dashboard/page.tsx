@@ -22,7 +22,9 @@ import {
   ChevronRight,
   Package,
   AlertCircle,
-  Megaphone
+  Megaphone,
+  Archive,
+  Briefcase
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -121,6 +123,11 @@ export default function Dashboard() {
     router.push("/")
   }
 
+  const handleClockRoomNav = () => {
+    toast({ title: "Opening Clock Room Storage..." })
+    router.push('/clock-room')
+  }
+
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -150,6 +157,13 @@ export default function Dashboard() {
       href: "/map",
       gradient: "bg-primary",
       description: "Browse campus matches"
+    },
+    {
+      title: "Clock Room",
+      icon: Briefcase,
+      href: "/clock-room",
+      gradient: "bg-orange-600",
+      description: "Secure digital luggage storage"
     },
     {
       title: "Campus Shop",
@@ -233,13 +247,17 @@ export default function Dashboard() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2" align="end">
                   <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-3">Account</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => router.push('/settings/profile')} className="rounded-xl cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
                     <Package className="mr-2 h-4 w-4" />
                     <span>My Items</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/orders')} className="rounded-xl cursor-pointer">
-                    <ShoppingBag className="mr-2 h-4 w-4" />
-                    <span>My Orders</span>
+                  <DropdownMenuItem onClick={handleClockRoomNav} className="rounded-xl cursor-pointer">
+                    <Briefcase className="mr-2 h-4 w-4 text-orange-500" />
+                    <span className="font-bold">Clock Room Storage</span>
                   </DropdownMenuItem>
                   
                   {isGuard && (

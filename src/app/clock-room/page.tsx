@@ -27,7 +27,6 @@ export default function ClockRoomMain() {
   const db = useFirestore()
 
   const itemsQuery = useMemoFirebase(() => {
-    // Crucial: Only execute the query if we have a verified user UID
     if (!db || !user?.uid) return null
     return query(
       collection(db, "clockRoomItems"),
@@ -52,7 +51,7 @@ export default function ClockRoomMain() {
         <div className="max-w-md lg:max-w-6xl mx-auto flex flex-col gap-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
+              <button onClick={() => router.push('/dashboard')} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <h1 className="text-2xl font-headline font-bold">Clock Room</h1>

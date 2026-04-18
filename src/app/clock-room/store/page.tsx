@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { analyzeLuggage } from "@/ai/flows/clock-room-ai-flow"
 import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
@@ -92,13 +92,12 @@ export default function StoreItemPage() {
       otp,
       expectedReturnDate: returnDate ? new Date(returnDate).toISOString() : null,
       createdAt: new Date().toISOString(),
-      guardId: "GUARD_001" // Simulated
     }
 
     try {
       await addDocumentNonBlocking(collection(db, "clockRoomItems"), itemData)
       setIsSuccess(true)
-      toast({ title: "Item Stored Successfully" })
+      toast({ title: "Item stored successfully" })
       setTimeout(() => router.push("/clock-room"), 2500)
     } finally {
       setIsSubmitting(false)
