@@ -183,7 +183,7 @@ export default function GuardDashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6">
-        {/* TOKEN PROCESSING PANEL - REFINED SIZE */}
+        {/* TOKEN PROCESSING PANEL */}
         <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-sm max-w-3xl mx-auto">
           <CardContent className="p-6 lg:p-8 flex flex-col md:flex-row items-center gap-6">
              <div className="bg-primary/10 p-3.5 rounded-2xl hidden md:block">
@@ -204,13 +204,13 @@ export default function GuardDashboard() {
                   />
                   <Smartphone className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30 pointer-events-none" />
                 </div>
-                <Button 
+                <button 
                   onClick={handleProcessToken} 
                   disabled={isProcessingToken || tokenInput.length < 4} 
-                  className="h-14 w-14 rounded-2xl gradient-header shadow-lg shadow-primary/20 active:scale-95 transition-all shrink-0"
+                  className="h-14 w-14 rounded-2xl gradient-header shadow-lg shadow-primary/20 active:scale-95 transition-all shrink-0 flex items-center justify-center text-white disabled:opacity-50"
                 >
                   {isProcessingToken ? <Loader2 className="animate-spin h-5 w-5" /> : <ChevronRight className="h-6 w-6" />}
-                </Button>
+                </button>
              </div>
           </CardContent>
         </Card>
@@ -334,6 +334,10 @@ export default function GuardDashboard() {
       {/* CLOCK ITEM FULL DETAILS MODAL */}
       <Dialog open={!!viewingClockItem} onOpenChange={() => setViewingClockItem(null)}>
         <DialogContent className="max-w-[440px] rounded-[40px] p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="sr-only">
+             <DialogTitle>Clock Room Record</DialogTitle>
+             <DialogDescription>Full audit and verification details for student luggage.</DialogDescription>
+          </DialogHeader>
           {viewingClockItem && (
             <div className="flex flex-col">
               <div className="aspect-video relative overflow-hidden">
@@ -359,17 +363,17 @@ export default function GuardDashboard() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-muted/30 rounded-2xl space-y-1">
                       <p className="text-[8px] font-bold text-muted-foreground uppercase">Storage Location</p>
-                      <p className="text-xs font-bold flex items-center gap-1.5">
+                      <div className="text-xs font-bold flex items-center gap-1.5">
                          <Building className="h-3.5 w-3.5 text-primary" />
                          {viewingClockItem.rackNumber === 'Awaiting Assignment' ? 'Reception' : `Rack ${viewingClockItem.rackNumber}, Slot ${viewingClockItem.slotNumber}`}
-                      </p>
+                      </div>
                     </div>
                     <div className="p-4 bg-muted/30 rounded-2xl space-y-1">
                       <p className="text-[8px] font-bold text-muted-foreground uppercase">Logged On</p>
-                      <p className="text-xs font-bold flex items-center gap-1.5">
+                      <div className="text-xs font-bold flex items-center gap-1.5">
                          <Calendar className="h-3.5 w-3.5 text-primary" />
                          {format(new Date(viewingClockItem.createdAt), 'MMM dd')}
-                      </p>
+                      </div>
                     </div>
                   </div>
 
@@ -451,6 +455,47 @@ export default function GuardDashboard() {
             <Button onClick={handleConfirmStorage} disabled={!rackInput || !slotInput} className="w-full h-14 rounded-xl gradient-header font-bold text-sm shadow-xl">
               Finalize Check-in
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* RESOLUTION MODAL */}
+      <Dialog open={!!resolvingItem} onOpenChange={() => setResolvingItem(null)}>
+        <DialogContent className="max-w-[420px] rounded-[32px] p-8">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
+              <CheckCircle2 className="h-6 w-6 text-secondary" /> Finalize Handover
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Confirm that this item has been physically returned to the student.
+            </DialogDescription>
+          </DialogHeader>
+          {resolvingItem && (
+            <div className="space-y-4 py-4">
+              <div className="bg-muted/30 p-4 rounded-2xl flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl relative overflow-hidden shrink-0 shadow-sm">
+                  <Image src={resolvingItem.imageUrl} alt="Item" fill className="object-cover" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold">{resolvingItem.name}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold">{resolvingItem.category}</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed italic">
+                By clicking "Mark Resolved", you confirm the item is no longer in security custody and has been correctly returned.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => {
+              updateDocumentNonBlocking(doc(db, "items", resolvingItem.id), { 
+                status: "Resolved", 
+                resolvedBy: user?.displayName || user?.email || "Security Guard",
+                resolvedAt: new Date().toISOString() 
+              })
+              setResolvingItem(null)
+              toast({ title: "Item Resolved", description: "Record updated in audit trail." })
+            }} className="w-full h-12 rounded-xl gradient-header font-bold">Mark Resolved</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
