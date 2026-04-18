@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -106,11 +105,6 @@ export default function Dashboard() {
     router.push("/")
   }
 
-  const handleClockRoomNav = () => {
-    toast({ title: "Opening Clock Room Storage..." })
-    router.push('/clock-room')
-  }
-
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -206,10 +200,6 @@ export default function Dashboard() {
                   <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
                     <Package className="mr-2 h-4 w-4" />
                     <span>My Items</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleClockRoomNav} className="rounded-xl cursor-pointer">
-                    <Briefcase className="mr-2 h-4 w-4 text-orange-500" />
-                    <span className="font-bold">Clock Room Storage</span>
                   </DropdownMenuItem>
                   
                   {isGuard && (
