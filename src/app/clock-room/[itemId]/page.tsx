@@ -12,7 +12,10 @@ import {
   Loader2,
   Lock,
   Trash2,
-  CheckCircle2
+  CheckCircle2,
+  Calendar,
+  CreditCard,
+  UserCheck
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -68,7 +71,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
     setTimeout(() => {
       setIsProcessing(false)
       setIsCollectOpen(false)
-      toast({ title: "Item Collected Successfully" })
+      toast({ title: "Item Checked-out Successfully" })
       router.push("/clock-room")
     }, 1500)
   }
@@ -111,6 +114,11 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                   <MapPin className="h-4 w-4 text-primary" /> Rack {item.rackNumber}, Slot {item.slotNumber}
                 </p>
+                {item.registrationNumber && (
+                  <p className="text-xs font-bold text-primary flex items-center gap-1.5 mt-2">
+                    <CreditCard className="h-3.5 w-3.5" /> Student Reg: {item.registrationNumber}
+                  </p>
+                )}
               </div>
               <div className="w-4 h-4 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />
             </div>
@@ -127,14 +135,30 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
 
             <div className="grid grid-cols-2 gap-4">
                <div className="p-4 bg-muted/20 rounded-2xl space-y-1">
-                 <p className="text-[8px] font-bold text-muted-foreground uppercase">Stored On</p>
-                 <p className="text-[10px] font-bold">{format(new Date(item.createdAt), 'MMM dd, HH:mm')}</p>
+                 <p className="text-[8px] font-bold text-muted-foreground uppercase">Check-in Date</p>
+                 <p className="text-[10px] font-bold flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-primary" />
+                    {format(new Date(item.createdAt), 'MMM dd, HH:mm')}
+                 </p>
                </div>
                <div className="p-4 bg-muted/20 rounded-2xl space-y-1">
-                 <p className="text-[8px] font-bold text-muted-foreground uppercase">Expected Back</p>
-                 <p className="text-[10px] font-bold">{item.expectedReturnDate ? format(new Date(item.expectedReturnDate), 'MMM dd') : "N/A"}</p>
+                 <p className="text-[8px] font-bold text-muted-foreground uppercase">Expected Return</p>
+                 <p className="text-[10px] font-bold flex items-center gap-1">
+                    <Clock className="h-3 w-3 text-primary" />
+                    {item.expectedReturnDate ? format(new Date(item.expectedReturnDate), 'MMM dd') : "N/A"}
+                 </p>
                </div>
             </div>
+
+            {item.collectedAt && (
+              <div className="p-4 bg-secondary/10 rounded-2xl border border-secondary/20 space-y-1">
+                <p className="text-[8px] font-bold text-secondary uppercase">Check-out Date</p>
+                <p className="text-[10px] font-bold flex items-center gap-1">
+                   <UserCheck className="h-3 w-3 text-secondary" />
+                   {format(new Date(item.collectedAt), 'MMM dd, HH:mm')}
+                </p>
+              </div>
+            )}
 
             <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-center justify-between">
                <div className="flex items-center gap-3">
@@ -152,7 +176,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
                 onClick={() => setIsCollectOpen(true)}
                 className="w-full h-14 rounded-2xl gradient-header font-bold text-sm shadow-xl flex items-center justify-center gap-2"
               >
-                <Trash2 className="h-5 w-5" /> Check-out & Collect
+                <Trash2 className="h-5 w-5" /> Confirm Check-out
               </Button>
             )}
 
@@ -160,9 +184,9 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
               <div className="bg-secondary/10 p-4 rounded-2xl border border-secondary/20 flex items-center gap-3">
                  <CheckCircle2 className="h-6 w-6 text-secondary" />
                  <div>
-                    <p className="text-xs font-bold text-secondary">Collected</p>
+                    <p className="text-xs font-bold text-secondary">Collected & Checked-out</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {item.collectedAt ? format(new Date(item.collectedAt), 'PPp') : ""}
+                      Retrieval logged successfully.
                     </p>
                  </div>
               </div>
@@ -175,10 +199,10 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
         <DialogContent className="max-w-[400px] rounded-[32px] p-8">
           <DialogHeader>
             <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-primary" /> Security Verification
+              <ShieldCheck className="h-6 w-6 text-primary" /> Check-out Verification
             </DialogTitle>
             <DialogDescription className="text-sm">
-              Enter the 4-digit OTP shown on your storage receipt to confirm collection.
+              Enter the 4-digit OTP shown on your storage receipt to confirm the retrieval and check-out.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
@@ -199,7 +223,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
               disabled={isProcessing || otpInput.length < 4}
               className="w-full h-14 rounded-xl gradient-header font-bold text-sm"
             >
-              {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirm Collection"}
+              {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify Check-out"}
             </Button>
           </DialogFooter>
         </DialogContent>

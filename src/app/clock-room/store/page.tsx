@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -13,7 +13,8 @@ import {
   Tag,
   Info,
   CheckCircle2,
-  Package
+  Package,
+  CreditCard
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,8 +23,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { analyzeLuggage } from "@/ai/flows/clock-room-ai-flow"
-import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
-import { collection } from "firebase/firestore"
+import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase"
+import { collection, doc } from "firebase/firestore"
 import Image from "next/image"
 
 export default function StoreItemPage() {
@@ -36,11 +37,24 @@ export default function StoreItemPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   
+  const [registrationNumber, setRegistrationNumber] = useState("")
   const [itemType, setItemType] = useState("")
   const [color, setColor] = useState("")
   const [description, setDescription] = useState("")
   const [returnDate, setReturnDate] = useState("")
   const [isSuccess, setIsSuccess] = useState(false)
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+  const { data: userData } = useDoc(userDocRef)
+
+  useEffect(() => {
+    if (userData?.registrationNumber) {
+      setRegistrationNumber(userData.registrationNumber)
+    }
+  }, [userData])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -82,6 +96,7 @@ export default function StoreItemPage() {
 
     const itemData = {
       userId: user.uid,
+      registrationNumber,
       itemType,
       color,
       description,
@@ -158,6 +173,20 @@ export default function StoreItemPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Registration Number</Label>
+                <div className="relative">
+                  <Input 
+                    placeholder="e.g. 12200000" 
+                    className="rounded-xl h-12 pl-10" 
+                    value={registrationNumber}
+                    onChange={(e) => setRegistrationNumber(e.target.value)}
+                    required 
+                  />
+                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Item Type</Label>
                 <div className="relative">
                   <Input 
@@ -186,11 +215,11 @@ export default function StoreItemPage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Return Date</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Expected Return</Label>
                   <div className="relative">
                     <Input 
                       type="date" 
-                      className="rounded-xl h-12 pl-10" 
+                      className="rounded-xl h-12 pl-10 text-xs" 
                       value={returnDate}
                       onChange={(e) => setReturnDate(e.target.value)}
                       required 

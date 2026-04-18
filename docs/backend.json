@@ -93,6 +93,7 @@
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
+        "registrationNumber": { "type": "string" },
         "itemType": { "type": "string" },
         "color": { "type": "string" },
         "description": { "type": "string" },
