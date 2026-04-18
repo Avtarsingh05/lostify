@@ -251,7 +251,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-24 w-full space-y-6 lg:space-y-12">
+      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-16 w-full space-y-6 lg:space-y-12">
         {/* Banner Carousel */}
         <section className="w-full">
           <Carousel 
