@@ -35,28 +35,39 @@ export default function ClockRoomMain() {
 
   // Implement Role-Based Privacy: 
   // Regular users see only their own items. Guards/Admins see everything.
+  // Note: orderBy is removed from the Student View query to avoid requiring a composite index.
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid || !userData) return null
     
     const isAdminOrGuard = userData?.role === "ADMIN" || userData?.role === "GUARD";
     
     if (isAdminOrGuard) {
-      // Staff view: All items
+      // Staff view: All items (Single field order-by doesn't need manual index)
       return query(
         collection(db, "clockRoomItems"),
         orderBy("createdAt", "desc")
       )
     } else {
       // Student view: Only personal luggage
+      // We remove orderBy from the server query to prevent "Missing Index" errors
       return query(
         collection(db, "clockRoomItems"),
-        where("userId", "==", user.uid),
-        orderBy("createdAt", "desc")
+        where("userId", "==", user.uid)
       )
     }
   }, [db, user?.uid, userData])
 
-  const { data: storedItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
+  const { data: rawItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
+
+  // In-memory sorting for Student View to maintain performance without complex indexes
+  const storedItems = useMemo(() => {
+    if (!rawItems) return []
+    return [...rawItems].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return dateB - dateA
+    })
+  }, [rawItems])
 
   if (isUserLoading) {
     return (
