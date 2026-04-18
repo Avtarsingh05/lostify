@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -105,9 +106,25 @@
         "collectedAt": { "type": "string", "format": "date-time" }
       }
     },
+    "ClockRoomHandover": {
+      "title": "ClockRoomHandover",
+      "description": "Clock Room pickup verification data.",
+      "type": "object",
+      "properties": {
+        "itemId": { "type": "string" },
+        "userId": { "type": "string" },
+        "guardId": { "type": "string" },
+        "guardName": { "type": "string" },
+        "verificationCode": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "Handover": {
       "title": "Handover",
-      "description": "Item handover session data.",
+      "description": "General item handover session data.",
       "type": "object",
       "properties": {
         "itemId": { "type": "string" },
@@ -132,7 +149,8 @@
       { "path": "/shopItems/{itemId}", "definition": { "entityName": "ShopItem", "schema": { "$ref": "#/backend/entities/ShopItem" }, "description": "Stores shop items." } },
       { "path": "/orders/{orderId}", "definition": { "entityName": "Order", "schema": { "$ref": "#/backend/entities/Order" }, "description": "Stores shop orders." } },
       { "path": "/clockRoomItems/{itemId}", "definition": { "entityName": "ClockRoomItem", "schema": { "$ref": "#/backend/entities/ClockRoomItem" }, "description": "Stores clock room storage records." } },
-      { "path": "/handovers/{handoverId}", "definition": { "entityName": "Handover", "schema": { "$ref": "#/backend/entities/Handover" }, "description": "Stores item handover sessions." } },
+      { "path": "/clockRoomHandovers/{handoverId}", "definition": { "entityName": "ClockRoomHandover", "schema": { "$ref": "#/backend/entities/ClockRoomHandover" }, "description": "Stores clock room pickup sessions." } },
+      { "path": "/handovers/{handoverId}", "definition": { "entityName": "Handover", "schema": { "$ref": "#/backend/entities/Handover" }, "description": "Stores general item handover sessions." } },
       { "path": "/system/config", "definition": { "entityName": "Config", "schema": { "type": "object", "properties": { "appLogo": { "type": "string" } } }, "description": "Stores system configuration." } }
     ]
   }

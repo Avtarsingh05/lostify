@@ -17,8 +17,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, where, limit } from "firebase/firestore"
+import { useFirestore } from "@/firebase"
+import { collection, query, where, limit, getDocs } from "firebase/firestore"
 
 export default function HandoverEntry() {
   const router = useRouter()
@@ -33,6 +33,7 @@ export default function HandoverEntry() {
 
     setIsVerifying(true)
     try {
+      // Check general handovers first
       const handoversRef = collection(db, "handovers")
       const q = query(
         handoversRef, 
@@ -41,20 +42,34 @@ export default function HandoverEntry() {
         limit(1)
       )
       
-      // Use standard fetch here since we need immediate result for navigation
-      const { getDocs } = await import("firebase/firestore")
       const snapshot = await getDocs(q)
       
-      if (snapshot.empty) {
-        toast({
-          variant: "destructive",
-          title: "Invalid Code",
-          description: "This code is incorrect or has already expired."
-        })
-      } else {
-        const handoverId = snapshot.docs[0].id
-        router.push(`/handover/${handoverId}`)
+      if (!snapshot.empty) {
+        router.push(`/handover/${snapshot.docs[0].id}`)
+        return
       }
+
+      // Check clock room handovers if not found in general
+      const clockHandoversRef = collection(db, "clockRoomHandovers")
+      const qClock = query(
+        clockHandoversRef,
+        where("verificationCode", "==", code),
+        where("status", "==", "pending"),
+        limit(1)
+      )
+      
+      const clockSnapshot = await getDocs(qClock)
+
+      if (!clockSnapshot.empty) {
+        router.push(`/handover/${clockSnapshot.docs[0].id}?type=clock`)
+        return
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Invalid Code",
+        description: "This code is incorrect or has already expired."
+      })
     } catch (error) {
       toast({
         variant: "destructive",

@@ -1,8 +1,8 @@
 
 "use client"
 
-import { useState, use } from "react"
-import { useRouter } from "next/navigation"
+import { useState, use, useMemo } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
   ShieldCheck, 
@@ -13,7 +13,11 @@ import {
   Calendar,
   ShieldAlert,
   MapPin,
-  Building
+  Building,
+  Phone,
+  CreditCard,
+  Briefcase,
+  AlertTriangle
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,49 +37,72 @@ import { format } from "date-fns"
 export default function HandoverVerification({ params }: { params: Promise<{ handoverId: string }> }) {
   const { handoverId } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const db = useFirestore()
   const { user, isUserLoading: isAuthLoading } = useUser()
   
+  const isClockRoom = searchParams.get('type') === 'clock'
   const [isConfirming, setIsConfirming] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
+  // Fetch handover details
   const handoverRef = useMemoFirebase(() => {
     if (!db) return null
-    return doc(db, "handovers", handoverId)
-  }, [db, handoverId])
+    return doc(db, isClockRoom ? "clockRoomHandovers" : "handovers", handoverId)
+  }, [db, handoverId, isClockRoom])
 
   const { data: handover, isLoading: isHandoverLoading } = useDoc(handoverRef)
 
+  // Fetch associated item (only if handover exists)
+  const itemRef = useMemoFirebase(() => {
+    if (!db || !handover?.itemId) return null
+    return doc(db, isClockRoom ? "clockRoomItems" : "items", handover.itemId)
+  }, [db, handover?.itemId, isClockRoom])
+
+  const { data: item, isLoading: isItemLoading } = useDoc(itemRef)
+
+  // Fetch student profile (if different from current user, for verification summary)
+  const studentRef = useMemoFirebase(() => {
+    if (!db || !handover?.userId) return null
+    return doc(db, "users", handover.userId)
+  }, [db, handover?.userId])
+
+  const { data: studentData } = useDoc(studentRef)
+
   const handleConfirm = async () => {
-    if (!db || !handover || !user) return
+    if (!db || !handover || !user || !item) return
     setIsConfirming(true)
 
     try {
       // 1. Update Handover Session
-      const hRef = doc(db, "handovers", handoverId)
+      const hRef = doc(db, isClockRoom ? "clockRoomHandovers" : "handovers", handoverId)
       updateDocumentNonBlocking(hRef, {
-        userId: user.uid,
-        userName: user.displayName || user.email?.split('@')[0] || "Student",
-        userEmail: user.email,
         status: "completed",
         completedAt: new Date().toISOString()
       })
 
       // 2. Update Item Status
-      const itemRef = doc(db, "items", handover.itemId)
-      updateDocumentNonBlocking(itemRef, {
-        status: "Resolved",
-        claimerId: user.uid,
-        resolvedBy: handover.guardName,
-        resolvedAt: new Date().toISOString(),
-        lastUpdatedAt: new Date().toISOString()
-      })
+      const targetItemRef = doc(db, isClockRoom ? "clockRoomItems" : "items", handover.itemId)
+      if (isClockRoom) {
+        updateDocumentNonBlocking(targetItemRef, {
+          status: "collected",
+          collectedAt: new Date().toISOString()
+        })
+      } else {
+        updateDocumentNonBlocking(targetItemRef, {
+          status: "Resolved",
+          claimerId: user.uid,
+          resolvedBy: handover.guardName,
+          resolvedAt: new Date().toISOString(),
+          lastUpdatedAt: new Date().toISOString()
+        })
+      }
 
       setIsSuccess(true)
       toast({
-        title: "Item Received",
-        description: "Your handover has been confirmed and logged."
+        title: "Pickup confirmed",
+        description: "Your collection has been securely logged."
       })
     } catch (error) {
       toast({
@@ -88,7 +115,7 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
     }
   }
 
-  if (isAuthLoading || isHandoverLoading) {
+  if (isAuthLoading || isHandoverLoading || isItemLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -117,15 +144,19 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
         <div className="w-24 h-24 bg-secondary/10 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-secondary/20">
           <CheckCircle2 className="h-12 w-12 text-secondary" />
         </div>
-        <h2 className="text-3xl font-headline font-bold mb-2">Item Received!</h2>
+        <h2 className="text-3xl font-headline font-bold mb-2">Luggage collected successfully</h2>
         <p className="text-muted-foreground text-sm mb-12 max-w-xs">
-          Your collection has been securely logged. Thank you for using Lostify.
+          Your retrieval has been securely logged. Safe travels!
         </p>
         
         <Card className="w-full max-w-sm rounded-[32px] border-none shadow-xl bg-muted/20 p-6 space-y-4">
            <div className="flex justify-between items-center text-xs">
              <span className="font-bold text-muted-foreground uppercase">Verified By</span>
              <span className="font-bold">{handover.guardName} (Guard)</span>
+           </div>
+           <div className="flex justify-between items-center text-xs">
+             <span className="font-bold text-muted-foreground uppercase">Guard ID</span>
+             <span className="font-mono">{handover.guardId.substring(0, 10).toUpperCase()}</span>
            </div>
            <div className="flex justify-between items-center text-xs">
              <span className="font-bold text-muted-foreground uppercase">Session ID</span>
@@ -154,41 +185,68 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-4">
         <Card className="rounded-[40px] overflow-hidden shadow-2xl border-none">
           <div className="aspect-video relative overflow-hidden bg-muted">
-             <Image src={handover.itemImageUrl} alt={handover.itemName} fill className="object-cover" />
+             <Image src={item?.imageUrl || handover.itemImageUrl} alt="Pickup Item" fill className="object-cover" />
           </div>
           <CardContent className="p-8 space-y-8">
             <div className="flex justify-between items-start">
                <div>
-                 <h2 className="text-2xl font-headline font-bold leading-tight">{handover.itemName}</h2>
-                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Item to be Handed Over</p>
+                 <h2 className="text-2xl font-headline font-bold leading-tight">{isClockRoom ? item?.itemType : handover.itemName}</h2>
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                   {isClockRoom ? "Luggage Storage Pickup" : "Item Handover"}
+                 </p>
                </div>
-               <Badge className="bg-secondary/10 text-secondary border-none font-bold">In Handover</Badge>
+               <Badge className="bg-orange-500 text-white border-none font-bold">IN VERIFICATION</Badge>
             </div>
 
             <div className="space-y-4">
-               <div className="bg-muted/30 p-4 rounded-2xl space-y-3">
+               {/* --- STUDENT INFO --- */}
+               <div className="bg-muted/30 p-5 rounded-2xl space-y-4">
                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Student Information</p>
-                 <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-xl">
-                      <User className="h-5 w-5 text-primary" />
+                 <div className="flex items-center gap-4">
+                    <div className="bg-primary/10 p-3 rounded-2xl">
+                      <User className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold">{user?.displayName || "University Student"}</p>
-                      <p className="text-[10px] text-muted-foreground">{user?.email}</p>
+                      <p className="text-base font-bold leading-tight">{studentData?.username || user?.displayName || "Student"}</p>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <p className="text-[10px] font-bold flex items-center gap-1.5 text-muted-foreground">
+                          <CreditCard className="h-3 w-3" /> {studentData?.registrationNumber || "N/A"}
+                        </p>
+                        <p className="text-[10px] font-bold flex items-center gap-1.5 text-muted-foreground">
+                          <Phone className="h-3 w-3" /> {studentData?.phoneNumber || "N/A"}
+                        </p>
+                      </div>
                     </div>
                  </div>
                </div>
 
-               <div className="bg-muted/30 p-4 rounded-2xl space-y-3">
-                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Handover Details</p>
+               {/* --- LUGGAGE / STORAGE INFO --- */}
+               {isClockRoom && item && (
+                 <div className="bg-orange-500/5 border border-orange-500/10 p-5 rounded-2xl space-y-4">
+                   <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Storage Details</p>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase">Location</p>
+                        <p className="text-sm font-bold flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-orange-500" /> Rack {item.rackNumber}, Slot {item.slotNumber}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase">Stored Since</p>
+                        <p className="text-sm font-bold flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-orange-500" /> {format(new Date(item.createdAt), 'MMM dd')}</p>
+                      </div>
+                   </div>
+                 </div>
+               )}
+
+               <div className="bg-muted/30 p-5 rounded-2xl space-y-3">
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Handover Session</p>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase">Handed Over By</p>
-                      <p className="text-[10px] font-bold flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-secondary" /> {handover.guardName}</p>
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase">Verified By (Guard)</p>
+                      <p className="text-[10px] font-bold flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 text-secondary" /> {handover.guardName}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-[8px] font-bold text-muted-foreground uppercase">Timestamp</p>
-                      <p className="text-[10px] font-bold flex items-center gap-1"><Calendar className="h-3 w-3 text-primary" /> {format(new Date(), 'PPp')}</p>
+                      <p className="text-[10px] font-bold flex items-center gap-1.5"><Clock className="h-3 w-3 text-primary" /> {format(new Date(), 'HH:mm:ss')}</p>
                     </div>
                  </div>
                </div>
@@ -197,21 +255,24 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
             <Button 
               onClick={handleConfirm}
               disabled={isConfirming}
-              className="w-full h-16 rounded-[28px] gradient-header font-bold text-md shadow-xl flex items-center justify-center gap-2 mt-4"
+              className="w-full h-16 rounded-[28px] gradient-header font-bold text-lg shadow-xl flex items-center justify-center gap-3 mt-4 active:scale-95 transition-transform"
             >
               {isConfirming ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
                 <>
-                  <CheckCircle2 className="h-5 w-5" />
-                  Confirm & Receive Item
+                  <Briefcase className="h-5 w-5" />
+                  Confirm Pickup
                 </>
               )}
             </Button>
             
-            <p className="text-[9px] text-muted-foreground text-center px-4 leading-relaxed italic">
-              By clicking confirm, you acknowledge that you have physically inspected and received the correct item from the guard.
-            </p>
+            <div className="bg-amber-500/5 p-4 rounded-2xl border border-amber-500/10 flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-[9px] text-muted-foreground leading-relaxed italic">
+                By clicking confirm, you acknowledge physical inspection and receipt of your luggage. This action is final and will be logged in the campus security audit trail.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </main>

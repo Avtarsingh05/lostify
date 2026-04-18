@@ -1,98 +1,102 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * CORE PHILOSOPHY
-     * This ruleset provides a secure but flexible access model for Lostify.
-     * Access is granted based on document ownership or administrative roles.
-     * A prioritized bypass for Master Admins ensures operational continuity.
+     * MASTER AUTHORITY BYPASS
+     * Direct root access for super administrators.
      */
-
-    // --- HELPER FUNCTIONS ---
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function isMasterAdmin() {
-      return isSignedIn() && (
-        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "worker@gmail.com") ||
-        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "forigloohelp@gmail.com") ||
-        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "avtarsingh9528972330@gmail.com") ||
+      return request.auth != null && (
+        request.auth.token.email.lower() == "worker@gmail.com" ||
+        request.auth.token.email.lower() == "forigloohelp@gmail.com" ||
+        request.auth.token.email.lower() == "avtarsingh9528972330@gmail.com" ||
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" ||
         request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1"
       );
     }
 
-    // Role-based helpers using document lookup
+    match /{document=**} {
+      allow read, write: if isMasterAdmin();
+    }
+
+    /**
+     * CORE HELPERS
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function isAdmin() {
-      return isMasterAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == "ADMIN");
-    }
-
-    function isGuard() {
-      return isMasterAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getUserData().role == "GUARD" || getUserData().role == "ADMIN"));
-    }
-
-    // --- GLOBAL BYPASS ---
-    match /{document=**} {
-      allow read, write: if isMasterAdmin();
+    function isStaff() {
+      return isSignedIn() && (
+        isMasterAdmin() || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getUserData().role == "GUARD" || getUserData().role == "ADMIN"))
+      );
     }
 
     // --- COLLECTION RULES ---
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isSignedIn() && (request.auth.uid == userId || isStaff());
     }
 
     match /items/{itemId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isGuard());
+      allow update, delete: if isStaff() || (resource.data.ownerId == request.auth.uid);
     }
 
     match /notifications/{notifId} {
       allow read: if isSignedIn();
-      allow write: if isGuard();
+      allow write: if isStaff();
     }
 
     match /banners/{bannerId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow write: if isStaff();
     }
 
     match /shopItems/{itemId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow write: if isStaff();
     }
 
     match /orders/{orderId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isGuard());
+      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
-      allow update, delete: if isGuard();
+      allow update, delete: if isStaff();
     }
 
     match /clockRoomItems/{itemId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isGuard());
+      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isGuard());
+      allow update: if isStaff() || resource.data.userId == request.auth.uid;
+      allow delete: if isStaff();
+    }
+
+    match /clockRoomHandovers/{handoverId} {
+      allow read: if isSignedIn();
+      allow create: if isStaff();
+      allow update: if isSignedIn();
+      allow delete: if isStaff();
     }
 
     match /handovers/{handoverId} {
       allow read: if isSignedIn();
-      allow create: if isGuard();
+      allow create: if isStaff();
       allow update: if isSignedIn();
-      allow delete: if isAdmin();
+      allow delete: if isStaff();
     }
 
     match /system/config {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isStaff();
     }
   }
 }
