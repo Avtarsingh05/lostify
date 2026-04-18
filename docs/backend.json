@@ -1,99 +1,631 @@
-
 {
   "entities": {
-    "User": {
+    "UserProfile": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
+      "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user of the Lostify application.",
+      "description": "Represents a user's profile information within the Lostify application, excluding authentication data.",
       "properties": {
-        "id": { "type": "string" },
-        "username": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "phoneNumber": { "type": "string" },
-        "registrationNumber": { "type": "string" },
-        "photoURL": { "type": "string", "format": "uri" },
-        "role": { "type": "string", "enum": ["USER", "GUARD", "ADMIN"] },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The display name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "profilePictureUrl": {
+          "type": "string",
+          "description": "URL to the user's profile picture.",
+          "format": "uri"
+        },
+        "contactPreference": {
+          "type": "string",
+          "description": "The user's preferred method for contact regarding item inquiries (e.g., 'email', 'chat')."
+        }
       },
-      "required": ["id", "username", "email", "createdAt"]
+      "required": [
+        "id",
+        "name",
+        "email"
+      ]
     },
-    "ClockRoomItem": {
+    "Category": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ClockRoomItem",
+      "title": "Category",
       "type": "object",
+      "description": "Represents a classification category for lost and found items.",
       "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "imageUrl": { "type": "string", "format": "uri" },
-        "itemType": { "type": "string" },
-        "color": { "type": "string" },
-        "description": { "type": "string" },
-        "rackNumber": { "type": "string" },
-        "slotNumber": { "type": "string" },
-        "status": { "type": "string", "enum": ["stored", "collected"] },
-        "otp": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "collectedAt": { "type": "string", "format": "date-time" },
-        "expectedReturnDate": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category (e.g., 'Electronics', 'Jewelry', 'Documents')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the category."
+        }
       },
-      "required": ["userId", "itemType", "status", "createdAt"]
+      "required": [
+        "id",
+        "name"
+      ]
     },
-    "Handover": {
+    "LostItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Handover",
+      "title": "LostItem",
       "type": "object",
+      "description": "Represents an item that a user has reported as lost.",
       "properties": {
-        "id": { "type": "string" },
-        "itemId": { "type": "string" },
-        "itemName": { "type": "string" },
-        "itemImageUrl": { "type": "string", "format": "uri" },
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "userEmail": { "type": "string", "format": "email" },
-        "guardId": { "type": "string" },
-        "guardName": { "type": "string" },
-        "verificationCode": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "completed"] },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "completedAt": { "type": "string", "format": "date-time" },
-        "expiresAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LostItem entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the lost item."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the lost item."
+        },
+        "lastSeenLocationDescription": {
+          "type": "string",
+          "description": "A user-provided description of where the item was last seen."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "The geographical latitude of the item's last known location."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "The geographical longitude of the item's last known location."
+        },
+        "dateTimeLost": {
+          "type": "string",
+          "description": "The date and time when the item was lost.",
+          "format": "date-time"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to an image of the lost item.",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the lost item (e.g., 'Reported', 'Pending Match', 'Claimed', 'Returned')."
+        },
+        "reporterId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who reported this item as lost. (Relationship: UserProfile 1:N LostItem)"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category this item belongs to. (Relationship: Category 1:N LostItem)"
+        },
+        "reportedAt": {
+          "type": "string",
+          "description": "Timestamp when the lost item report was submitted.",
+          "format": "date-time"
+        },
+        "rewardAmount": {
+          "type": "number",
+          "description": "Optional monetary reward offered for the item's return."
+        }
       },
-      "required": ["itemId", "verificationCode", "status", "createdAt"]
+      "required": [
+        "id",
+        "name",
+        "description",
+        "lastSeenLocationDescription",
+        "dateTimeLost",
+        "imageUrl",
+        "status",
+        "reporterId",
+        "categoryId",
+        "reportedAt"
+      ]
     },
-    "Banner": {
+    "FoundItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Banner",
+      "title": "FoundItem",
       "type": "object",
+      "description": "Represents an item that a user has reported as found.",
       "properties": {
-        "id": { "type": "string" },
-        "imageUrl": { "type": "string", "format": "uri" },
-        "link": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the FoundItem entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the found item, potentially auto-suggested by AI."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the found item, potentially auto-suggested by AI."
+        },
+        "foundLocationDescription": {
+          "type": "string",
+          "description": "A description of where the item was found."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "The geographical latitude of the item's found location."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "The geographical longitude of the item's found location."
+        },
+        "dateTimeFound": {
+          "type": "string",
+          "description": "The date and time when the item was found.",
+          "format": "date-time"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to an image of the found item.",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the found item (e.g., 'Reported', 'Pending Match', 'Claimed', 'Returned')."
+        },
+        "finderId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who found and reported this item. (Relationship: UserProfile 1:N FoundItem)"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category this item belongs to. (Relationship: Category 1:N FoundItem)"
+        },
+        "reportedAt": {
+          "type": "string",
+          "description": "Timestamp when the found item report was submitted.",
+          "format": "date-time"
+        },
+        "storageInfo": {
+          "type": "string",
+          "description": "Information about where the found item is currently stored (e.g., 'Held by finder', 'Police station')."
+        }
       },
-      "required": ["imageUrl", "createdAt"]
+      "required": [
+        "id",
+        "name",
+        "description",
+        "foundLocationDescription",
+        "dateTimeFound",
+        "imageUrl",
+        "status",
+        "finderId",
+        "categoryId",
+        "reportedAt",
+        "storageInfo"
+      ]
+    },
+    "ItemClaim": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ItemClaim",
+      "type": "object",
+      "description": "Represents a formal claim made by a user for a found item, or a lost item they believe is theirs.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ItemClaim entity."
+        },
+        "foundItemId": {
+          "type": "string",
+          "description": "Reference to the FoundItem being claimed. (Relationship: FoundItem 1:N ItemClaim)"
+        },
+        "claimerId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who is making the claim. (Relationship: UserProfile 1:N ItemClaim)"
+        },
+        "claimDetails": {
+          "type": "string",
+          "description": "Detailed description and evidence provided by the claimer to support their claim."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the claim (e.g., 'Pending Review', 'Approved', 'Rejected', 'Completed')."
+        },
+        "claimedAt": {
+          "type": "string",
+          "description": "Timestamp when the claim was submitted.",
+          "format": "date-time"
+        },
+        "resolvedAt": {
+          "type": "string",
+          "description": "Timestamp when the claim was resolved."
+        },
+        "resolverId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (e.g., finder or admin) who resolved the claim. (Relationship: UserProfile 1:N ItemClaim)"
+        },
+        "matchingLostItemId": {
+          "type": "string",
+          "description": "Optional reference to a LostItem reported by the claimer that potentially matches this FoundItem. (Relationship: LostItem 1:N ItemClaim)"
+        }
+      },
+      "required": [
+        "id",
+        "foundItemId",
+        "claimerId",
+        "claimDetails",
+        "status",
+        "claimedAt"
+      ]
+    },
+    "Conversation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Conversation",
+      "type": "object",
+      "description": "Represents a private chat conversation between two users regarding a specific item.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Conversation entity."
+        },
+        "participantIds": {
+          "type": "array",
+          "description": "References to the UserProfiles participating in this conversation. (Relationship: UserProfile N:N Conversation)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedItemId": {
+          "type": "string",
+          "description": "Reference to the LostItem or FoundItem this conversation is about. (Relationship: LostItem/FoundItem 1:N Conversation)"
+        },
+        "relatedItemType": {
+          "type": "string",
+          "description": "Indicates whether 'relatedItemId' refers to a 'LostItem' or 'FoundItem'."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the conversation was initiated.",
+          "format": "date-time"
+        },
+        "lastMessageAt": {
+          "type": "string",
+          "description": "Timestamp of the most recent message in the conversation.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "participantIds",
+        "relatedItemId",
+        "relatedItemType",
+        "createdAt",
+        "lastMessageAt"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a single message within a conversation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message entity."
+        },
+        "conversationId": {
+          "type": "string",
+          "description": "Reference to the Conversation this message belongs to. (Relationship: Conversation 1:N Message)"
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who sent this message. (Relationship: UserProfile 1:N Message)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp when the message was sent.",
+          "format": "date-time"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates whether the recipient has read the message."
+        }
+      },
+      "required": [
+        "id",
+        "conversationId",
+        "senderId",
+        "content",
+        "timestamp"
+      ]
+    },
+    "Auction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Auction",
+      "type": "object",
+      "description": "Represents an auction for a reward related to a lost or found item.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Auction entity."
+        },
+        "relatedItemId": {
+          "type": "string",
+          "description": "Reference to the LostItem or FoundItem this auction is associated with. (Relationship: LostItem/FoundItem 1:N Auction)"
+        },
+        "relatedItemType": {
+          "type": "string",
+          "description": "Indicates whether 'relatedItemId' refers to a 'LostItem' or 'FoundItem'."
+        },
+        "organizerId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who organized this auction. (Relationship: UserProfile 1:N Auction)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the auction (e.g., 'Reward for Lost Watch')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the auction and the item/reward."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The date and time when the auction begins.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The date and time when the auction concludes.",
+          "format": "date-time"
+        },
+        "startingBidAmount": {
+          "type": "number",
+          "description": "The initial minimum bid amount for the auction."
+        },
+        "currentHighestBidId": {
+          "type": "string",
+          "description": "Reference to the current highest Bid in this auction. (Relationship: Auction 1:1 Bid)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the auction (e.g., 'Active', 'Closed', 'Cancelled')."
+        },
+        "winnerId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who won the auction, if applicable. (Relationship: UserProfile 1:N Auction)"
+        }
+      },
+      "required": [
+        "id",
+        "relatedItemId",
+        "relatedItemType",
+        "organizerId",
+        "title",
+        "description",
+        "startTime",
+        "endTime",
+        "startingBidAmount",
+        "status"
+      ]
+    },
+    "Bid": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bid",
+      "type": "object",
+      "description": "Represents a bid placed by a user in an auction.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Bid entity."
+        },
+        "auctionId": {
+          "type": "string",
+          "description": "Reference to the Auction this bid belongs to. (Relationship: Auction 1:N Bid)"
+        },
+        "bidderId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who placed this bid. (Relationship: UserProfile 1:N Bid)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The monetary amount of the bid."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp when the bid was placed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "auctionId",
+        "bidderId",
+        "amount",
+        "timestamp"
+      ]
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
-    "/users/{userId}": {
-      "schema": "#/backend/entities/User",
-      "description": "Stores user profiles."
-    },
-    "/handovers/{handoverId}": {
-      "schema": "#/backend/entities/Handover",
-      "description": "Secure item handover sessions."
-    },
-    "/banners/{bannerId}": {
-      "schema": "#/backend/entities/Banner",
-      "description": "Promotional banners for the dashboard."
-    },
-    "/clockRoomItems/{itemId}": {
-      "schema": "#/backend/entities/ClockRoomItem",
-      "description": "Digital tokens for campus luggage storage."
-    }
+    "structure": [
+      {
+        "path": "/userProfiles/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores individual user profile data. Each document's ID must match the authenticated user's UID (userId). Includes a self-referencing 'id' field for path-based ownership enforcement."
+        }
+      },
+      {
+        "path": "/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores predefined categories for lost and found items. This collection is globally readable by all authenticated users, and writable by administrators.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for the category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/lostItems/{lostItemId}",
+        "definition": {
+          "entityName": "LostItem",
+          "schema": {
+            "$ref": "#/backend/entities/LostItem"
+          },
+          "description": "Stores items reported as lost. Documents include `reporterId` for ownership, enabling all authenticated users to read (list and get) but only the reporter to modify. The `id` field within the document must match the document ID.",
+          "params": [
+            {
+              "name": "lostItemId",
+              "description": "The unique identifier for the lost item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/foundItems/{foundItemId}",
+        "definition": {
+          "entityName": "FoundItem",
+          "schema": {
+            "$ref": "#/backend/entities/FoundItem"
+          },
+          "description": "Stores items reported as found. Documents include `finderId` for ownership, enabling all authenticated users to read (list and get) but only the finder to modify. The `id` field within the document must match the document ID.",
+          "params": [
+            {
+              "name": "foundItemId",
+              "description": "The unique identifier for the found item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/itemClaims/{itemClaimId}",
+        "definition": {
+          "entityName": "ItemClaim",
+          "schema": {
+            "$ref": "#/backend/entities/ItemClaim"
+          },
+          "description": "Stores claims made for found items. Documents include `claimerId` and a denormalized `foundItemFinderId` (the finder of the related FoundItem) for authorization independence. Only the claimer or the found item's finder can read or modify the claim. The `id` field within the document must match the document ID.",
+          "params": [
+            {
+              "name": "itemClaimId",
+              "description": "The unique identifier for the item claim."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/conversations/{conversationId}",
+        "definition": {
+          "entityName": "Conversation",
+          "schema": {
+            "$ref": "#/backend/entities/Conversation"
+          },
+          "description": "Stores private chat conversations between users. Documents include a `participants` map (`{uid1: true, uid2: true}`) for authorization independence. Only participants can read or write to the conversation. The `id` field within the document must match the document ID.",
+          "params": [
+            {
+              "name": "conversationId",
+              "description": "The unique identifier for the conversation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/conversations/{conversationId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores individual messages within a conversation. Includes a denormalized `conversationParticipants` map (from the parent Conversation) for authorization independence. Only conversation participants can read or write messages. The `id` field within the document must match the document ID.",
+          "params": [
+            {
+              "name": "conversationId",
+              "description": "The unique identifier of the parent conversation."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/auctions/{auctionId}",
+        "definition": {
+          "entityName": "Auction",
+          "schema": {
+            "$ref": "#/backend/entities/Auction"
+          },
+          "description": "Stores auction listings for rewards. Documents include `organizerId` for ownership. All authenticated users can read (list and get) active auctions, but only the organizer can create, update, or delete their own auction. The `id` field within the document must match the document ID.",
+          "params": [
+            {
+              "name": "auctionId",
+              "description": "The unique identifier for the auction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/auctions/{auctionId}/bids/{bidId}",
+        "definition": {
+          "entityName": "Bid",
+          "schema": {
+            "$ref": "#/backend/entities/Bid"
+          },
+          "description": "Stores bids placed in an auction. Documents include `bidderId` for ownership and a denormalized `auctionOrganizerId` (from the parent Auction) for authorization independence. All authenticated users can read bids for public visibility, but only the bidder can modify their own bid. The `id` field within the document must match the document ID.",
+          "params": [
+            {
+              "name": "auctionId",
+              "description": "The unique identifier of the parent auction."
+            },
+            {
+              "name": "bidId",
+              "description": "The unique identifier for the bid."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Dedicated collection for Database Access Control (DBAC) to define administrators. The document ID must be the UID of an administrator. Existence of a document at this path for a given UID signifies admin status. No direct schema is applied, but effectively stores the `UserProfile` relevant to the admin.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who has an administrative role."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to be secure, scalable, and debuggable, strictly adhering to the core design principles and mandates. The primary goal is Authorization Independence, ensuring that security rules do not rely on `get()` calls to parent documents, which simplifies rules and enables atomic operations. This is achieved through strategic denormalization of authorization context.\n\nHere's how the structure supports the core principles:\n\n1.  \"Authorization Independence\" and \"Clarity of Intent\":\n    *   **User Profiles:** `/userProfiles/{userId}`. Ownership is inherent in the path, with `resource.data.id` matching `{userId}`. This makes rules like `allow read, write: if request.auth.uid == userId;` straightforward and independent.\n    *   **Lost and Found Items:** `/lostItems/{lostItemId}` and `/foundItems/{foundItemId}`. Each item document contains `reporterId` or `finderId` respectively. Rules simply check `resource.data.reporterId == request.auth.uid` or `resource.data.finderId == request.auth.uid`, avoiding any `get()` operations for ownership checks.\n    *   **Item Claims:** `/itemClaims/{itemClaimId}`. To enable both the `claimer` and the `finder` of the related `FoundItem` to manage the claim without `get()`, the `ItemClaim` document will include a denormalized `foundItemFinderId` field. This allows rules to check `request.auth.uid == resource.data.claimerId || request.auth.uid == resource.data.foundItemFinderId` directly on the claim document.\n    *   **Conversations and Messages:** `/conversations/{conversationId}` and `/conversations/{conversationId}/messages/{messageId}`. `Conversation` documents will contain a `participants` map (`{uid1: true, uid2: true}`). For authorization independence of `Message` documents, each `Message` document will denormalize the `conversationParticipants` map from its parent conversation. Rules can then directly check `request.auth.uid in resource.data.conversationParticipants` without a `get()` call to the parent conversation.\n    *   **Auctions and Bids:** `/auctions/{auctionId}` and `/auctions/{auctionId}/bids/{bidId}`. `Auction` documents include `organizerId`. `Bid` documents will denormalize `auctionOrganizerId` from their parent auction. This allows `organizerId` access to bids without a `get()` call to the parent auction.\n\n2.  \"DBAC (No Custom Claims)\": A dedicated collection `/roles_admin/{userId}` is used for administrative roles. Authorization rules will use `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))` for admin checks, ensuring roles are database-driven.\n\n3.  \"QAPs (Rules are not Filters)\": The structure explicitly supports secure `list` operations:\n    *   **Publicly Listable Collections:** `/categories`, `/lostItems`, `/foundItems`, `/auctions` are designed for authenticated users to `list` all documents. Rules for these collections will generally allow `read: if request.auth != null;`. Any specific filters required by the UI (e.g., filtering lost items by category) are applied on the client-side query, with rules enforcing general read access.\n    *   **User-Specific Listable Collections:**\n        *   For `/itemClaims`, users can only `list` claims where `claimerId` or `foundItemFinderId` matches `request.auth.uid`. Client queries must include these filters, which rules will enforce.\n        *   For `/conversations`, users can only `list` conversations where `request.auth.uid` is a participant. Client queries will use `where('participants.' + request.auth.uid, '==', true)` or equivalent for `map-contains` checks, with rules enforcing this.\n        *   For `/conversations/{conversationId}/messages`, once a user has access to a conversation, they can `list` its messages. The denormalized `conversationParticipants` allows rules to verify access efficiently.\n\n4.  \"Structural Segregation\": Each collection (e.g., `/lostItems`, `/foundItems`) holds documents with a homogeneous security posture (e.g., all lost items are publicly viewable by authenticated users, but editable only by their reporter). This prevents complex conditional logic within rules.\n\n5.  \"Data Clarity and Predictability\": Consistent naming conventions (e.g., `reporterId`, `finderId`, `organizerId`), explicit `status` fields (e.g., 'Reported', 'Claimed'), and descriptive wildcards (e.g., `{lostItemId}`) are used.\n\nRegarding the reported error: `Runtime FirebaseError: Missing or insufficient permissions: ... \"method\": \"list\", \"path\": \"/databases/(default)/documents/clockRoomItems\"`. This indicates that the client-side code is attempting to `list` from a collection named `clockRoomItems`. This collection is not part of the defined entities. Therefore, the immediate fix on the client side is to update the path to one of the correctly designed collections, such as `/lostItems` or `/foundItems`, which are explicitly designed to support `list` operations for all authenticated users. If `clockRoomItems` was intended to be a general items collection, it should be re-evaluated to either use `/lostItems` or `/foundItems` directly or implement a combined view on the client side."
   }
 }

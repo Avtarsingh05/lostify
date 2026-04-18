@@ -1,68 +1,29 @@
-
 'use client';
 import {
-  Auth,
+  Auth, // Import Auth type for type hinting
   signInAnonymously,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile,
+  // Assume getAuth and app are initialized elsewhere
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
 
 /** Initiate anonymous sign-in (non-blocking). */
 export function initiateAnonymousSignIn(authInstance: Auth): void {
-  signInAnonymously(authInstance).catch((error) => {
-    errorEmitter.emit('auth-error', error);
-  });
+  // CRITICAL: Call signInAnonymously directly. Do NOT use 'await signInAnonymously(...)'.
+  signInAnonymously(authInstance);
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
 
-/** Initiate email/password sign-up (non-blocking) with optional display name and Firestore sync. */
-export function initiateEmailSignUp(authInstance: Auth, email: string, password: string, displayName?: string): void {
-  createUserWithEmailAndPassword(authInstance, email, password)
-    .then(async (userCredential) => {
-      const user = userCredential.user;
-      
-      // 1. Update Auth Profile
-      if (displayName) {
-        await updateProfile(user, { displayName });
-      }
-
-      // 2. Sync to Firestore 'users' collection
-      // Auto-promote specific emails to ADMIN status
-      const adminEmails = [
-        "worker@gmail.com",
-        "forigloohelp@gmail.com",
-        "avtarsingh9528972330@gmail.com"
-      ];
-      
-      const isAdminEmail = adminEmails.includes(email.toLowerCase()) || 
-                          user.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" ||
-                          user.uid === "9Qv4QkTuukaYhr2sggnQmQmqgHu1";
-      
-      const db = getFirestore(user.app);
-      const userRef = doc(db, "users", user.uid);
-      
-      setDoc(userRef, {
-        id: user.uid,
-        username: displayName || email.split('@')[0],
-        email: email,
-        role: isAdminEmail ? "ADMIN" : "USER",
-        photoURL: user.photoURL || "",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }, { merge: true }).catch((e) => {
-        console.error("Firestore sync error during signup:", e);
-      });
-    })
-    .catch((error) => {
-      errorEmitter.emit('auth-error', error);
-    });
+/** Initiate email/password sign-up (non-blocking). */
+export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): void {
+  // CRITICAL: Call createUserWithEmailAndPassword directly. Do NOT use 'await createUserWithEmailAndPassword(...)'.
+  createUserWithEmailAndPassword(authInstance, email, password);
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
 
 /** Initiate email/password sign-in (non-blocking). */
 export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): void {
-  signInWithEmailAndPassword(authInstance, email, password).catch((error) => {
-    errorEmitter.emit('auth-error', error);
-  });
+  // CRITICAL: Call signInWithEmailAndPassword directly. Do NOT use 'await signInWithEmailAndPassword(...)'.
+  signInWithEmailAndPassword(authInstance, email, password);
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
