@@ -19,28 +19,6 @@
       },
       "required": ["id", "username", "email", "createdAt"]
     },
-    "ClockRoomItem": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ClockRoomItem",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "imageUrl": { "type": "string", "format": "uri" },
-        "itemType": { "type": "string" },
-        "color": { "type": "string" },
-        "description": { "type": "string" },
-        "rackNumber": { "type": "string" },
-        "slotNumber": { "type": "string" },
-        "status": { "type": "string", "enum": ["stored", "collected"] },
-        "otp": { "type": "string" },
-        "expectedReturnDate": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "collectedAt": { "type": "string", "format": "date-time" },
-        "guardId": { "type": "string" }
-      },
-      "required": ["id", "userId", "imageUrl", "itemType", "status", "rackNumber", "slotNumber", "createdAt"]
-    },
     "Handover": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Handover",
@@ -83,10 +61,6 @@
     "/users/{userId}": {
       "schema": "#/backend/entities/User",
       "description": "Stores user profiles."
-    },
-    "/clockRoomItems/{itemId}": {
-      "schema": "#/backend/entities/ClockRoomItem",
-      "description": "Luggage stored in the university clock room."
     },
     "/handovers/{handoverId}": {
       "schema": "#/backend/entities/Handover",

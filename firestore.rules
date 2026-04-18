@@ -21,18 +21,15 @@ service cloud.firestore {
     }
 
     function getRole() {
-      // Safely fetch the role from the users collection
       let userDoc = /databases/$(database)/documents/users/$(request.auth.uid);
       return exists(userDoc) ? get(userDoc).data.role : "USER";
     }
 
     function isStaff() {
-      // Staff includes Master Admins and users with ADMIN/GUARD roles
       return isMasterAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getRole() == "ADMIN" || getRole() == "GUARD"));
     }
 
     // --- GLOBAL BYPASS FOR MASTER ADMINS ---
-    // This allows root access to all collections for development and master oversight
     match /{document=**} {
       allow read, write: if isMasterAdmin();
     }
@@ -42,14 +39,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if request.auth.uid == userId;
-    }
-
-    match /clockRoomItems/{itemId} {
-      // Allow list/get if staff, or if querying own items
-      allow read: if isSignedIn() && (isStaff() || (resource == null || resource.data.userId == request.auth.uid));
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      allow delete: if isStaff();
     }
 
     match /handovers/{handoverId} {

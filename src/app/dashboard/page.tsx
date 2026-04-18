@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Package,
   AlertCircle,
-  Briefcase,
   Megaphone
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
@@ -165,13 +164,6 @@ export default function Dashboard() {
       href: "/gallery",
       gradient: "gradient-header",
       description: "Browse found & lost items"
-    },
-    {
-      title: "Clock Room",
-      icon: Briefcase,
-      href: "/clock-room",
-      gradient: "bg-slate-800",
-      description: "Luggage storage & tracking"
     }
   ]
 
@@ -248,13 +240,6 @@ export default function Dashboard() {
                   <DropdownMenuItem onClick={() => router.push('/orders')} className="rounded-xl cursor-pointer">
                     <ShoppingBag className="mr-2 h-4 w-4" />
                     <span>My Orders</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    toast({ description: "Opening Clock Room Storage..." });
-                    router.push('/clock-room');
-                  }} className="rounded-xl cursor-pointer">
-                    <Briefcase className="mr-2 h-4 w-4" />
-                    <span>Clock Room Storage</span>
                   </DropdownMenuItem>
                   
                   {isGuard && (
