@@ -16,15 +16,12 @@ import {
   Building,
   UserCheck,
   History,
-  AlertTriangle,
   QrCode,
   Smartphone,
-  Calendar,
   Briefcase,
-  ChevronRight,
   Package
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -75,6 +72,13 @@ export default function GuardDashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
+  // Debugging logs
+  useEffect(() => {
+    if (user) {
+      console.log("[GuardStation] Logged in as:", user.email, "UID:", user.uid);
+    }
+  }, [user]);
+
   // Master Authority Identifiers
   const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
   const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
@@ -101,6 +105,7 @@ export default function GuardDashboard() {
   // Clock Room Items Query
   const clockRoomQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
+    // Staff can list all stored items without a userId filter
     return query(
       collection(db, "clockRoomItems"),
       where("status", "==", "stored"),
@@ -131,10 +136,7 @@ export default function GuardDashboard() {
       verifiedBy: user?.displayName || user?.email?.split('@')[0] || "Guard",
       lastUpdatedAt: new Date().toISOString()
     })
-    toast({
-      title: "Item Approved",
-      description: `Logged at ${storageLocation}. Now visible in gallery.`,
-    })
+    toast({ title: "Item Approved" })
     setVerifyingItem(null)
     setStorageLocation("")
   }
@@ -149,10 +151,7 @@ export default function GuardDashboard() {
       resolvedAt: new Date().toISOString(),
       lastUpdatedAt: new Date().toISOString()
     })
-    toast({
-      title: "Item Resolved",
-      description: `Claimed by student: ${regNumber}`,
-    })
+    toast({ title: "Item Resolved" })
     setResolvingItem(null)
     setRegNumber("")
   }
@@ -160,8 +159,6 @@ export default function GuardDashboard() {
   const handleInitiateClockHandover = async (item: any) => {
     if (!db || !user) return
     setIsHandoverLoading(true)
-    toast({ title: "Verification started", description: "Generating secure session..." })
-
     const verificationCode = Math.floor(1000 + Math.random() * 9000).toString()
     const handoverData = {
       itemId: item.id,
@@ -174,9 +171,7 @@ export default function GuardDashboard() {
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
     }
-
-    const colRef = collection(db, "clockRoomHandovers");
-    addDocumentNonBlocking(colRef, handoverData).then((docRef) => {
+    addDocumentNonBlocking(collection(db, "clockRoomHandovers"), handoverData).then((docRef) => {
        setHandoverSession({ ...handoverData, id: docRef?.id || "session_pending" });
        setIsHandoverLoading(false)
     });
@@ -185,7 +180,6 @@ export default function GuardDashboard() {
   const handleInitiateHandover = async (item: any) => {
     if (!db || !user) return
     setIsHandoverLoading(true)
-
     const verificationCode = Math.floor(1000 + Math.random() * 9000).toString()
     const handoverData = {
       itemId: item.id,
@@ -198,9 +192,7 @@ export default function GuardDashboard() {
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
     }
-
-    const colRef = collection(db, "handovers");
-    addDocumentNonBlocking(colRef, handoverData).then((docRef) => {
+    addDocumentNonBlocking(collection(db, "handovers"), handoverData).then((docRef) => {
        setHandoverSession({ ...handoverData, id: docRef?.id || "session_pending" });
        setIsHandoverLoading(false)
     });
@@ -213,12 +205,6 @@ export default function GuardDashboard() {
       item.itemType?.toLowerCase().includes(search.toLowerCase())
     )
   }
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push("/")
-    }
-  }, [user, isUserLoading, router])
 
   if (isUserLoading || !user) {
     return (
@@ -235,7 +221,7 @@ export default function GuardDashboard() {
           <AlertCircle className="h-8 w-8 text-destructive" />
         </div>
         <h2 className="text-xl font-headline font-bold">Access Denied</h2>
-        <p className="text-sm text-muted-foreground">This panel is restricted to authorized campus personnel only.</p>
+        <p className="text-sm text-muted-foreground">Unauthorized Access.</p>
         <Button onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
       </div>
     )
@@ -313,9 +299,7 @@ export default function GuardDashboard() {
 
           <TabsContent value="pending" className="space-y-4">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
-              </div>
+              <div className="flex flex-col items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" /></div>
             ) : filterItems(pendingFound).length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
                 {filterItems(pendingFound).map((item) => (
@@ -325,34 +309,20 @@ export default function GuardDashboard() {
                         <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
-                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-secondary/10 text-secondary">
-                              Pending
-                            </Badge>
-                          </div>
-                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <MapPin className="h-3 w-3" /> {item.locationDescription}
-                          </p>
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                          <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-secondary/10 text-secondary">Pending</Badge>
                         </div>
+                        <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="h-3 w-3" /> {item.locationDescription}</p>
                         <div className="flex items-center justify-end mt-3">
-                          <Button 
-                            size="sm" 
-                            onClick={() => setVerifyingItem(item)}
-                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-primary active:scale-95 transition-transform"
-                          >
-                            Log to Office
-                          </Button>
+                          <Button size="sm" onClick={() => setVerifyingItem(item)} className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-primary active:scale-95 transition-transform">Log to Office</Button>
                         </div>
                       </div>
                     </div>
                   </Card>
                 ))}
               </div>
-            ) : (
-              <EmptyState icon={CheckCircle2} message="No reports pending." />
-            )}
+            ) : <EmptyState icon={CheckCircle2} message="No reports pending." />}
           </TabsContent>
 
           <TabsContent value="office" className="space-y-4">
@@ -365,44 +335,21 @@ export default function GuardDashboard() {
                         <Image src={item.imageUrl || "https://picsum.photos/seed/item/200/200"} alt={item.name} fill className="object-cover" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
-                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-primary/10 text-primary">
-                              In Office
-                            </Badge>
-                          </div>
-                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <Building className="h-3 w-3" /> {item.storageOffice}
-                          </p>
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                          <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-primary/10 text-primary">In Office</Badge>
                         </div>
+                        <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1"><Building className="h-3 w-3" /> {item.storageOffice}</p>
                         <div className="flex items-center gap-2 mt-3 justify-end">
-                          <Button 
-                            size="sm" 
-                            variant="secondary"
-                            onClick={() => handleInitiateHandover(item)}
-                            disabled={isHandoverLoading}
-                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold shadow-md flex items-center gap-1.5"
-                          >
-                            <QrCode className="h-3 w-3" /> Secure Handover
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setResolvingItem(item)}
-                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-primary/20 text-primary hover:bg-primary/10"
-                          >
-                            Mark Claimed
-                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => handleInitiateHandover(item)} disabled={isHandoverLoading} className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold shadow-md flex items-center gap-1.5"><QrCode className="h-3 w-3" /> Secure Handover</Button>
+                          <Button size="sm" variant="outline" onClick={() => setResolvingItem(item)} className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-primary/20 text-primary hover:bg-primary/10">Mark Claimed</Button>
                         </div>
                       </div>
                     </div>
                   </Card>
                 ))}
               </div>
-            ) : (
-              <EmptyState icon={Archive} message="No items in custody." />
-            )}
+            ) : <EmptyState icon={Archive} message="No items in custody." />}
           </TabsContent>
 
           <TabsContent value="lost" className="space-y-4">
@@ -415,35 +362,20 @@ export default function GuardDashboard() {
                         <Image src={item.imageUrl || "https://picsum.photos/seed/lost/200/200"} alt={item.name} fill className="object-cover" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
-                            <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-accent/10 text-accent">
-                              Lost Report
-                            </Badge>
-                          </div>
-                          <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <MapPin className="h-3 w-3" /> {item.locationDescription}
-                          </p>
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
+                          <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-accent/10 text-accent">Lost Report</Badge>
                         </div>
+                        <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="h-3 w-3" /> {item.locationDescription}</p>
                         <div className="flex items-center justify-end mt-3">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setResolvingItem(item)}
-                            className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-accent/20 text-accent hover:bg-accent/10"
-                          >
-                            Mark Returned
-                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setResolvingItem(item)} className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold border-accent/20 text-accent hover:bg-accent/10">Mark Returned</Button>
                         </div>
                       </div>
                     </div>
                   </Card>
                 ))}
               </div>
-            ) : (
-              <EmptyState icon={History} message="No active lost reports." />
-            )}
+            ) : <EmptyState icon={History} message="No active lost reports." />}
           </TabsContent>
 
           <TabsContent value="clock" className="space-y-4">
@@ -458,151 +390,73 @@ export default function GuardDashboard() {
                          <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
                        </div>
                        <div className="flex-1 min-w-0 flex flex-col justify-between">
-                         <div>
-                           <div className="flex justify-between items-start">
-                             <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.itemType}</h3>
-                             <Badge className="bg-orange-500 text-[8px] lg:text-[10px] h-4 lg:h-5">STORED</Badge>
-                           </div>
-                           <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                             <MapPin className="h-3 w-3 text-orange-500" /> Rack {item.rackNumber}, Slot {item.slotNumber}
-                           </p>
-                           <p className="text-[9px] text-muted-foreground mt-1 flex items-center gap-1">
-                             <Clock className="h-2.5 w-2.5" /> Stored {format(new Date(item.createdAt), 'MMM dd, HH:mm')}
-                           </p>
+                         <div className="flex justify-between items-start">
+                           <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.itemType}</h3>
+                           <Badge className="bg-orange-500 text-[8px] lg:text-[10px] h-4 lg:h-5">STORED</Badge>
                          </div>
+                         <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="h-3 w-3 text-orange-500" /> Rack {item.rackNumber}, Slot {item.slotNumber}</p>
                          <div className="flex items-center justify-end mt-3">
-                           <Button 
-                             size="sm" 
-                             onClick={() => handleInitiateClockHandover(item)}
-                             disabled={isHandoverLoading}
-                             className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-orange-500 hover:bg-orange-600 active:scale-95 transition-transform gap-2"
-                           >
-                             <QrCode className="h-3.5 w-3.5" /> Verify Pickup
-                           </Button>
+                           <Button size="sm" onClick={() => handleInitiateClockHandover(item)} disabled={isHandoverLoading} className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-orange-500 hover:bg-orange-600 active:scale-95 transition-transform gap-2"><QrCode className="h-3.5 w-3.5" /> Verify Pickup</Button>
                          </div>
                        </div>
                      </div>
                    </Card>
                  ))}
                </div>
-             ) : (
-               <EmptyState icon={Package} message="Clock room is empty." />
-             )}
+             ) : <EmptyState icon={Package} message="Clock room is empty." />}
           </TabsContent>
         </Tabs>
       </main>
 
-      {/* --- HANDOVER MODAL (SHARED) --- */}
+      {/* --- HANDOVER MODAL --- */}
       <Dialog open={!!handoverSession} onOpenChange={() => setHandoverSession(null)}>
         <DialogContent className="max-w-[420px] rounded-[48px] p-8 bg-card border-none shadow-2xl">
           <DialogHeader className="items-center text-center">
             <DialogTitle className="font-headline font-bold text-2xl">Verify Handover</DialogTitle>
-            <DialogDescription className="text-xs uppercase tracking-widest font-bold text-muted-foreground">
-              Scan QR or use manual code
-            </DialogDescription>
+            <DialogDescription className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Scan QR or use manual code</DialogDescription>
           </DialogHeader>
-          
           <div className="flex flex-col items-center gap-8 py-4">
             <div className="bg-white p-6 rounded-[40px] shadow-inner shadow-black/5 border-2 border-dashed border-primary/20">
-              <QRCodeSVG 
-                value={handoverSession ? `${window.location.origin}/handover/${handoverSession.id}${handoverSession.type === 'clock_room' ? '?type=clock' : ''}` : ""} 
-                size={200}
-                includeMargin
-              />
+              <QRCodeSVG value={handoverSession ? `${window.location.origin}/handover/${handoverSession.id}${handoverSession.type === 'clock_room' ? '?type=clock' : ''}` : ""} size={200} includeMargin />
             </div>
-
             <div className="text-center space-y-2">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Verification Code</p>
-              <div className="bg-primary/10 px-8 py-4 rounded-3xl border border-primary/20">
-                <span className="text-5xl font-headline font-black text-primary tracking-[0.2em]">
-                  {handoverSession?.verificationCode}
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-secondary/10 p-4 rounded-2xl flex items-center gap-3 w-full border border-secondary/20">
-              <Smartphone className="h-5 w-5 text-secondary" />
-              <p className="text-[10px] font-bold text-secondary-foreground leading-tight">
-                Student should open Lostify on their phone and scan this QR or enter the 4-digit code.
-              </p>
+              <div className="bg-primary/10 px-8 py-4 rounded-3xl border border-primary/20"><span className="text-5xl font-headline font-black text-primary tracking-[0.2em]">{handoverSession?.verificationCode}</span></div>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button 
-              onClick={() => setHandoverSession(null)}
-              variant="outline"
-              className="w-full h-14 rounded-2xl font-bold text-xs"
-            >
-              Close Session
-            </Button>
-          </DialogFooter>
+          <DialogFooter><Button onClick={() => setHandoverSession(null)} variant="outline" className="w-full h-14 rounded-2xl font-bold text-xs">Close Session</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!verifyingItem} onOpenChange={() => setVerifyingItem(null)}>
         <DialogContent className="max-w-[420px] rounded-[32px] p-8">
           <DialogHeader>
-            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
-              <Building className="h-6 w-6 text-primary" /> Log Storage
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              Where is this item being physically kept?
-            </DialogDescription>
+            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2"><Building className="h-6 w-6 text-primary" /> Log Storage</DialogTitle>
+            <DialogDescription className="text-sm">Where is this item being physically kept?</DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Office / Building No.</Label>
-              <Input 
-                value={storageLocation}
-                onChange={(e) => setStorageLocation(e.target.value)}
-                placeholder="e.g. Block 34, Office 102"
-                className="rounded-xl h-12 text-sm"
-              />
+              <Input value={storageLocation} onChange={(e) => setStorageLocation(e.target.value)} placeholder="e.g. Block 34, Office 102" className="rounded-xl h-12 text-sm" />
             </div>
           </div>
-          <DialogFooter>
-            <Button 
-              onClick={handleApprove}
-              disabled={!storageLocation}
-              className="w-full h-14 rounded-xl gradient-header font-bold text-sm"
-            >
-              Verify & Add to Map
-            </Button>
-          </DialogFooter>
+          <DialogFooter><Button onClick={handleApprove} disabled={!storageLocation} className="w-full h-14 rounded-xl gradient-header font-bold text-sm">Verify & Add to Map</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!resolvingItem} onOpenChange={() => setResolvingItem(null)}>
         <DialogContent className="max-w-[420px] rounded-[32px] p-8">
           <DialogHeader>
-            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
-              <UserCheck className="h-6 w-6 text-accent" /> Student Return
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              Enter the student's registration details to close this report.
-            </DialogDescription>
+            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2"><UserCheck className="h-6 w-6 text-accent" /> Student Return</DialogTitle>
+            <DialogDescription className="text-sm">Enter the student's registration details to close this report.</DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Registration Number</Label>
-              <Input 
-                value={regNumber}
-                onChange={(e) => setRegNumber(e.target.value)}
-                placeholder="e.g. 12200000"
-                className="rounded-xl h-12 text-sm"
-              />
+              <Input value={regNumber} onChange={(e) => setRegNumber(e.target.value)} placeholder="e.g. 12200000" className="rounded-xl h-12 text-sm" />
             </div>
           </div>
-          <DialogFooter>
-            <Button 
-              onClick={handleResolve}
-              disabled={!regNumber}
-              className="w-full h-14 rounded-xl gradient-accent font-bold text-sm"
-            >
-              Confirm Return
-            </Button>
-          </DialogFooter>
+          <DialogFooter><Button onClick={handleResolve} disabled={!regNumber} className="w-full h-14 rounded-xl gradient-accent font-bold text-sm">Confirm Return</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

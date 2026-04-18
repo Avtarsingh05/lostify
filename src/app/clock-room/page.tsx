@@ -2,13 +2,13 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import { 
   ArrowLeft, 
   Plus, 
   Briefcase, 
   Clock, 
   MapPin, 
-  CheckCircle2, 
   Loader2,
   ChevronRight,
   Archive
@@ -26,8 +26,16 @@ export default function ClockRoomMain() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
 
+  // Debugging logs
+  useEffect(() => {
+    if (user) {
+      console.log("[ClockRoom] Logged in user UID:", user.uid);
+    }
+  }, [user]);
+
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
+    // Filtered query is required to satisfy "allow list" rules for non-staff users
     return query(
       collection(db, "clockRoomItems"),
       where("userId", "==", user.uid),
@@ -35,7 +43,7 @@ export default function ClockRoomMain() {
     )
   }, [db, user?.uid])
 
-  const { data: storedItems, isLoading: isItemsLoading } = useCollection(itemsQuery)
+  const { data: storedItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
 
   if (isUserLoading) {
     return (
@@ -82,6 +90,11 @@ export default function ClockRoomMain() {
         {isItemsLoading ? (
           <div className="flex justify-center py-20 opacity-20">
             <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center bg-destructive/10 rounded-[32px] border border-destructive/20">
+            <p className="text-sm font-bold text-destructive">Permission Error</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Please ensure your profile is fully synchronized.</p>
           </div>
         ) : storedItems && storedItems.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

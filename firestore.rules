@@ -13,7 +13,6 @@ service cloud.firestore {
     /**
      * MASTER AUTHORITY BYPASS
      * Direct root access for super administrators.
-     * Prioritizes UIDs for absolute reliability.
      */
     function isMasterAdmin() {
       return isSignedIn() && (
@@ -27,8 +26,7 @@ service cloud.firestore {
 
     /**
      * STAFF VERIFICATION
-     * Checks if user has GUARD or ADMIN role in their profile.
-     * Includes automatic fallback to Master Admin status.
+     * Checks if user has GUARD or ADMIN role.
      */
     function isStaff() {
       if (!isSignedIn()) return false;
@@ -39,7 +37,6 @@ service cloud.firestore {
 
     /**
      * GLOBAL BYPASS
-     * Immediate authorization for Master Admins across all collections.
      */
     match /{document=**} {
       allow read, write: if isMasterAdmin();
@@ -53,7 +50,8 @@ service cloud.firestore {
     }
 
     match /items/{itemId} {
-      allow read: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (isStaff() || resource.data.ownerId == request.auth.uid);
       allow create: if isSignedIn();
       allow update, delete: if isStaff() || (resource.data.ownerId == request.auth.uid);
     }
@@ -74,27 +72,34 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
       allow update, delete: if isStaff();
     }
 
     match /clockRoomItems/{itemId} {
-      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      // Allow single doc read if staff or owner
+      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      // Allow list queries only if they filter by userId (for students) or if user is staff
+      allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      
       allow create: if isSignedIn();
       allow update: if isStaff() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow delete: if isStaff();
     }
 
     match /clockRoomHandovers/{handoverId} {
-      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isStaff();
       allow update: if isSignedIn();
       allow delete: if isStaff();
     }
 
     match /handovers/{handoverId} {
-      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isStaff();
       allow update: if isSignedIn();
       allow delete: if isStaff();
