@@ -396,7 +396,7 @@ export default function GuardDashboard() {
                        <div className="bg-white p-2 rounded-xl shadow-sm"><UserCheck className="h-6 w-6 text-secondary" /></div>
                        <div className="space-y-0.5">
                          <p className="text-xs font-bold">Successfully Released</p>
-                         <p className="text-[10px] text-muted-foreground">Handover complete at {format(new Date(viewingClockItem.collectedAt), 'HH:mm on MMM dd')}</p>
+                         <p className="text-[10px] text-muted-foreground">Handover complete at {format(new Date(viewingClockItem.collectedAt), "HH:mm 'on' MMM dd")}</p>
                        </div>
                     </div>
                   )}
