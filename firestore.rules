@@ -1,34 +1,56 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper functions for better rule management
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/roles_admins/$(request.auth.uid)) || 
+             request.auth.token.email.matches('.*avtarsingh.*@gmail.com') ||
+             request.auth.token.email.matches('.*worker.*@gmail.com') ||
+             request.auth.token.email.matches('.*forigloohelp.*@gmail.com');
+    }
+
+    function isGuard() {
+      return exists(/databases/$(database)/documents/roles_guards/$(request.auth.uid)) || isAdmin();
+    }
+
     /**
-     * GLOBAL AUTHENTICATED ACCESS
-     * Explicitly permits all authenticated users to perform any operation 
-     * on all collections. This is the most robust way to ensure no 
-     * "Missing or insufficient permissions" errors occur for signed-in users.
+     * CLOCK ROOM SECURITY
+     * Regular users can only read their own storage records.
+     * Guards and Admins can read all records.
+     */
+    match /clockRoomItems/{itemId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isGuard());
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isGuard());
+    }
+
+    /**
+     * GLOBAL AUTHENTICATED ACCESS (Fallback)
+     * General access for other collections to prevent breaking core features.
      */
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isSignedIn();
     }
 
     /**
      * PUBLIC READ ACCESS
-     * Essential branding and promotional data must be available to everyone.
+     * Critical system configuration and branding.
      */
     match /system/config {
       allow read: if true;
     }
 
     match /banners/{bannerId} {
-      allow read: if true;
-    }
-    
-    match /notifications/{notificationId} {
-      allow read: if true;
-    }
-    
-    match /items/{itemId} {
       allow read: if true;
     }
   }

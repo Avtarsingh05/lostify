@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useRouter } from "next/navigation"
@@ -32,17 +33,28 @@ export default function ClockRoomMain() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // As requested, all users can now access the full list like guards/admins
+  // Implement Role-Based Privacy: 
+  // Regular users see only their own items. Guards/Admins see everything.
   const itemsQuery = useMemoFirebase(() => {
-    if (!db || !user?.uid) return null
+    if (!db || !user?.uid || !userData) return null
     
-    // Returning all items for everyone to satisfy the "access like guard/admin" requirement
-    // This also helps avoid permission errors related to filtered user queries
-    return query(
-      collection(db, "clockRoomItems"),
-      orderBy("createdAt", "desc")
-    )
-  }, [db, user?.uid])
+    const isAdminOrGuard = userData?.role === "ADMIN" || userData?.role === "GUARD";
+    
+    if (isAdminOrGuard) {
+      // Staff view: All items
+      return query(
+        collection(db, "clockRoomItems"),
+        orderBy("createdAt", "desc")
+      )
+    } else {
+      // Student view: Only personal luggage
+      return query(
+        collection(db, "clockRoomItems"),
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc")
+      )
+    }
+  }, [db, user?.uid, userData])
 
   const { data: storedItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
 
@@ -83,7 +95,7 @@ export default function ClockRoomMain() {
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center px-1">
           <h2 className="text-[10px] sm:text-sm font-headline font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Clock className="h-3 w-3 sm:h-4 sm:w-4" /> All Active Records
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4" /> {isAdminOrGuard ? "All Active Records" : "My Stored Luggage"}
           </h2>
           <Button 
             onClick={() => router.push('/clock-room/store')}
@@ -99,7 +111,7 @@ export default function ClockRoomMain() {
           </div>
         ) : error ? (
           <div className="p-8 text-center bg-destructive/10 rounded-[32px] border border-destructive/20">
-            <p className="text-sm font-bold text-destructive">Permission Error</p>
+            <p className="text-sm font-bold text-destructive">Database Query Error</p>
             <p className="text-[10px] text-muted-foreground mt-1">Please try refreshing or contact admin.</p>
           </div>
         ) : storedItems && storedItems.length > 0 ? (
