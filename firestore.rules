@@ -4,18 +4,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * Lostify Branding Rules
-     * Allows public access to system config for login page branding.
+     * Publicly Accessible System Rules
+     * Allows anyone to read config, notifications, and banners (including unauthenticated users).
      */
     match /system/config {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    /**
-     * Broadcast & Banner Rules
-     * Allows public access for reading so everyone can see announcements and banners.
-     */
     match /notifications/{notificationId} {
       allow read: if true;
       allow write: if request.auth != null;
@@ -26,7 +22,39 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    /**
+     * Item & Shop Rules
+     * Items are readable by everyone for gallery/search purposes.
+     */
+    match /items/{itemId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
     match /shopItems/{itemId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    /**
+     * User Specific Data
+     */
+    match /users/{userId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /clockRoomItems/{itemId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /orders/{orderId} {
+      allow read, write: if request.auth != null;
+    }
+
+    /**
+     * Community Chat Rules
+     */
+    match /community_messages/{messageId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }

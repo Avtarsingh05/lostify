@@ -267,7 +267,7 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-24 w-full space-y-6 lg:space-y-12">
-        {/* Broadcast Message Strip - Positioned Above Banner */}
+        {/* Broadcast Message Strip - Positioned ABOVE Banner */}
         {latestBroadcast && (
           <div className="animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
             <div className="bg-accent/20 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-5 flex items-center gap-4 shadow-2xl overflow-hidden relative">
