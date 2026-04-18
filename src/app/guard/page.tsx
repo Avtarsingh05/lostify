@@ -72,15 +72,16 @@ export default function GuardDashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Master Authority Sync
-  const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
-  const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
+  // Master Authority Identifiers
+  const adminEmails = useMemo(() => ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"], []);
+  const adminUIDs = useMemo(() => ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"], []);
 
-  const isAdmin = (user?.email && adminEmails.includes(user.email.toLowerCase())) || 
-                  (user?.uid && adminUIDs.includes(user.uid)) ||
-                  userData?.role === "ADMIN";
-  
-  const isAuthorized = isAdmin || userData?.role === "GUARD";
+  const isAuthorized = useMemo(() => {
+    if (!user) return false;
+    const isMaster = adminEmails.includes(user.email?.toLowerCase() || "") || adminUIDs.includes(user.uid);
+    const hasRole = userData?.role === "ADMIN" || userData?.role === "GUARD";
+    return isMaster || hasRole;
+  }, [user, userData, adminEmails, adminUIDs]);
 
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
@@ -190,16 +191,25 @@ export default function GuardDashboard() {
     if (!isUserLoading && !user) {
       router.push("/")
     }
-    if (!isUserLoading && user && userData && !isAuthorized) {
-       toast({ variant: "destructive", title: "Access Denied", description: "Restricted to campus security only." });
-       router.push("/dashboard");
-    }
-  }, [user, isUserLoading, userData, isAuthorized, router, toast])
+  }, [user, isUserLoading, router])
 
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!isAuthorized && !isUserLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <h2 className="text-xl font-headline font-bold">Access Denied</h2>
+        <p className="text-sm text-muted-foreground">This panel is restricted to authorized campus personnel only.</p>
+        <Button onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
       </div>
     )
   }
