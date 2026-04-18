@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, use, useMemo } from "react"
+import { useState, use, useMemo, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -19,7 +19,8 @@ import {
   Briefcase,
   AlertTriangle,
   Archive,
-  Tag
+  Tag,
+  Clock
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,6 +48,11 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
   const isClockRoom = searchParams.get('type') === 'clock'
   const [isConfirming, setIsConfirming] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [mountedTime, setMountedTime] = useState<string | null>(null)
+
+  useEffect(() => {
+    setMountedTime(format(new Date(), 'HH:mm:ss'))
+  }, [])
 
   // Fetch handover details
   const handoverRef = useMemoFirebase(() => {
@@ -262,7 +268,10 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
                     </div>
                     <div className="space-y-1">
                       <p className="text-[8px] font-bold text-muted-foreground uppercase">Timestamp</p>
-                      <p className="text-[10px] font-bold flex items-center gap-1.5"><Clock className="h-3 w-3 text-primary" /> {format(new Date(), 'HH:mm:ss')}</p>
+                      <p className="text-[10px] font-bold flex items-center gap-1.5">
+                        <Clock className="h-3 w-3 text-primary" /> 
+                        {mountedTime || '--:--:--'}
+                      </p>
                     </div>
                  </div>
                </div>
