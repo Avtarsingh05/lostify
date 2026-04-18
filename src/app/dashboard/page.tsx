@@ -80,7 +80,6 @@ export default function Dashboard() {
       const pendingRegNo = localStorage.getItem('pending_regno')
 
       // ONLY SYNC if we have pending data or if the user record is confirmed to need updating.
-      // We check for truthy values to avoid overwriting existing Firestore data with empty strings.
       if (pendingNickname || pendingRegNo || (userData && !userData.registrationNumber)) {
         const userRef = doc(db, "users", user.uid)
         setDocumentNonBlocking(userRef, {
@@ -151,18 +150,18 @@ export default function Dashboard() {
       description: "Browse campus matches"
     },
     {
-      title: "Campus Gallery",
-      icon: Package,
-      href: "/gallery",
-      gradient: "bg-rose-500",
-      description: "Browse found & lost items"
-    },
-    {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
       gradient: "bg-blue-600",
       description: "Premium marketplace"
+    },
+    {
+      title: "Campus Gallery",
+      icon: Package,
+      href: "/gallery",
+      gradient: "bg-rose-500",
+      description: "Browse found & lost items"
     },
     {
       title: "Clock Room",
