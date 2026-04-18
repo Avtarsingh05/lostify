@@ -10,16 +10,20 @@ service cloud.firestore {
     }
 
     function getRole() {
+      // Safely fetch the role from the users collection
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
     function isSuperAdmin() {
       return isSignedIn() && (
+        // 1. Hardcoded UIDs for Master Authority
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
         request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
+        // 2. Official Administrator Emails
         request.auth.token.email == "worker@gmail.com" ||
         request.auth.token.email == "forigloohelp@gmail.com" ||
         request.auth.token.email == "avtarsingh9528972330@gmail.com" ||
+        // 3. Dynamic Role Check (Set via Admin Console)
         getRole() == "ADMIN"
       );
     }
@@ -41,6 +45,7 @@ service cloud.firestore {
 
     match /clockRoomItems/{itemId} {
       // Allow guards and admins to see all items, owners see their own
+      // prioritize role checks to allow collection-wide 'list' operations
       allow read: if isSignedIn() && (isGuard() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (isGuard() || resource.data.userId == request.auth.uid);
@@ -55,7 +60,7 @@ service cloud.firestore {
     }
 
     match /handovers/{handoverId} {
-      // Critical: Allow guards/admins to list all handovers for history/auditing
+      // Secure Handover access: Admins/Guards can audit everything
       allow read: if isSignedIn() && (isGuard() || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
       allow create: if isSignedIn();
       allow update: if isSignedIn();
@@ -69,7 +74,7 @@ service cloud.firestore {
     
     match /notifications/{notifId} {
       allow read: if isSignedIn();
-      allow write: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
     }
     
     match /shopItems/{itemId} {

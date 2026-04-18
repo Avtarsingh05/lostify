@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -67,11 +68,12 @@ export default function Dashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  const isAdmin = user?.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" || 
-                  user?.uid === "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
-                  user?.email === "worker@gmail.com" || 
-                  user?.email === "avtarsingh9528972330@gmail.com" ||
-                  user?.email === "forigloohelp@gmail.com" ||
+  // Master Admin Identification Logic
+  const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
+  const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
+
+  const isAdmin = (user?.email && adminEmails.includes(user.email.toLowerCase())) || 
+                  (user?.uid && adminUIDs.includes(user.uid)) ||
                   userData?.role === "ADMIN";
   
   const isGuard = isAdmin || userData?.role === "GUARD";
@@ -123,7 +125,7 @@ export default function Dashboard() {
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
   }

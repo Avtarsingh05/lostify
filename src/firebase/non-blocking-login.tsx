@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Auth,
@@ -28,11 +29,16 @@ export function initiateEmailSignUp(authInstance: Auth, email: string, password:
       }
 
       // 2. Sync to Firestore 'users' collection
-      // Auto-promote specific emails to ADMIN
-      const isAdminEmail = email === "worker@gmail.com" || 
-                          email === "forigloohelp@gmail.com" || 
-                          email === "avtarsingh9528972330@gmail.com" ||
-                          user.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02";
+      // Auto-promote specific emails to ADMIN status
+      const adminEmails = [
+        "worker@gmail.com",
+        "forigloohelp@gmail.com",
+        "avtarsingh9528972330@gmail.com"
+      ];
+      
+      const isAdminEmail = adminEmails.includes(email.toLowerCase()) || 
+                          user.uid === "PX8zNjMWBWTFGYnaYWrtxojquD02" ||
+                          user.uid === "9Qv4QkTuukaYhr2sggnQmQmqgHu1";
       
       const db = getFirestore(user.app);
       const userRef = doc(db, "users", user.uid);
