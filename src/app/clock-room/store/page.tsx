@@ -16,7 +16,8 @@ import {
   CreditCard,
   FileText,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Hash
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -71,7 +72,7 @@ export default function StoreItemPage() {
     reader.onloadend = () => {
       const dataUri = reader.result as string
       setPreviewImage(dataUri)
-      toast({ title: "Photo Attached", description: "Please fill in the identification details manually." })
+      toast({ title: "Photo Attached", description: "Identity verified via snapshot." })
     }
     reader.readAsDataURL(file)
   }
@@ -85,8 +86,9 @@ export default function StoreItemPage() {
 
     setIsSubmitting(true)
     
-    // Default location to Uni Mall until guard updates it
-    const otp = Math.floor(1000 + Math.random() * 9000).toString()
+    // Generate unique codes for both stages
+    const checkInCode = Math.floor(1000 + Math.random() * 9000).toString()
+    const checkOutCode = Math.floor(1000 + Math.random() * 9000).toString()
 
     const itemData = {
       userId: user.uid,
@@ -98,10 +100,11 @@ export default function StoreItemPage() {
       itemCondition,
       brandMarkings,
       imageUrl: previewImage,
-      rackNumber: "Uni Mall",
+      rackNumber: "Awaiting Assignment",
       slotNumber: "Reception",
-      status: "stored",
-      otp,
+      status: "pending_storage", // Initial status
+      checkInCode,
+      checkOutCode,
       expectedReturnDate: returnDate ? new Date(returnDate).toISOString() : null,
       createdAt: new Date().toISOString(),
     }
@@ -109,7 +112,7 @@ export default function StoreItemPage() {
     try {
       await addDocumentNonBlocking(collection(db, "clockRoomItems"), itemData)
       setIsSuccess(true)
-      toast({ title: "Item logged at Uni Mall", description: "Guard will assign a rack shortly." })
+      toast({ title: "Draft Created", description: "Please show your Check-in Code to the guard." })
       setTimeout(() => router.push("/clock-room"), 2500)
     } finally {
       setIsSubmitting(false)
@@ -122,9 +125,9 @@ export default function StoreItemPage() {
         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-500 shadow-xl shadow-primary/20">
           <CheckCircle2 className="h-12 w-12 text-primary" />
         </div>
-        <h2 className="text-3xl font-headline font-bold mb-2">Check-in Complete</h2>
+        <h2 className="text-3xl font-headline font-bold mb-2">Form Submitted</h2>
         <p className="text-muted-foreground text-sm mb-8 max-w-xs">
-          Your luggage is logged at Uni Mall. A guard will assign your rack number now.
+          Your request is logged. Go to the Uni Mall reception and show your digital check-in token to the guard.
         </p>
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
@@ -138,7 +141,7 @@ export default function StoreItemPage() {
           <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-2xl font-headline font-bold">New Check-in</h1>
+          <h1 className="text-2xl font-headline font-bold">Secure Check-in</h1>
         </div>
       </div>
 
@@ -232,7 +235,7 @@ export default function StoreItemPage() {
                 <div className="space-y-1.5">
                   <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Unique Brand or Markings</Label>
                   <Input 
-                    placeholder="e.g. Nike, Red ribbon on handle, Scratched logo" 
+                    placeholder="e.g. Nike, Red ribbon on handle" 
                     className="rounded-xl h-12 bg-muted/20 border-none shadow-none"
                     value={brandMarkings}
                     onChange={(e) => setBrandMarkings(e.target.value)}
@@ -241,35 +244,15 @@ export default function StoreItemPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Verification Question: What's inside?</Label>
+                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Internal Contents (2-3 items)</Label>
                   <Textarea 
-                    placeholder="List 2-3 items inside for identification (e.g. Blue hoodie, Dell laptop, Math textbook)" 
+                    placeholder="e.g. Blue hoodie, Dell laptop" 
                     className="rounded-xl min-h-[80px] bg-muted/20 border-none resize-none"
                     value={contentsVerification}
                     onChange={(e) => setContentsVerification(e.target.value)}
                     required
                   />
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Bag Condition</Label>
-                  <Input 
-                    placeholder="e.g. Brand new, Broken zip, Torn side pocket" 
-                    className="rounded-xl h-12 bg-muted/20 border-none shadow-none"
-                    value={itemCondition}
-                    onChange={(e) => setItemCondition(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">General Notes</Label>
-                <Textarea 
-                  placeholder="Any extra info for the guard..." 
-                  className="rounded-xl min-h-[80px] bg-muted/20 border-none resize-none"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
               </div>
 
               <Button 
@@ -278,7 +261,7 @@ export default function StoreItemPage() {
                 disabled={isSubmitting || !previewImage}
                 className="w-full h-16 rounded-[28px] gradient-header font-bold shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform"
               >
-                {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <><Send className="h-5 w-5" /> Secure My Luggage</>}
+                {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <><ShieldCheck className="h-5 w-5" /> Generate Digital Token</>}
               </Button>
             </form>
           </CardContent>
@@ -287,13 +270,8 @@ export default function StoreItemPage() {
         <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-3xl flex items-start gap-4">
           <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <p className="text-[10px] text-muted-foreground leading-relaxed">
-            <strong>Security Notice:</strong> After submission, show your luggage to the guard at Uni Mall. They will place it in a secure rack and update your digital receipt location.
+            <strong>Security Notice:</strong> Your items are not "Stored" until a guard validates your Check-in Code and places them in a secure rack.
           </p>
-        </div>
-
-        <div className="pt-4 pb-8 text-center space-y-1 opacity-40">
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em]">Secure Storage Protocol v3.2</p>
-          <p className="text-[8px] font-medium">Verified by Campus Security</p>
         </div>
       </main>
     </div>
