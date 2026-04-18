@@ -13,31 +13,34 @@ service cloud.firestore {
     /**
      * MASTER AUTHORITY BYPASS
      * Direct root access for super administrators.
-     * Uses UIDs first for performance and reliability.
+     * Prioritizes UIDs for performance and absolute reliability.
      */
     function isMasterAdmin() {
       return isSignedIn() && (
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" ||
         request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
-        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "worker@gmail.com") ||
-        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "forigloohelp@gmail.com") ||
-        (request.auth.token.keys().contains('email') && request.auth.token.email.lower() == "avtarsingh9528972330@gmail.com")
-      );
-    }
-
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function isStaff() {
-      return isSignedIn() && (
-        isMasterAdmin() || 
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getUserData().role == "GUARD" || getUserData().role == "ADMIN"))
+        (request.auth.token.keys().contains('email') && (
+          request.auth.token.email == "worker@gmail.com" ||
+          request.auth.token.email == "forigloohelp@gmail.com" ||
+          request.auth.token.email == "avtarsingh9528972330@gmail.com"
+        ))
       );
     }
 
     /**
+     * STAFF VERIFICATION
+     * Checks if user has GUARD or ADMIN role in their profile.
+     */
+    function isStaff() {
+      if (!isSignedIn()) return false;
+      if (isMasterAdmin()) return true;
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userDocPath) && (get(userDocPath).data.role == "GUARD" || get(userDocPath).data.role == "ADMIN");
+    }
+
+    /**
      * GLOBAL BYPASS
+     * Immediate authorization for Master Admins across all collections.
      */
     match /{document=**} {
       allow read, write: if isMasterAdmin();
@@ -78,6 +81,7 @@ service cloud.firestore {
     }
 
     match /clockRoomItems/{itemId} {
+      // Explicitly allow list operations for administrative collection queries
       allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
       allow update: if isStaff() || resource.data.userId == request.auth.uid;

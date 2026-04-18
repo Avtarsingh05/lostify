@@ -50,7 +50,7 @@ import {
 } from "@/firebase"
 import { collection, query, doc, orderBy, limit, where } from "firebase/firestore"
 import Image from "next/image"
-import { isBefore, subDays, format } from "date-fns"
+import { format } from "date-fns"
 import { QRCodeSVG } from "qrcode.react"
 
 export default function GuardDashboard() {
@@ -86,7 +86,7 @@ export default function GuardDashboard() {
     return isMaster || hasRole;
   }, [user, userData, adminEmails, adminUIDs]);
 
-  // General Items Query
+  // General Items Query - Only runs if user is identified as staff/admin
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
     return query(
@@ -109,8 +109,6 @@ export default function GuardDashboard() {
   }, [db, isAuthorized])
 
   const { data: clockItems, isLoading: isClockLoading } = useCollection(clockRoomQuery)
-
-  const thirtyDaysAgo = subDays(new Date(), 30)
 
   const pendingFound = useMemo(() => {
     return allItems?.filter(i => i.type === 'found' && i.status === 'Pending Verification') || []
@@ -159,7 +157,6 @@ export default function GuardDashboard() {
     setRegNumber("")
   }
 
-  // --- NEW: CLOCK ROOM PICKUP FLOW ---
   const handleInitiateClockHandover = async (item: any) => {
     if (!db || !user) return
     setIsHandoverLoading(true)
@@ -231,7 +228,7 @@ export default function GuardDashboard() {
     )
   }
 
-  if (!isAuthorized && !isUserLoading) {
+  if (!isAuthorized && !isUserLoading && userData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-4">
         <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
@@ -449,7 +446,6 @@ export default function GuardDashboard() {
             )}
           </TabsContent>
 
-          {/* --- NEW: CLOCK ROOM TAB --- */}
           <TabsContent value="clock" className="space-y-4">
              {isClockLoading ? (
                <div className="flex justify-center py-20 opacity-20"><Loader2 className="animate-spin h-8 w-8" /></div>
