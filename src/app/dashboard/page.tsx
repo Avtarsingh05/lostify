@@ -159,11 +159,11 @@ export default function Dashboard() {
       description: "Browse campus matches"
     },
     {
-      title: "Clock Room",
-      icon: Briefcase,
-      href: "/clock-room",
-      gradient: "bg-orange-600",
-      description: "Secure digital luggage storage"
+      title: "Campus Gallery",
+      icon: Package,
+      href: "/gallery",
+      gradient: "bg-teal-600",
+      description: "Browse found & lost items"
     },
     {
       title: "Campus Shop",
@@ -173,11 +173,11 @@ export default function Dashboard() {
       description: "Premium marketplace"
     },
     {
-      title: "Campus Gallery",
-      icon: Package,
-      href: "/gallery",
-      gradient: "gradient-header",
-      description: "Browse found & lost items"
+      title: "Clock Room",
+      icon: Briefcase,
+      href: "/clock-room",
+      gradient: "bg-orange-600",
+      description: "Secure digital luggage storage"
     }
   ]
 
