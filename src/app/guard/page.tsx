@@ -76,17 +76,17 @@ export default function GuardDashboard() {
   const { data: userData } = useDoc(userDocRef)
 
   // Master Authority Identifiers
-  const adminEmails = useMemo(() => ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"], []);
-  const adminUIDs = useMemo(() => ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"], []);
+  const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
+  const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
 
   const isAuthorized = useMemo(() => {
     if (!user) return false;
     const isMaster = adminEmails.includes(user.email?.toLowerCase() || "") || adminUIDs.includes(user.uid);
     const hasRole = userData?.role === "ADMIN" || userData?.role === "GUARD";
     return isMaster || hasRole;
-  }, [user, userData, adminEmails, adminUIDs]);
+  }, [user, userData]);
 
-  // General Items Query - Only runs if user is identified as staff/admin
+  // General Items Query
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
     return query(

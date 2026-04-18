@@ -13,7 +13,7 @@ service cloud.firestore {
     /**
      * MASTER AUTHORITY BYPASS
      * Direct root access for super administrators.
-     * Prioritizes UIDs for performance and absolute reliability.
+     * Prioritizes UIDs for absolute reliability.
      */
     function isMasterAdmin() {
       return isSignedIn() && (
@@ -80,10 +80,9 @@ service cloud.firestore {
     }
 
     match /clockRoomItems/{itemId} {
-      // Explicitly allow list operations for administrative collection queries
       allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn();
-      allow update: if isStaff() || resource.data.userId == request.auth.uid;
+      allow update: if isStaff() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow delete: if isStaff();
     }
 
