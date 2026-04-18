@@ -54,6 +54,7 @@ import {
   useMemoFirebase, 
   updateDocumentNonBlocking,
   addDocumentNonBlocking,
+  deleteDocumentNonBlocking,
   useDoc
 } from "@/firebase"
 import { collection, query, doc, orderBy, limit, where, getDocs } from "firebase/firestore"
@@ -146,17 +147,16 @@ export default function GuardDashboard() {
         return
       }
 
-      // 2. Check for Check-out Tokens (stored -> collected)
+      // 2. Check for Check-out Tokens (stored -> collection & deletion)
       const qCheckOut = query(collection(db, "clockRoomItems"), where("checkOutCode", "==", codeToProcess), where("status", "==", "stored"), limit(1))
       const snapOut = await getDocs(qCheckOut)
       if (!snapOut.empty) {
         const item = { ...snapOut.docs[0].data(), id: snapOut.docs[0].id }
-        updateDocumentNonBlocking(doc(db, "clockRoomItems", item.id), {
-          status: "collected",
-          collectedAt: new Date().toISOString(),
-          releasedBy: user?.displayName || user?.email?.split('@')[0] || "Guard"
-        })
-        toast({ title: "Collection Verified", description: "Luggage released to student." })
+        
+        // Literal request fulfillment: "after the collection it will be deleted"
+        deleteDocumentNonBlocking(doc(db, "clockRoomItems", item.id))
+        
+        toast({ title: "Collection Verified", description: "Luggage released and record deleted from storage." })
         setTokenInput("")
         return
       }
@@ -286,7 +286,7 @@ export default function GuardDashboard() {
                       <div className="w-32 relative overflow-hidden shrink-0 bg-muted">
                         <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
                         <div className="absolute top-2 left-2">
-                           <Badge className={item.status === 'stored' ? 'bg-primary' : item.status === 'collected' ? 'bg-secondary' : 'bg-accent'}>
+                           <Badge className={item.status === 'stored' ? 'bg-primary' : 'bg-accent'}>
                              {item.status.replace('_', ' ').toUpperCase()}
                            </Badge>
                         </div>

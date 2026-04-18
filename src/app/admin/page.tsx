@@ -23,7 +23,10 @@ import {
   Clock,
   Image as ImageIcon,
   Plus,
-  Package
+  Package,
+  Briefcase,
+  Phone,
+  CreditCard
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -44,19 +47,8 @@ import { collection, query, orderBy, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow, format } from "date-fns"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/dialog"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -68,6 +60,7 @@ export default function AdminDashboard() {
   const [isPushing, setIsPushing] = useState(false)
   const [userSearch, setUserSearch] = useState("")
   const [itemSearch, setItemSearch] = useState("")
+  const [luggageSearch, setLuggageSearch] = useState("")
 
   // Logo Upload State
   const [isUploading, setIsUploading] = useState(false)
@@ -91,6 +84,10 @@ export default function AdminDashboard() {
   const shopItemsQuery = useMemoFirebase(() => 
     query(collection(db, "shopItems"), orderBy("createdAt", "desc")), [db])
   const { data: shopItems } = useCollection(shopItemsQuery)
+
+  const clockItemsQuery = useMemoFirebase(() => 
+    query(collection(db, "clockRoomItems"), orderBy("createdAt", "desc")), [db])
+  const { data: clockItems } = useCollection(clockItemsQuery)
 
   const configRef = useMemoFirebase(() => doc(db, "system", "config"), [db])
   const { data: systemConfig } = useDoc(configRef)
@@ -133,7 +130,13 @@ export default function AdminDashboard() {
   const handleDeleteItem = (id: string) => {
     const itemRef = doc(db, "items", id)
     deleteDocumentNonBlocking(itemRef)
-    toast({ title: "Item Record Deleted", description: "This action is permanent." })
+    toast({ title: "Item Record Deleted" })
+  }
+
+  const handleDeleteLuggage = (id: string) => {
+    const luggageRef = doc(db, "clockRoomItems", id)
+    deleteDocumentNonBlocking(luggageRef)
+    toast({ title: "Luggage Record Removed" })
   }
 
   const handleToggleRole = (userId: string, currentRole: string) => {
@@ -245,20 +248,28 @@ export default function AdminDashboard() {
 
   const filteredUsers = allUsers?.filter(u => 
     u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.email?.toLowerCase().includes(userSearch.toLowerCase())
+    u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.registrationNumber?.toLowerCase().includes(userSearch.toLowerCase())
   )
 
   const filteredItems = allItems?.filter(i => 
     i.name?.toLowerCase().includes(itemSearch.toLowerCase()) ||
     i.claimerRegNo?.toLowerCase().includes(itemSearch.toLowerCase()) ||
+    i.reporterRegNo?.toLowerCase().includes(itemSearch.toLowerCase()) ||
     i.storageOffice?.toLowerCase().includes(itemSearch.toLowerCase())
+  )
+
+  const filteredLuggage = clockItems?.filter(l => 
+    l.studentName?.toLowerCase().includes(luggageSearch.toLowerCase()) ||
+    l.registrationNumber?.toLowerCase().includes(luggageSearch.toLowerCase()) ||
+    l.itemType?.toLowerCase().includes(luggageSearch.toLowerCase())
   )
 
   const stats = [
     { label: "Lost Items", value: allItems?.filter(i => i.type === 'lost').length.toString() || "0", icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
     { label: "Found Items", value: allItems?.filter(i => i.type === 'found').length.toString() || "0", icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
-    { label: "Total Students", value: allUsers?.length.toString() || "0", icon: Users, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Shop Items", value: shopItems?.length.toString() || "0", icon: ShoppingBag, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { label: "Luggage", value: clockItems?.length.toString() || "0", icon: Briefcase, color: "text-orange-500", bg: "bg-orange-500/10" },
+    { label: "Students", value: allUsers?.length.toString() || "0", icon: Users, color: "text-primary", bg: "bg-primary/10" },
   ]
 
   return (
@@ -277,9 +288,10 @@ export default function AdminDashboard() {
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6 lg:space-y-12">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 max-w-2xl mx-auto lg:max-w-none">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 rounded-2xl p-1 bg-card shadow-lg h-auto md:h-12 mb-6 max-w-4xl mx-auto lg:max-w-none gap-1">
             <TabsTrigger value="overview" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Stats</TabsTrigger>
             <TabsTrigger value="users" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Users</TabsTrigger>
+            <TabsTrigger value="luggage" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Luggage</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Branding</TabsTrigger>
             <TabsTrigger value="banners" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Banners</TabsTrigger>
             <TabsTrigger value="audit" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Audit</TabsTrigger>
@@ -359,6 +371,58 @@ export default function AdminDashboard() {
                   </ScrollArea>
                 </CardContent>
               </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="luggage" className="space-y-4 lg:space-y-8">
+            <div className="relative max-w-2xl mx-auto lg:max-w-none">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search luggage by Reg No, Name or Bag..." className="pl-9 h-12 rounded-2xl" value={luggageSearch} onChange={(e) => setLuggageSearch(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 pb-12">
+              {filteredLuggage?.map((lug) => (
+                <Card key={lug.id} className="border-none shadow-sm rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden relative shadow-sm shrink-0">
+                      <Image src={lug.imageUrl} alt={lug.itemType} fill className="object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-bold text-sm truncate">{lug.itemType}</h4>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteLuggage(lug.id)}
+                          className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-lg -mt-1 -mr-1"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight truncate">{lug.studentName}</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        <Badge variant="outline" className="text-[8px] h-4">{lug.status.replace('_', ' ')}</Badge>
+                        <Badge className="bg-primary/10 text-primary text-[8px] h-4 border-none">Rack {lug.rackNumber}</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-1.5">
+                       <CreditCard className="h-3 w-3 text-muted-foreground" />
+                       <span className="text-[10px] font-bold truncate">{lug.registrationNumber}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                       <Phone className="h-3 w-3 text-muted-foreground" />
+                       <span className="text-[10px] font-bold truncate">{lug.phoneNumber}</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              {(!filteredLuggage || filteredLuggage.length === 0) && (
+                <div className="col-span-full py-20 text-center opacity-30 border-2 border-dashed rounded-[32px]">
+                   <Briefcase className="h-10 w-10 mx-auto mb-2" />
+                   <p className="text-[10px] font-bold uppercase">No storage records active</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
