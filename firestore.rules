@@ -4,13 +4,21 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * Lostify Ultra-Resilient Rules
-     * Allows all authenticated users access to core collections to prevent complex rule failures.
+     * Lostify Branding Rules
+     * Allows public access to system config for login page branding.
      */
+    match /system/config {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
 
+    /**
+     * Broadcast & Banner Rules
+     * Allows all authenticated students to see announcements.
+     */
     match /notifications/{notificationId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null; // Guard/Admin handled by logic
+      allow write: if request.auth != null;
     }
 
     match /banners/{bannerId} {
@@ -23,6 +31,10 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    /**
+     * Core Application Rules
+     * Default fallback for all other collections.
+     */
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
