@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -89,7 +88,7 @@
     },
     "ClockRoomItem": {
       "title": "ClockRoomItem",
-      "description": "Luggage storage records.",
+      "description": "Luggage storage records with verification details.",
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
@@ -97,6 +96,9 @@
         "itemType": { "type": "string" },
         "color": { "type": "string" },
         "description": { "type": "string" },
+        "contentsVerification": { "type": "string", "description": "Verification data of what's inside the bag." },
+        "itemCondition": { "type": "string" },
+        "brandMarkings": { "type": "string" },
         "imageUrl": { "type": "string" },
         "rackNumber": { "type": "string" },
         "slotNumber": { "type": "string" },
