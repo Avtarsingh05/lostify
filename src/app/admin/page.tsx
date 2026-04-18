@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef } from "react"
@@ -12,7 +11,6 @@ import {
   Bell,
   Send,
   Loader2,
-  ShieldCheck,
   Search,
   ShoppingBag,
   Building,
@@ -21,7 +19,9 @@ import {
   Sparkles,
   UploadCloud,
   Trash2,
-  Clock
+  Clock,
+  Image as ImageIcon,
+  Plus
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -62,6 +62,12 @@ export default function AdminDashboard() {
   const [logoPreview, setLogoPreview] = useState("")
   const logoInputRef = useRef<HTMLInputElement>(null)
 
+  // Banner Management State
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+  const [bannerFile, setBannerFile] = useState<File | null>(null)
+  const [bannerPreview, setBannerPreview] = useState("")
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+
   const itemsQuery = useMemoFirebase(() => collection(db, "items"), [db])
   const { data: allItems } = useCollection(itemsQuery)
   
@@ -79,6 +85,10 @@ export default function AdminDashboard() {
   const notificationsQuery = useMemoFirebase(() => 
     query(collection(db, "notifications"), orderBy("createdAt", "desc")), [db])
   const { data: notifications } = useCollection(notificationsQuery)
+
+  const bannersQuery = useMemoFirebase(() => 
+    query(collection(db, "banners"), orderBy("createdAt", "desc")), [db])
+  const { data: banners } = useCollection(bannersQuery)
 
   const handlePushNotification = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -160,6 +170,60 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setBannerFile(file)
+      setBannerPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleSaveBanner = async () => {
+    if (!bannerFile || !db) return
+
+    setIsUploadingBanner(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", bannerFile)
+      formData.append("upload_preset", "admin_banner_upload")
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      
+      if (!res.ok) throw new Error("Banner upload failed")
+      const data = await res.json()
+      
+      const bannerCol = collection(db, "banners")
+      addDocumentNonBlocking(bannerCol, {
+        imageUrl: data.secure_url,
+        createdAt: new Date().toISOString()
+      })
+
+      toast({
+        title: "Banner Added",
+        description: "Promotional banner is now live on the dashboard.",
+      })
+      setBannerFile(null)
+      setBannerPreview("")
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Banner Failed",
+        description: error.message || "Could not upload banner.",
+      })
+    } finally {
+      setIsUploadingBanner(false)
+    }
+  }
+
+  const handleDeleteBanner = (id: string) => {
+    const bannerRef = doc(db, "banners", id)
+    deleteDocumentNonBlocking(bannerRef)
+    toast({ title: "Banner Removed" })
+  }
+
   const filteredUsers = allUsers?.filter(u => 
     u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
     u.email?.toLowerCase().includes(userSearch.toLowerCase())
@@ -198,8 +262,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="overview" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Stats</TabsTrigger>
             <TabsTrigger value="users" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Users</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Branding</TabsTrigger>
+            <TabsTrigger value="banners" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Banners</TabsTrigger>
             <TabsTrigger value="audit" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Audit</TabsTrigger>
-            <TabsTrigger value="shop" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Shop</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 lg:space-y-12">
@@ -338,13 +402,81 @@ export default function AdminDashboard() {
                     </>
                   )}
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                {systemConfig?.appLogo && (
-                  <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-center gap-3">
-                    <Badge className="bg-primary text-white">LIVE</Badge>
-                    <p className="text-[10px] font-bold text-muted-foreground">Current logo is active on the portal login page.</p>
+          <TabsContent value="banners" className="space-y-6 lg:space-y-12">
+            <Card className="border-none shadow-xl rounded-[40px] overflow-hidden bg-card/80 backdrop-blur-sm max-w-4xl mx-auto">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="font-headline font-bold text-2xl flex items-center gap-3">
+                  <ImageIcon className="h-8 w-8 text-primary" /> Dashboard Banners
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 space-y-8">
+                <div className="flex flex-col gap-6">
+                  <div 
+                    onClick={() => bannerInputRef.current?.click()}
+                    className="relative w-full aspect-[21/9] rounded-[32px] border-4 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-all overflow-hidden"
+                  >
+                    {bannerPreview ? (
+                      <Image src={bannerPreview} alt="Preview" fill className="object-cover" />
+                    ) : (
+                      <div className="text-center space-y-2">
+                        <div className="bg-primary/10 p-4 rounded-2xl inline-block">
+                           <Plus className="h-8 w-8 text-primary" />
+                        </div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-primary">Upload New Banner</p>
+                        <p className="text-[10px] text-muted-foreground">High resolution landscape recommended (21:9)</p>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      ref={bannerInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleBannerChange} 
+                    />
                   </div>
-                )}
+                  
+                  {bannerFile && (
+                    <Button 
+                      onClick={handleSaveBanner} 
+                      disabled={isUploadingBanner}
+                      className="h-14 rounded-2xl gradient-header font-bold shadow-lg flex items-center justify-center gap-2"
+                    >
+                      {isUploadingBanner ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
+                      Push Banner Live
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-4 pt-8 border-t">
+                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Active Banners</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {banners?.map((banner) => (
+                        <div key={banner.id} className="relative aspect-[16/9] rounded-2xl overflow-hidden group shadow-md">
+                           <Image src={banner.imageUrl} alt="Banner" fill className="object-cover" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button 
+                                variant="destructive" 
+                                size="icon" 
+                                onClick={() => handleDeleteBanner(banner.id)}
+                                className="rounded-full h-12 w-12 shadow-2xl"
+                              >
+                                <Trash2 className="h-6 w-6" />
+                              </Button>
+                           </div>
+                        </div>
+                      ))}
+                      {(!banners || banners.length === 0) && (
+                        <div className="col-span-full py-12 text-center opacity-30 border-2 border-dashed rounded-[32px]">
+                           <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                           <p className="text-[10px] font-bold uppercase">No active banners</p>
+                        </div>
+                      )}
+                   </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -411,10 +543,6 @@ export default function AdminDashboard() {
                 </Card>
               ))}
             </div>
-          </TabsContent>
-
-          <TabsContent value="shop" className="space-y-4">
-             <div className="text-center py-40 opacity-30"><ShoppingBag className="h-20 w-20 mx-auto" /><p className="text-sm lg:text-lg font-bold mt-4">Shop Management Active</p></div>
           </TabsContent>
         </Tabs>
       </main>

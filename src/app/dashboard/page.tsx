@@ -71,6 +71,7 @@ export default function Dashboard() {
                   user?.uid === "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
                   user?.email === "worker@gmail.com" || 
                   user?.email === "avtarsingh9528972330@gmail.com" ||
+                  user?.email === "forigloohelp@gmail.com" ||
                   userData?.role === "ADMIN";
   
   const isGuard = isAdmin || userData?.role === "GUARD";
@@ -239,8 +240,8 @@ export default function Dashboard() {
                 <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2" align="end">
                   <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-3">Account</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
-                    <History className="mr-2 h-4 w-4" />
-                    <span>My Reports</span>
+                    <Package className="mr-2 h-4 w-4" />
+                    <span>My Items</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/orders')} className="rounded-xl cursor-pointer">
                     <ShoppingBag className="mr-2 h-4 w-4" />
@@ -307,7 +308,7 @@ export default function Dashboard() {
         <section className="w-full">
           <Carousel 
             plugins={[Autoplay({ delay: 4000 })]} 
-            className="w-full"
+            className="w-full lg:max-w-5xl mx-auto"
           >
             <CarouselContent>
               {isBannersLoading ? (
@@ -317,7 +318,7 @@ export default function Dashboard() {
               ) : displayBanners && displayBanners.length > 0 ? (
                 displayBanners.map((banner) => (
                   <CarouselItem key={banner.id}>
-                    <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl group">
+                    <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl group border border-white/10">
                       <Image 
                         src={banner.imageUrl} 
                         alt="Promo Banner" 
@@ -333,7 +334,7 @@ export default function Dashboard() {
                 ))
               ) : (
                 <CarouselItem>
-                   <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl bg-muted flex items-center justify-center">
+                   <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl bg-muted flex items-center justify-center border border-dashed">
                       <div className="text-center opacity-30">
                         <Sparkles className="h-12 w-12 mx-auto mb-2" />
                         <p className="font-headline font-bold text-xs uppercase tracking-widest">No Banners Active</p>
@@ -349,16 +350,16 @@ export default function Dashboard() {
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
               <ThreeDCard 
-                className={item.gradient + " p-4 lg:p-8 h-36 lg:h-48 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl shadow-black/5"}
+                className={item.gradient + " p-4 lg:p-8 h-36 lg:h-56 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl shadow-black/5"}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex flex-col gap-2 lg:gap-4 text-white">
                   <div className="bg-white/20 w-fit p-2 lg:p-3 rounded-xl">
-                    <item.icon className="h-4 w-4 lg:h-6 lg:w-6" />
+                    <item.icon className="h-4 w-4 lg:h-7 lg:w-7" />
                   </div>
                   <div>
-                    <h3 className="text-sm lg:text-xl font-headline font-bold leading-tight">{item.title}</h3>
-                    <p className="text-[9px] lg:text-xs opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
+                    <h3 className="text-sm lg:text-2xl font-headline font-bold leading-tight">{item.title}</h3>
+                    <p className="text-[9px] lg:text-sm opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
                   </div>
                 </div>
               </ThreeDCard>

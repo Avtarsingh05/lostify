@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -18,7 +17,8 @@ import {
   History,
   AlertTriangle,
   QrCode,
-  Smartphone
+  Smartphone,
+  Calendar
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -43,9 +43,9 @@ import {
   updateDocumentNonBlocking,
   addDocumentNonBlocking
 } from "@/firebase"
-import { collection, query, doc, orderBy, limit } from "firebase/firestore"
+import { collection, query, doc, orderBy, limit, where } from "firebase/firestore"
 import Image from "next/image"
-import { isBefore, subDays } from "date-fns"
+import { isBefore, subDays, format } from "date-fns"
 import { QRCodeSVG } from "qrcode.react"
 
 export default function GuardDashboard() {
@@ -74,6 +74,18 @@ export default function GuardDashboard() {
   }, [db])
 
   const { data: allItems, isLoading } = useCollection(itemsQuery)
+
+  const handoversHistoryQuery = useMemoFirebase(() => {
+    if (!db) return null
+    return query(
+      collection(db, "handovers"),
+      where("status", "==", "completed"),
+      orderBy("completedAt", "desc"),
+      limit(50)
+    )
+  }, [db])
+
+  const { data: handoverHistory } = useCollection(handoversHistoryQuery)
 
   const thirtyDaysAgo = subDays(new Date(), 30)
 
@@ -191,23 +203,29 @@ export default function GuardDashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6 lg:space-y-12">
-        <div className="grid grid-cols-3 gap-2 lg:gap-8">
+        <div className="grid grid-cols-4 gap-2 lg:gap-8">
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-3 lg:p-8 text-center">
-              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Handovers</p>
+              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Reports</p>
               <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-secondary">{pendingFound.length}</h3>
             </CardContent>
           </Card>
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-3 lg:p-8 text-center">
-              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">In Office</p>
+              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Office</p>
               <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-primary">{inOfficeFound.length}</h3>
             </CardContent>
           </Card>
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-3 lg:p-8 text-center">
-              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Lost</p>
+              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Lost</p>
               <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
+            <CardContent className="p-3 lg:p-8 text-center">
+              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Logs</p>
+              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-muted-foreground">{handoverHistory?.length || 0}</h3>
             </CardContent>
           </Card>
         </div>
@@ -223,15 +241,18 @@ export default function GuardDashboard() {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border overflow-x-auto max-w-2xl mx-auto lg:max-w-none">
+          <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border overflow-x-auto max-w-2xl mx-auto lg:max-w-none">
             <TabsTrigger value="pending" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
-              <Clock className="h-3 w-3 lg:h-4 lg:w-4" /> Handovers
+              <Clock className="h-3 w-3 lg:h-4 lg:w-4" /> Reports
             </TabsTrigger>
             <TabsTrigger value="office" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
-              <Archive className="h-3 w-3 lg:h-4 lg:w-4" /> In Office
+              <Archive className="h-3 w-3 lg:h-4 lg:w-4" /> Office
             </TabsTrigger>
             <TabsTrigger value="lost" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
-              <AlertCircle className="h-3 w-3 lg:h-4 lg:w-4" /> Lost Reports
+              <AlertCircle className="h-3 w-3 lg:h-4 lg:w-4" /> Lost
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
+              <History className="h-3 w-3 lg:h-4 lg:w-4" /> History
             </TabsTrigger>
           </TabsList>
 
@@ -258,7 +279,7 @@ export default function GuardDashboard() {
                               <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.name}</h3>
                               <div className="flex flex-col items-end gap-1">
                                 <Badge variant="outline" className="text-[8px] lg:text-[10px] border-none px-2 py-0 bg-secondary/10 text-secondary">
-                                  Handover
+                                  Pending
                                 </Badge>
                                 {isExpired && <Badge className="bg-destructive text-[8px] font-bold h-4">EXPIRED</Badge>}
                               </div>
@@ -273,7 +294,7 @@ export default function GuardDashboard() {
                               onClick={() => setVerifyingItem(item)}
                               className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-primary active:scale-95 transition-transform"
                             >
-                              Verify Handover
+                              Log to Office
                             </Button>
                           </div>
                         </div>
@@ -393,17 +414,47 @@ export default function GuardDashboard() {
               <EmptyState icon={History} message="No active lost reports." />
             )}
           </TabsContent>
-        </Tabs>
 
-        <div className="bg-primary/5 border border-primary/10 p-5 lg:p-10 rounded-[28px] lg:rounded-[48px] flex items-start gap-3 lg:gap-8">
-          <AlertTriangle className="h-5 w-5 lg:h-8 lg:w-8 text-primary shrink-0 mt-0.5" />
-          <div>
-            <h4 className="text-xs lg:text-xl font-bold text-primary">Handover Protocol</h4>
-            <p className="text-[10px] lg:text-sm text-muted-foreground mt-1 leading-relaxed">
-              Use "Secure Handover" for verified items in office. The system generates a 4-digit verification code and a QR token valid for 5 minutes. The student must scan or enter this code on their device to confirm receipt, ensuring a digital audit trail.
-            </p>
-          </div>
-        </div>
+          <TabsContent value="history" className="space-y-4">
+            <div className="bg-card/80 backdrop-blur-md rounded-[32px] overflow-hidden shadow-xl border">
+               <CardHeader className="p-6 pb-2">
+                 <CardTitle className="text-sm font-headline font-bold uppercase tracking-widest flex items-center gap-2">
+                   <History className="h-4 w-4 text-primary" /> Handover History
+                 </CardTitle>
+               </CardHeader>
+               <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {handoverHistory && handoverHistory.length > 0 ? (
+                      handoverHistory.map((h) => (
+                        <div key={h.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-dashed border-primary/20">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl relative overflow-hidden shrink-0 shadow-sm">
+                              <Image src={h.itemImageUrl} alt={h.itemName} fill className="object-cover" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold truncate">{h.itemName}</p>
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <UserCheck className="h-2 w-2" /> {h.userName || "Student"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[9px] font-bold uppercase text-secondary">Completed</p>
+                             <p className="text-[8px] text-muted-foreground">{h.completedAt ? format(new Date(h.completedAt), 'MMM dd, HH:mm') : ""}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-12 text-center opacity-30">
+                        <Calendar className="h-10 w-10 mx-auto mb-2" />
+                        <p className="text-[10px] font-bold uppercase">No handover logs found</p>
+                      </div>
+                    )}
+                  </div>
+               </CardContent>
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <Dialog open={!!verifyingItem} onOpenChange={() => setVerifyingItem(null)}>
