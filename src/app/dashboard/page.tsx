@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -159,18 +158,18 @@ export default function Dashboard() {
       description: "Browse campus matches"
     },
     {
+      title: "Campus Gallery",
+      icon: Package,
+      href: "/gallery",
+      gradient: "bg-rose-500",
+      description: "Browse found & lost items"
+    },
+    {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
       gradient: "bg-blue-600",
       description: "Premium marketplace"
-    },
-    {
-      title: "Campus Gallery",
-      icon: Package,
-      href: "/gallery",
-      gradient: "bg-teal-600",
-      description: "Browse found & lost items"
     },
     {
       title: "Clock Room",
