@@ -42,7 +42,8 @@ import {
   useCollection, 
   useMemoFirebase, 
   updateDocumentNonBlocking,
-  addDocumentNonBlocking
+  addDocumentNonBlocking,
+  useDoc
 } from "@/firebase"
 import { collection, query, doc, orderBy, limit, where } from "firebase/firestore"
 import Image from "next/image"
@@ -65,26 +66,44 @@ export default function GuardDashboard() {
   const [handoverSession, setHandoverSession] = useState<any | null>(null)
   const [isHandoverLoading, setIsHandoverLoading] = useState(false)
 
+  // Authorization Check (Mirroring Dashboard logic for consistency)
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+
+  const { data: userData } = useDoc(userDocRef)
+
+  const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
+  const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
+
+  const isAdmin = (user?.email && adminEmails.includes(user.email.toLowerCase())) || 
+                  (user?.uid && adminUIDs.includes(user.uid)) ||
+                  userData?.role === "ADMIN";
+  
+  const isAuthorized = isAdmin || userData?.role === "GUARD";
+
+  // Gated Queries: Only fetch if user is authorized to prevent permission errors
   const itemsQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !isAuthorized) return null
     return query(
       collection(db, "items"),
       orderBy("reportedAt", "desc"),
       limit(100)
     )
-  }, [db])
+  }, [db, isAuthorized])
 
   const { data: allItems, isLoading } = useCollection(itemsQuery)
 
   const handoversHistoryQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !isAuthorized) return null
     return query(
       collection(db, "handovers"),
       where("status", "==", "completed"),
       orderBy("completedAt", "desc"),
       limit(50)
     )
-  }, [db])
+  }, [db, isAuthorized])
 
   const { data: handoverHistory } = useCollection(handoversHistoryQuery)
 
@@ -156,14 +175,9 @@ export default function GuardDashboard() {
 
     try {
       const colRef = collection(db, "handovers");
-      const docRef = await addDocumentNonBlocking(colRef, handoverData);
-      // addDocumentNonBlocking returns a promise that resolves once the local write is initiated
-      // We'll set the session locally for the QR code display
-      setHandoverSession({ ...handoverData, id: "session_pending" });
-      
-      toast({
-        title: "Session Initiated",
-        description: "Show the QR code to the student.",
+      addDocumentNonBlocking(colRef, handoverData).then((docRef) => {
+         setHandoverSession({ ...handoverData, id: docRef?.id || "session_pending" });
+         toast({ title: "Session Initiated", description: "Show the QR code to the student." });
       });
     } catch (error) {
       toast({ variant: "destructive", title: "Handover Failed", description: "Could not initiate secure session." })
@@ -183,7 +197,11 @@ export default function GuardDashboard() {
     if (!isUserLoading && !user) {
       router.push("/")
     }
-  }, [user, isUserLoading, router])
+    if (!isUserLoading && user && userData && !isAuthorized) {
+       toast({ variant: "destructive", title: "Access Denied", description: "Restricted to campus security only." });
+       router.push("/dashboard");
+    }
+  }, [user, isUserLoading, userData, isAuthorized, router, toast])
 
   if (isUserLoading || !user) {
     return (

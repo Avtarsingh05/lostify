@@ -29,7 +29,11 @@ service cloud.firestore {
     }
 
     function isGuard() {
-      return isSignedIn() && (isSuperAdmin() || getRole() == "GUARD");
+      // Guards can be either Admins or users explicitly assigned the GUARD role
+      return isSignedIn() && (
+        isSuperAdmin() || 
+        getRole() == "GUARD"
+      );
     }
 
     function isOwner(userId) {
@@ -44,9 +48,10 @@ service cloud.firestore {
     }
 
     match /clockRoomItems/{itemId} {
-      // Allow guards and admins to see all items, owners see their own
-      // prioritize role checks to allow collection-wide 'list' operations
-      allow read: if isSignedIn() && (isGuard() || resource.data.userId == request.auth.uid);
+      // Separate global read from ownership read to support collection-wide 'list'
+      allow read: if isSignedIn() && isGuard();
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (isGuard() || resource.data.userId == request.auth.uid);
       allow delete: if isSuperAdmin();
@@ -60,8 +65,11 @@ service cloud.firestore {
     }
 
     match /handovers/{handoverId} {
-      // Secure Handover access: Admins/Guards can audit everything
-      allow read: if isSignedIn() && (isGuard() || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
+      // Global read for Guards/Admins (supports auditing)
+      allow read: if isSignedIn() && isGuard();
+      // Specific read for involved Student/Guard
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
+      
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSuperAdmin();
@@ -84,7 +92,8 @@ service cloud.firestore {
     
     match /orders/{orderId} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn() && (isSuperAdmin() || resource.data.userId == request.auth.uid);
+      allow read: if isSignedIn() && isSuperAdmin();
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     match /banners/{bannerId} {
