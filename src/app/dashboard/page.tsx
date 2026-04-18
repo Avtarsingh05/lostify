@@ -25,7 +25,8 @@ import {
   Megaphone,
   Archive,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  Volume2
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -38,7 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { collection, query, orderBy, limit, doc } from "firebase/firestore"
+import { collection, query, orderBy, limit, doc, where } from "firebase/firestore"
 import { Badge } from "@/components/ui/badge"
 import {
   Carousel,
@@ -79,7 +80,6 @@ export default function Dashboard() {
       const pendingNickname = localStorage.getItem('pending_nickname')
       const pendingRegNo = localStorage.getItem('pending_regno')
 
-      // ONLY SYNC if we have pending data or if the user record is confirmed to need updating.
       if (pendingNickname || pendingRegNo || (userData && !userData.registrationNumber)) {
         const userRef = doc(db, "users", user.uid)
         setDocumentNonBlocking(userRef, {
@@ -92,7 +92,6 @@ export default function Dashboard() {
           updatedAt: new Date().toISOString()
         }, { merge: true })
 
-        // Clear pending data after sync
         if (pendingNickname) localStorage.removeItem('pending_nickname')
         if (pendingRegNo) localStorage.removeItem('pending_regno')
       }
@@ -107,6 +106,19 @@ export default function Dashboard() {
   }, [db])
 
   const { data: displayBanners, isLoading: isBannersLoading } = useCollection(bannersQuery)
+
+  const notificationsQuery = useMemoFirebase(() => {
+    if (!db) return null
+    return query(
+      collection(db, "notifications"), 
+      where("userId", "==", "all"),
+      orderBy("createdAt", "desc"),
+      limit(1)
+    )
+  }, [db])
+
+  const { data: globalNotifs } = useCollection(notificationsQuery)
+  const latestBroadcast = globalNotifs?.[0]
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -143,18 +155,18 @@ export default function Dashboard() {
       description: "Help return an item"
     },
     {
-      title: "Interactive Map",
-      icon: MapIcon,
-      href: "/map",
-      gradient: "bg-primary",
-      description: "Browse campus matches"
-    },
-    {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
       gradient: "bg-blue-600",
       description: "Premium marketplace"
+    },
+    {
+      title: "Interactive Map",
+      icon: MapIcon,
+      href: "/map",
+      gradient: "bg-primary",
+      description: "Browse campus matches"
     },
     {
       title: "Campus Gallery",
@@ -255,6 +267,25 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-24 w-full space-y-6 lg:space-y-12">
+        {/* Broadcast Message Strip - Positioned Above Banner */}
+        {latestBroadcast && (
+          <div className="animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
+            <div className="bg-accent/15 backdrop-blur-md border border-accent/20 rounded-2xl p-4 flex items-center gap-3 shadow-xl overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-1 opacity-10">
+                <Volume2 size={40} className="text-accent" />
+              </div>
+              <div className="bg-accent p-2 rounded-xl text-white shadow-lg shrink-0">
+                <Megaphone className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-widest text-accent leading-none mb-1">Campus Announcement</p>
+                <h4 className="text-xs font-bold truncate leading-tight">{latestBroadcast.title}</h4>
+                <p className="text-[10px] text-muted-foreground truncate leading-relaxed">{latestBroadcast.message}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Banner Carousel */}
         <section className="w-full">
           <Carousel 
