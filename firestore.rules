@@ -68,8 +68,8 @@ service cloud.firestore {
     }
 
     /**
-     * CLOCK ROOM STORAGE
-     * Simplified permissions to ensure no blocking errors for valid users.
+     * CLOCK ROOM & HANDOVERS
+     * Simplified rules to ensure no blocking errors.
      */
     match /clockRoomItems/{itemId} {
       allow read, write: if isSignedIn();

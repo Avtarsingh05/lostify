@@ -17,7 +17,6 @@ import {
   UserCheck,
   History,
   QrCode,
-  Briefcase,
   Package
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -89,18 +88,6 @@ export default function GuardDashboard() {
 
   const { data: allItems, isLoading } = useCollection(itemsQuery)
 
-  const clockRoomQuery = useMemoFirebase(() => {
-    if (!db || !isAuthorized) return null
-    return query(
-      collection(db, "clockRoomItems"),
-      where("status", "==", "stored"),
-      orderBy("createdAt", "desc"),
-      limit(50)
-    )
-  }, [db, isAuthorized])
-
-  const { data: clockItems, isLoading: isClockLoading } = useCollection(clockRoomQuery)
-
   const pendingFound = useMemo(() => {
     return allItems?.filter(i => i.type === 'found' && i.status === 'Pending Verification') || []
   }, [allItems])
@@ -140,27 +127,6 @@ export default function GuardDashboard() {
     toast({ title: "Item Resolved" })
     setResolvingItem(null)
     setRegNumber("")
-  }
-
-  const handleInitiateClockHandover = async (item: any) => {
-    if (!db || !user) return
-    setIsHandoverLoading(true)
-    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString()
-    const handoverData = {
-      itemId: item.id,
-      userId: item.userId,
-      guardId: user.uid,
-      guardName: user.displayName || user.email?.split('@')[0] || "Guard",
-      verificationCode,
-      status: "pending",
-      type: "clock_room",
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
-    }
-    addDocumentNonBlocking(collection(db, "clockRoomHandovers"), handoverData).then((docRef) => {
-       setHandoverSession({ ...handoverData, id: docRef?.id || "session_pending" });
-       setIsHandoverLoading(false)
-    });
   }
 
   const handleInitiateHandover = async (item: any) => {
@@ -216,7 +182,7 @@ export default function GuardDashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6 lg:space-y-12">
-        <div className="grid grid-cols-4 gap-2 lg:gap-8">
+        <div className="grid grid-cols-3 gap-2 lg:gap-8">
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-3 lg:p-8 text-center">
               <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Reports</p>
@@ -235,18 +201,12 @@ export default function GuardDashboard() {
               <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-3 lg:p-8 text-center">
-              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Storage</p>
-              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-orange-500">{clockItems?.length || 0}</h3>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="relative group max-w-2xl mx-auto lg:max-w-none">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input 
-            placeholder="Search all reports & storage..." 
+            placeholder="Search all reports..." 
             className="pl-10 h-14 rounded-2xl shadow-lg border-none bg-white dark:bg-card/80 backdrop-blur-md"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -254,7 +214,7 @@ export default function GuardDashboard() {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border overflow-x-auto max-w-2xl mx-auto lg:max-w-none">
+          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border max-w-2xl mx-auto lg:max-w-none">
             <TabsTrigger value="pending" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
               <Clock className="h-3 w-3 lg:h-4 lg:w-4" /> Reports
             </TabsTrigger>
@@ -263,9 +223,6 @@ export default function GuardDashboard() {
             </TabsTrigger>
             <TabsTrigger value="lost" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
               <AlertCircle className="h-3 w-3 lg:h-4 lg:w-4" /> Lost
-            </TabsTrigger>
-            <TabsTrigger value="clock" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
-              <Briefcase className="h-3 w-3 lg:h-4 lg:w-4" /> Clock Room
             </TabsTrigger>
           </TabsList>
 
@@ -349,34 +306,6 @@ export default function GuardDashboard() {
               </div>
             ) : <EmptyState icon={History} message="No active lost reports." />}
           </TabsContent>
-
-          <TabsContent value="clock" className="space-y-4">
-             {isClockLoading ? (
-               <div className="flex justify-center py-20 opacity-20"><Loader2 className="animate-spin h-8 w-8" /></div>
-             ) : filterItems(clockItems || []).length > 0 ? (
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
-                 {filterItems(clockItems || []).map((item) => (
-                   <Card key={item.id} className="border-none shadow-xl rounded-3xl overflow-hidden bg-card/90 backdrop-blur-sm border border-orange-500/10">
-                     <div className="flex p-4 lg:p-6 gap-4 lg:gap-8">
-                       <div className="w-20 h-20 lg:w-32 lg:h-32 rounded-2xl overflow-hidden relative shadow-md bg-muted shrink-0">
-                         <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
-                       </div>
-                       <div className="flex-1 min-w-0 flex flex-col justify-between">
-                         <div className="flex justify-between items-start">
-                           <h3 className="font-headline font-bold text-sm lg:text-lg truncate pr-2">{item.itemType}</h3>
-                           <Badge className="bg-orange-500 text-[8px] lg:text-[10px] h-4 lg:h-5">STORED</Badge>
-                         </div>
-                         <p className="text-[10px] lg:text-sm text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="h-3 w-3 text-orange-500" /> Rack {item.rackNumber}, Slot {item.slotNumber}</p>
-                         <div className="flex items-center justify-end mt-3">
-                           <Button size="sm" onClick={() => handleInitiateClockHandover(item)} disabled={isHandoverLoading} className="h-8 lg:h-10 px-4 lg:px-6 rounded-xl text-[10px] lg:text-xs font-bold bg-orange-500 hover:bg-orange-600 active:scale-95 transition-transform gap-2"><QrCode className="h-3.5 w-3.5" /> Verify Pickup</Button>
-                         </div>
-                       </div>
-                     </div>
-                   </Card>
-                 ))}
-               </div>
-             ) : <EmptyState icon={Package} message="Clock room is empty." />}
-          </TabsContent>
         </Tabs>
       </main>
 
@@ -389,7 +318,7 @@ export default function GuardDashboard() {
           </DialogHeader>
           <div className="flex flex-col items-center gap-8 py-4">
             <div className="bg-white p-6 rounded-[40px] shadow-inner shadow-black/5 border-2 border-dashed border-primary/20">
-              <QRCodeSVG value={handoverSession ? `${window.location.origin}/handover/${handoverSession.id}${handoverSession.type === 'clock_room' ? '?type=clock' : ''}` : ""} size={200} includeMargin />
+              <QRCodeSVG value={handoverSession ? `${window.location.origin}/handover/${handoverSession.id}` : ""} size={200} includeMargin />
             </div>
             <div className="text-center space-y-2">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Verification Code</p>
