@@ -289,7 +289,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-20 w-full space-y-6 lg:space-y-12">
+      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-24 w-full space-y-6 lg:space-y-12">
         {/* Message Strip */}
         {notifications && notifications.length > 0 && (
           <div className="bg-white/90 dark:bg-card/90 backdrop-blur-xl rounded-2xl p-3 shadow-xl border border-white/20 flex items-center gap-3 animate-in slide-in-from-top-4 duration-500">
@@ -325,10 +325,6 @@ export default function Dashboard() {
                         fill 
                         className="object-cover transition-transform duration-700 group-hover:scale-105" 
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 lg:p-12 text-white">
-                         <Badge className="w-fit mb-2 bg-white/20 backdrop-blur-md border-none text-[8px] lg:text-xs">CAMPUS UPDATES</Badge>
-                         <h3 className="text-lg lg:text-3xl font-headline font-bold">Stay Updated with Uni Events</h3>
-                      </div>
                     </div>
                   </CarouselItem>
                 ))

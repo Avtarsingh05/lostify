@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useRouter } from "next/navigation"
@@ -48,7 +47,10 @@ export default function MyItems() {
     const isExpired = isBefore(reportDate, thirtyDaysAgo) && (item.status !== 'Resolved' && item.status !== 'Returned')
     
     return (
-      <ThreeDCard className={`p-0 overflow-hidden mb-3 border-none shadow-lg bg-card/80 backdrop-blur-sm ${isExpired ? 'opacity-70 grayscale-[0.3]' : ''}`}>
+      <ThreeDCard 
+        onClick={() => router.push(`/my-items/${item.id}`)}
+        className={`p-0 overflow-hidden mb-3 border-none shadow-lg bg-card/80 backdrop-blur-sm ${isExpired ? 'opacity-70 grayscale-[0.3]' : ''}`}
+      >
         <div className="flex h-28">
           <div className="w-28 h-full relative shrink-0">
             <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
