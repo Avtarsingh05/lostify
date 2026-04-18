@@ -1,160 +1,687 @@
 {
   "entities": {
     "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
-      "description": "User profiles and roles.",
       "type": "object",
+      "description": "Represents a user of the Lostify application, including regular users, guards, and administrators.",
       "properties": {
-        "id": { "type": "string" },
-        "email": { "type": "string" },
-        "username": { "type": "string" },
-        "photoURL": { "type": "string" },
-        "role": { "type": "string", "enum": ["ADMIN", "GUARD", "USER"] },
-        "registrationNumber": { "type": "string" },
-        "phoneNumber": { "type": "string" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema Draft-07 reference.",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's primary email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "The display name of the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the system (e.g., 'regular', 'guard', 'admin')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was last updated.",
+          "format": "date-time"
+        }
       },
-      "required": ["id", "email"]
+      "required": [
+        "$schema",
+        "id",
+        "email",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ]
     },
-    "Item": {
-      "title": "Item",
-      "description": "Lost or found items.",
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
       "type": "object",
+      "description": "Defines categories for lost and found items (e.g., Electronics, Wallet, Keys).",
       "properties": {
-        "id": { "type": "string" },
-        "ownerId": { "type": "string" },
-        "name": { "type": "string" },
-        "category": { "type": "string" },
-        "description": { "type": "string" },
-        "locationDescription": { "type": "string" },
-        "type": { "type": "string", "enum": ["lost", "found"] },
-        "status": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "reportedAt": { "type": "string", "format": "date-time" },
-        "storageOffice": { "type": "string" },
-        "verifiedBy": { "type": "string" },
-        "claimerRegNo": { "type": "string" },
-        "resolvedBy": { "type": "string" },
-        "resolvedAt": { "type": "string", "format": "date-time" }
-      }
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema Draft-07 reference.",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category (e.g., 'Electronics', 'Keys', 'Wallet')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of what this category represents."
+        }
+      },
+      "required": [
+        "$schema",
+        "id",
+        "name"
+      ]
     },
-    "Notification": {
-      "title": "Notification",
-      "description": "System broadcasts and user alerts.",
+    "LostItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LostItem",
       "type": "object",
+      "description": "Represents an item that has been reported as lost by a user.",
       "properties": {
-        "userId": { "type": "string" },
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema Draft-07 reference.",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LostItem entity."
+        },
+        "reporterId": {
+          "type": "string",
+          "description": "Reference to the User who reported this item as lost. (Relationship: User 1:N LostItem)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name or title of the lost item."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the lost item, including distinguishing features."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to an image of the lost item.",
+          "format": "uri"
+        },
+        "lastSeenLocationName": {
+          "type": "string",
+          "description": "A human-readable name or description of the last known location where the item was seen."
+        },
+        "lastSeenLocationLatitude": {
+          "type": "number",
+          "description": "The latitude coordinate of the last known location."
+        },
+        "lastSeenLocationLongitude": {
+          "type": "number",
+          "description": "The longitude coordinate of the last known location."
+        },
+        "lastSeenDateTime": {
+          "type": "string",
+          "description": "The date and time when the item was last seen.",
+          "format": "date-time"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category of the lost item. (Relationship: Category 1:N LostItem)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the lost item (e.g., 'Reported', 'Matched', 'Found', 'Returned')."
+        },
+        "reportedAt": {
+          "type": "string",
+          "description": "Timestamp when the lost item was reported.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the lost item report was last updated.",
+          "format": "date-time"
+        },
+        "potentialRewardAmount": {
+          "type": "number",
+          "description": "An optional monetary reward offered for the return of the item."
+        }
+      },
+      "required": [
+        "$schema",
+        "id",
+        "reporterId",
+        "name",
+        "description",
+        "imageUrl",
+        "lastSeenLocationName",
+        "lastSeenLocationLatitude",
+        "lastSeenLocationLongitude",
+        "lastSeenDateTime",
+        "categoryId",
+        "status",
+        "reportedAt",
+        "updatedAt"
+      ]
     },
-    "Banner": {
-      "title": "Banner",
-      "description": "Dashboard promotional banners.",
+    "FoundItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FoundItem",
       "type": "object",
+      "description": "Represents an item that has been found and reported, including its storage and checkout process.",
       "properties": {
-        "imageUrl": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema Draft-07 reference.",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the FoundItem entity."
+        },
+        "reporterId": {
+          "type": "string",
+          "description": "Reference to the User who reported this item as found. (Relationship: User 1:N FoundItem)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name or title of the found item, potentially auto-filled by AI."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the found item, potentially auto-filled by AI."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to an image of the found item.",
+          "format": "uri"
+        },
+        "foundLocationName": {
+          "type": "string",
+          "description": "A human-readable name or description of where the item was found."
+        },
+        "foundLocationLatitude": {
+          "type": "number",
+          "description": "The latitude coordinate of where the item was found."
+        },
+        "foundLocationLongitude": {
+          "type": "number",
+          "description": "The longitude coordinate of where the item was found."
+        },
+        "foundDateTime": {
+          "type": "string",
+          "description": "The date and time when the item was found.",
+          "format": "date-time"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category of the found item. (Relationship: Category 1:N FoundItem)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the found item (e.g., 'Reported', 'PendingPickup', 'Stored', 'PendingClaim', 'Claimed', 'Returned', 'Auctioned')."
+        },
+        "reportedAt": {
+          "type": "string",
+          "description": "Timestamp when the found item was reported.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the found item record was last updated.",
+          "format": "date-time"
+        },
+        "matchedLostItemId": {
+          "type": "string",
+          "description": "Optional reference to a LostItem if this found item has been matched to a lost report. (Relationship: LostItem 1:1 FoundItem)"
+        },
+        "pickupCode": {
+          "type": "string",
+          "description": "A unique code generated for the reporter to share with a guard to confirm initial item pickup and storage."
+        },
+        "storedById": {
+          "type": "string",
+          "description": "Optional reference to the User (guard) who confirmed the item storage. (Relationship: User 1:N FoundItem - storedBy)"
+        },
+        "storedAt": {
+          "type": "string",
+          "description": "Timestamp when the item was marked as stored.",
+          "format": "date-time"
+        },
+        "storageNotes": {
+          "type": "string",
+          "description": "Any additional notes from the guard regarding the item's storage location or condition."
+        },
+        "checkoutCode": {
+          "type": "string",
+          "description": "A unique code generated after storage for the owner/claimant to share with a guard to confirm item checkout."
+        },
+        "claimedById": {
+          "type": "string",
+          "description": "Optional reference to the User (owner) who successfully claimed the item. (Relationship: User 1:N FoundItem - claimedBy)"
+        },
+        "claimedAt": {
+          "type": "string",
+          "description": "Timestamp when the item was marked as claimed/returned to the owner.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "$schema",
+        "id",
+        "reporterId",
+        "name",
+        "description",
+        "imageUrl",
+        "foundLocationName",
+        "foundLocationLatitude",
+        "foundLocationLongitude",
+        "foundDateTime",
+        "categoryId",
+        "status",
+        "reportedAt",
+        "updatedAt",
+        "pickupCode",
+        "checkoutCode"
+      ]
     },
-    "ShopItem": {
-      "title": "ShopItem",
-      "description": "Items available in the campus shop.",
+    "Conversation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Conversation",
       "type": "object",
+      "description": "Facilitates private messaging between users regarding specific lost or found items.",
       "properties": {
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "price": { "type": "number" },
-        "imageUrl": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema Draft-07 reference.",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Conversation entity."
+        },
+        "lostItemId": {
+          "type": "string",
+          "description": "Optional reference to a LostItem if the conversation is related to a specific lost item. (Relationship: LostItem 1:N Conversation)"
+        },
+        "foundItemId": {
+          "type": "string",
+          "description": "Optional reference to a FoundItem if the conversation is related to a specific found item. (Relationship: FoundItem 1:N Conversation)"
+        },
+        "initiatorId": {
+          "type": "string",
+          "description": "Reference to the User who initiated this conversation. (Relationship: User 1:N Conversation - initiator)"
+        },
+        "participantId": {
+          "type": "string",
+          "description": "Reference to the other User participating in this conversation. (Relationship: User 1:N Conversation - participant)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the conversation was initiated.",
+          "format": "date-time"
+        },
+        "lastMessageAt": {
+          "type": "string",
+          "description": "Timestamp of the most recent message in the conversation.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "$schema",
+        "id",
+        "initiatorId",
+        "participantId",
+        "createdAt",
+        "lastMessageAt"
+      ]
     },
-    "Order": {
-      "title": "Order",
-      "description": "Shop purchase records.",
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
       "type": "object",
+      "description": "Represents an individual message within a conversation.",
       "properties": {
-        "userId": { "type": "string" },
-        "itemId": { "type": "string" },
-        "itemName": { "type": "string" },
-        "itemImageUrl": { "type": "string" },
-        "amount": { "type": "number" },
-        "paymentStatus": { "type": "string" },
-        "deliveryEmail": { "type": "string" },
-        "deliveryPhone": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema Draft-07 reference.",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message entity."
+        },
+        "conversationId": {
+          "type": "string",
+          "description": "Reference to the Conversation this message belongs to. (Relationship: Conversation 1:N Message)"
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to the User who sent this message. (Relationship: User 1:N Message)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The textual content of the message."
+        },
+        "sentAt": {
+          "type": "string",
+          "description": "Timestamp when the message was sent.",
+          "format": "date-time"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Boolean indicating if the message has been read by the recipient."
+        }
+      },
+      "required": [
+        "$schema",
+        "id",
+        "conversationId",
+        "senderId",
+        "content",
+        "sentAt",
+        "isRead"
+      ]
     },
-    "ClockRoomItem": {
-      "title": "ClockRoomItem",
-      "description": "Luggage storage records with verification details.",
+    "Auction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Auction",
       "type": "object",
+      "description": "Represents an auction or reward listing for a found item that is unclaimed or has a specified reward.",
       "properties": {
-        "userId": { "type": "string" },
-        "registrationNumber": { "type": "string" },
-        "itemType": { "type": "string" },
-        "color": { "type": "string" },
-        "description": { "type": "string" },
-        "contentsVerification": { "type": "string", "description": "Verification data of what's inside the bag." },
-        "itemCondition": { "type": "string" },
-        "brandMarkings": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "rackNumber": { "type": "string" },
-        "slotNumber": { "type": "string" },
-        "status": { "type": "string" },
-        "otp": { "type": "string" },
-        "expectedReturnDate": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "collectedAt": { "type": "string", "format": "date-time" }
-      }
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema Draft-07 reference.",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Auction entity."
+        },
+        "foundItemId": {
+          "type": "string",
+          "description": "Reference to the FoundItem that is part of this auction or reward listing. (Relationship: FoundItem 1:1 Auction)"
+        },
+        "creatorId": {
+          "type": "string",
+          "description": "Reference to the User (e.g., admin) who created this auction/reward listing. (Relationship: User 1:N Auction)"
+        },
+        "startDateTime": {
+          "type": "string",
+          "description": "The date and time when the auction or reward listing began.",
+          "format": "date-time"
+        },
+        "endDateTime": {
+          "type": "string",
+          "description": "The date and time when the auction or reward listing is scheduled to end.",
+          "format": "date-time"
+        },
+        "initialRewardAmount": {
+          "type": "number",
+          "description": "The initial monetary reward amount offered for the return of the item, if applicable."
+        },
+        "startingBid": {
+          "type": "number",
+          "description": "The minimum starting bid amount for an auction, if applicable."
+        },
+        "currentBid": {
+          "type": "number",
+          "description": "The highest current bid placed on the item in an active auction."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the auction (e.g., 'Active', 'Closed', 'Canceled')."
+        },
+        "winningBidId": {
+          "type": "string",
+          "description": "Optional reference to the winning Bid if the auction has concluded successfully. (Relationship: Auction 1:1 Bid)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the auction record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the auction record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "$schema",
+        "id",
+        "foundItemId",
+        "creatorId",
+        "startDateTime",
+        "endDateTime",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
     },
-    "ClockRoomHandover": {
-      "title": "ClockRoomHandover",
-      "description": "Clock Room pickup verification data.",
+    "Bid": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bid",
       "type": "object",
+      "description": "Represents an individual bid placed by a user in an auction.",
       "properties": {
-        "itemId": { "type": "string" },
-        "userId": { "type": "string" },
-        "guardId": { "type": "string" },
-        "guardName": { "type": "string" },
-        "verificationCode": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "completed"] },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "expiresAt": { "type": "string", "format": "date-time" },
-        "completedAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Handover": {
-      "title": "Handover",
-      "description": "General item handover session data.",
-      "type": "object",
-      "properties": {
-        "itemId": { "type": "string" },
-        "itemName": { "type": "string" },
-        "itemImageUrl": { "type": "string" },
-        "guardId": { "type": "string" },
-        "guardName": { "type": "string" },
-        "verificationCode": { "type": "string" },
-        "status": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "expiresAt": { "type": "string", "format": "date-time" }
-      }
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema Draft-07 reference.",
+          "format": "uri"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Bid entity."
+        },
+        "auctionId": {
+          "type": "string",
+          "description": "Reference to the Auction this bid belongs to. (Relationship: Auction 1:N Bid)"
+        },
+        "bidderId": {
+          "type": "string",
+          "description": "Reference to the User who placed this bid. (Relationship: User 1:N Bid)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The monetary amount of the bid."
+        },
+        "bidAt": {
+          "type": "string",
+          "description": "Timestamp when the bid was placed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "$schema",
+        "id",
+        "auctionId",
+        "bidderId",
+        "amount",
+        "bidAt"
+      ]
     }
   },
-  "auth": { "providers": ["password", "anonymous"] },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
   "firestore": {
     "structure": [
-      { "path": "/users/{userId}", "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "Stores user profiles." } },
-      { "path": "/items/{itemId}", "definition": { "entityName": "Item", "schema": { "$ref": "#/backend/entities/Item" }, "description": "Stores lost and found items." } },
-      { "path": "/notifications/{notifId}", "definition": { "entityName": "Notification", "schema": { "$ref": "#/backend/entities/Notification" }, "description": "Stores system notifications." } },
-      { "path": "/banners/{bannerId}", "definition": { "entityName": "Banner", "schema": { "$ref": "#/backend/entities/Banner" }, "description": "Stores dashboard banners." } },
-      { "path": "/shopItems/{itemId}", "definition": { "entityName": "ShopItem", "schema": { "$ref": "#/backend/entities/ShopItem" }, "description": "Stores shop items." } },
-      { "path": "/orders/{orderId}", "definition": { "entityName": "Order", "schema": { "$ref": "#/backend/entities/Order" }, "description": "Stores shop orders." } },
-      { "path": "/clockRoomItems/{itemId}", "definition": { "entityName": "ClockRoomItem", "schema": { "$ref": "#/backend/entities/ClockRoomItem" }, "description": "Stores clock room storage records." } },
-      { "path": "/clockRoomHandovers/{handoverId}", "definition": { "entityName": "ClockRoomHandover", "schema": { "$ref": "#/backend/entities/ClockRoomHandover" }, "description": "Stores clock room pickup sessions." } },
-      { "path": "/handovers/{handoverId}", "definition": { "entityName": "Handover", "schema": { "$ref": "#/backend/entities/Handover" }, "description": "Stores general item handover sessions." } },
-      { "path": "/system/config", "definition": { "entityName": "Config", "schema": { "type": "object", "properties": { "appLogo": { "type": "string" } } }, "description": "Stores system configuration." } }
-    ]
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Accessible by the user themselves or by administrators.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_guards/{guardId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Dedicated collection for guard roles. A document's existence signifies that the user (guardId) has guard privileges. Used for DBAC (Database-Backed Access Control) via existence checks in security rules.",
+          "params": [
+            {
+              "name": "guardId",
+              "description": "The unique identifier of the user with 'guard' role, corresponding to Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admins/{adminId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Dedicated collection for administrator roles. A document's existence signifies that the user (adminId) has admin privileges. Used for DBAC (Database-Backed Access Control) via existence checks in security rules.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the user with 'admin' role, corresponding to Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores predefined categories for lost and found items. Read-only for all users, writeable by administrators.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for the item category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/lost_items/{lostItemId}",
+        "definition": {
+          "entityName": "LostItem",
+          "schema": {
+            "$ref": "#/backend/entities/LostItem"
+          },
+          "description": "Stores reports of lost items. Publicly readable for browsing, but only the `reporterId` can create or update their own reports. Includes `reporterId` for authorization independence.",
+          "params": [
+            {
+              "name": "lostItemId",
+              "description": "The unique identifier for the reported lost item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/found_items/{foundItemId}",
+        "definition": {
+          "entityName": "FoundItem",
+          "schema": {
+            "$ref": "#/backend/entities/FoundItem"
+          },
+          "description": "Stores reports of found items and manages their pickup/checkout workflow. Publicly readable for browsing. Creation by any user, updates by the `reporterId` or a `guard` (based on `storedById`, `claimedById`, `pickupCode`, `checkoutCode`, `status`). All necessary authorization fields (`reporterId`, `storedById`, `claimedById`) are within the document for authorization independence.",
+          "params": [
+            {
+              "name": "foundItemId",
+              "description": "The unique identifier for the reported found item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/conversations/{conversationId}",
+        "definition": {
+          "entityName": "Conversation",
+          "schema": {
+            "$ref": "#/backend/entities/Conversation"
+          },
+          "description": "Stores private conversations between users. Only accessible by the `initiatorId` and `participantId`. Includes these IDs for authorization independence.",
+          "params": [
+            {
+              "name": "conversationId",
+              "description": "The unique identifier for the conversation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/conversations/{conversationId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores individual messages within a conversation. Accessible by the conversation's `initiatorId` and `participantId`. Requires denormalized 'conversationInitiatorId' and 'conversationParticipantId' fields (copied from parent Conversation) within each message document for authorization independence.",
+          "params": [
+            {
+              "name": "conversationId",
+              "description": "The unique identifier of the parent conversation."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/auctions/{auctionId}",
+        "definition": {
+          "entityName": "Auction",
+          "schema": {
+            "$ref": "#/backend/entities/Auction"
+          },
+          "description": "Stores auction listings for unclaimed or reward-based items. Publicly readable. Creation and updates restricted to `creatorId` (typically an admin). Includes `creatorId` and `status` for authorization independence and denormalization into subcollections.",
+          "params": [
+            {
+              "name": "auctionId",
+              "description": "The unique identifier for the auction listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/auctions/{auctionId}/bids/{bidId}",
+        "definition": {
+          "entityName": "Bid",
+          "schema": {
+            "$ref": "#/backend/entities/Bid"
+          },
+          "description": "Stores individual bids placed on an auction. Readable by the `bidderId` and `auctionCreatorId`. Requires denormalized 'auctionCreatorId' and 'auctionStatus' fields (copied from parent Auction) within each bid document for authorization independence.",
+          "params": [
+            {
+              "name": "auctionId",
+              "description": "The unique identifier of the parent auction."
+            },
+            {
+              "name": "bidId",
+              "description": "The unique identifier for the bid."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure prioritizes Authorization Independence and Query-Aware Security Rules (QAPs) by employing strategic denormalization and structural segregation. Authorization Independence is achieved primarily by ensuring that all necessary authorization context is available directly within the document being accessed, thereby eliminating the need for `get()` calls in security rules, which can break atomic operations and complicate debugging. For instance, `Message` documents will include denormalized `conversationInitiatorId` and `conversationParticipantId` fields from their parent `Conversation`, allowing direct authorization checks without fetching the parent. Similarly, `Bid` documents will denormalize `auctionCreatorId` and `auctionStatus` from their respective `Auction` parents. The critical `FoundItem` workflow (pickup/checkout) is designed with `reporterId`, `storedById`, `claimedById`, and `status` fields directly on the document, enabling guards to mark items as stored or claimed by verifying their `uid` against these fields or the dedicated `/roles_guards/{guardId}` collection for role existence checks.\n\nQAPs are supported through structural segregation. Publicly browsable collections like `/lost_items`, `/found_items`, and `/auctions` have a homogeneous read security posture (anyone can read), making `list` operations efficient and secure without requiring complex filtering in rules. Write/update permissions for these documents are handled at the individual document level based on explicit `reporterId` or `creatorId` fields, or by checking `guard` and `admin` roles via the `/roles_guards/{guardId}` and `/roles_admins/{adminId}` collections. Private user data, such as `users/{userId}` profiles and the `conversations/{conversationId}` subcollections, are distinct, ensuring that `list` operations on these paths will naturally be limited to the owner or participants, maintaining data privacy and rule simplicity. User roles are managed using the \"existence over content\" DBAC pattern, with dedicated top-level collections for `/roles_guards/{guardId}` and `/roles_admins/{adminId}`, allowing for straightforward role checks in security rules."
   }
 }

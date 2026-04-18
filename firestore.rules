@@ -1,91 +1,194 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * CORE HELPERS
+     * Lostify Security Rules
+     *
+     * Core Philosophy: 
+     * This ruleset implements a multi-tier authorization model supporting regular users, 
+     * security guards, and administrators. It prioritizes "Authorization Independence" by 
+     * utilizing denormalized fields (like reporterId, initiatorId) to perform high-performance 
+     * security lookups without nested document reads.
+     *
+     * Data Structure:
+     * - Top-level collections (/users, /lost_items, /found_items, /categories, /auctions) 
+     *   provide the primary entry points for the application.
+     * - Role-based access is managed via specialized "shadow" collections (/roles_guards, 
+     *   /roles_admins) where document existence confirms a user's elevated privileges.
+     * - Private interactions are secured via /conversations and its nested /messages.
+     *
+     * Key Security Decisions:
+     * - Public Browse: Lost and found items are publicly readable to facilitate matching.
+     * - Guard Workflows: Guards have specific update permissions on found items to manage 
+     *   the storage and checkout lifecycle via QR code/code verification.
+     * - Relationship Integrity: Critical fields like reporterId and bidderId are validated 
+     *   on creation and enforced as immutable on update.
+     * - Ownership Denormalization: Access to messages and bids is protected using 
+     *   denormalized ownership IDs copied from parent records to the child documents.
      */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * MASTER AUTHORITY BYPASS
-     * Direct root access for super administrators.
-     */
-    function isMasterAdmin() {
-      return isSignedIn() && (
-        request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" ||
-        request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
-        (request.auth.token.keys().contains('email') && (
-          request.auth.token.email == "worker@gmail.com" ||
-          request.auth.token.email == "forigloohelp@gmail.com" ||
-          request.auth.token.email == "avtarsingh9528972330@gmail.com"
-        ))
-      );
+    /** @description Checks if the user's UID matches the provided ID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * GLOBAL BYPASS
-     */
-    match /{document=**} {
-      allow read, write: if isMasterAdmin();
+    /** @description Checks if the existing document is owned by the user and exists. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
     }
 
-    // --- COLLECTION RULES ---
+    /** @description Checks if a user has the 'guard' role via the roles_guards collection. */
+    function isGuard() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_guards/$(request.auth.uid));
+    }
 
+    /** @description Checks if a user has the 'admin' role via the roles_admins collection. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admins/$(request.auth.uid));
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description User profile management. Users manage their own profiles; Admins have full access.
+     * @path /users/{userId}
+     * @allow (get) Any signed-in user viewing their own profile.
+     * @deny (update) A user trying to modify another user's profile.
+     * @principle Restricts access to a user's own data tree.
+     */
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && (request.auth.uid == userId || isMasterAdmin());
-    }
-
-    match /items/{itemId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
-    }
-
-    match /notifications/{notifId} {
-      allow read: if isSignedIn();
-      allow write: if isMasterAdmin();
-    }
-
-    match /banners/{bannerId} {
-      allow read: if isSignedIn();
-      allow write: if isMasterAdmin();
-    }
-
-    match /shopItems/{itemId} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
-    }
-
-    match /orders/{orderId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isMasterAdmin();
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
-     * CLOCK ROOM & HANDOVERS
-     * Simplified rules to ensure no blocking errors.
+     * @description Role tracking for Guards. Existence of doc = Guard role.
+     * @path /roles_guards/{guardId}
+     * @allow (get) Any authenticated user (to verify guard status).
+     * @deny (write) Any non-admin user.
+     * @principle Database-backed access control (DBAC) via existence checks.
      */
-    match /clockRoomItems/{itemId} {
-      allow read, write: if isSignedIn();
+    match /roles_guards/{guardId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
-    match /clockRoomHandovers/{handoverId} {
-      allow read, write: if isSignedIn();
+    /**
+     * @description Role tracking for Admins. Existence of doc = Admin role.
+     * @path /roles_admins/{adminId}
+     * @allow (get) Any authenticated user.
+     * @deny (write) Any non-admin user.
+     * @principle Database-backed access control (DBAC) via existence checks.
+     */
+    match /roles_admins/{adminId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
-    match /handovers/{handoverId} {
-      allow read, write: if isSignedIn();
+    /**
+     * @description Categories for items. Read-only for users, managed by Admins.
+     * @path /categories/{categoryId}
+     * @allow (list) Publicly readable for category selection.
+     * @deny (create) Regular users adding new categories.
+     * @principle Administrative control over global system configuration.
+     */
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
-    match /system/config {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+    /**
+     * @description Reports of lost items. Publicly browsable; reporter manages their report.
+     * @path /lost_items/{lostItemId}
+     * @allow (create) User reporting a lost item with their own ID.
+     * @deny (update) User trying to change the reporterId of a lost item.
+     * @principle Enforces document ownership for writes while allowing public reads.
+     */
+    match /lost_items/{lostItemId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.reporterId) && request.resource.data.reporterId == resource.data.reporterId;
+      allow delete: if isExistingOwner(resource.data.reporterId) || isAdmin();
+    }
+
+    /**
+     * @description Reports of found items. Publicly browsable. Managed by reporter or guards.
+     * @path /found_items/{foundItemId}
+     * @allow (update) Guard marking an item as 'Stored' or 'Returned'.
+     * @deny (update) Unauthorized user trying to modify item status.
+     * @principle Shared access between reporters and guards for workflow progression.
+     */
+    match /found_items/{foundItemId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow update: if resource != null && (isOwner(resource.data.reporterId) || isGuard() || isAdmin()) && request.resource.data.reporterId == resource.data.reporterId;
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Conversations between users. Only participants can access.
+     * @path /conversations/{conversationId}
+     * @allow (get) Initiator or participant reading the thread.
+     * @deny (list) User listing conversations they are not part of.
+     * @principle Shared access model for closed collaborators.
+     */
+    match /conversations/{conversationId} {
+      allow get, list: if isOwner(resource.data.initiatorId) || isOwner(resource.data.participantId);
+      allow create: if isSignedIn() && (request.resource.data.initiatorId == request.auth.uid || request.resource.data.participantId == request.auth.uid);
+      allow update: if isExistingOwner(resource.data.initiatorId) || isExistingOwner(resource.data.participantId);
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Individual messages. Uses denormalized participant IDs for security.
+     * @path /conversations/{conversationId}/messages/{messageId}
+     * @allow (create) Participant sending a message in a shared thread.
+     * @deny (get) Non-participant trying to read private messages.
+     * @principle Denormalization for authorization to avoid parent document lookups.
+     */
+    match /conversations/{conversationId}/messages/{messageId} {
+      allow get, list: if isOwner(resource.data.conversationInitiatorId) || isOwner(resource.data.conversationParticipantId);
+      allow create: if isSignedIn() && (request.resource.data.conversationInitiatorId == request.auth.uid || request.resource.data.conversationParticipantId == request.auth.uid) && request.resource.data.senderId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.senderId) && request.resource.data.senderId == resource.data.senderId;
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Auction listings. Publicly readable; Admin controlled.
+     * @path /auctions/{auctionId}
+     * @allow (get) Publicly viewing active auctions.
+     * @deny (create) Regular user trying to start an auction.
+     * @principle Public read with authorized administrative writes.
+     */
+    match /auctions/{auctionId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && request.resource.data.creatorId == request.auth.uid;
+      allow update: if (isExistingOwner(resource.data.creatorId) || isAdmin()) && request.resource.data.creatorId == resource.data.creatorId;
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Bids on auctions. Uses denormalized auction creator ID.
+     * @path /auctions/{auctionId}/bids/{bidId}
+     * @allow (create) User placing a bid on an auction.
+     * @deny (update) User trying to change a bid amount after submission.
+     * @principle Immutable data pattern for relational integrity.
+     */
+    match /auctions/{auctionId}/bids/{bidId} {
+      allow get, list: if isOwner(resource.data.bidderId) || isOwner(resource.data.auctionCreatorId) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.bidderId == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
   }
 }
