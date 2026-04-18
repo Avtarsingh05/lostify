@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Hash,
   User,
-  Phone
+  Phone,
+  Sparkles
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -78,7 +79,7 @@ export default function StoreItemPage() {
     reader.onloadend = () => {
       const dataUri = reader.result as string
       setPreviewImage(dataUri)
-      toast({ title: "Photo Attached", description: "Identity verified via snapshot." })
+      toast({ title: "Snapshot Taken", description: "Identity verified visually." })
     }
     reader.readAsDataURL(file)
   }
@@ -86,13 +87,11 @@ export default function StoreItemPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !db || !previewImage) {
-      toast({ variant: "destructive", title: "Missing Photo", description: "Please snap a photo of the luggage first." })
+      toast({ variant: "destructive", title: "Photo Required", description: "Take a snapshot of your luggage first." })
       return
     }
 
     setIsSubmitting(true)
-    
-    // Generate unique codes for both stages
     const checkInCode = Math.floor(1000 + Math.random() * 9000).toString()
     const checkOutCode = Math.floor(1000 + Math.random() * 9000).toString()
 
@@ -108,9 +107,9 @@ export default function StoreItemPage() {
       itemCondition,
       brandMarkings,
       imageUrl: previewImage,
-      rackNumber: "Awaiting Assignment",
+      rackNumber: "Staging",
       slotNumber: "Reception",
-      status: "pending_storage", // Initial status
+      status: "pending_storage",
       checkInCode,
       checkOutCode,
       expectedReturnDate: returnDate ? new Date(returnDate).toISOString() : null,
@@ -120,7 +119,7 @@ export default function StoreItemPage() {
     try {
       await addDocumentNonBlocking(collection(db, "clockRoomItems"), itemData)
       setIsSuccess(true)
-      toast({ title: "Draft Created", description: "Please show your Check-in Code to the guard." })
+      toast({ title: "Request Logged", description: "Proceed to Uni Mall Reception." })
       setTimeout(() => router.push("/clock-room"), 2500)
     } finally {
       setIsSubmitting(false)
@@ -129,13 +128,13 @@ export default function StoreItemPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-500 shadow-xl shadow-primary/20">
-          <CheckCircle2 className="h-12 w-12 text-primary" />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center overflow-x-hidden">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-500 shadow-xl shadow-primary/10">
+          <CheckCircle2 className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
         </div>
-        <h2 className="text-3xl font-headline font-bold mb-2">Form Submitted</h2>
-        <p className="text-muted-foreground text-sm mb-8 max-w-xs">
-          Your request is logged. Go to the Uni Mall reception and show your digital check-in token to the guard.
+        <h2 className="text-2xl sm:text-3xl font-headline font-bold mb-2">Check-in Ready</h2>
+        <p className="text-muted-foreground text-[11px] sm:text-sm mb-8 max-w-xs px-4">
+          Handover your bag at Uni Mall Reception and show your digital token to the guard.
         </p>
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
@@ -143,143 +142,149 @@ export default function StoreItemPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="gradient-header pt-12 pb-24 px-4 rounded-b-[48px] shadow-xl text-white">
+    <div className="min-h-screen bg-background pb-24 overflow-x-hidden">
+      <div className="gradient-header pt-12 pb-24 px-4 rounded-b-[40px] shadow-xl text-white">
         <div className="max-w-md mx-auto flex items-center gap-3">
           <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-2xl font-headline font-bold">Secure Check-in</h1>
+          <h1 className="text-xl sm:text-2xl font-headline font-bold">Secure Storage</h1>
         </div>
       </div>
 
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
-        <Card className="rounded-[40px] overflow-hidden shadow-2xl border-none">
-          <CardContent className="p-6 space-y-6">
+        <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none">
+          <CardContent className="p-5 sm:p-6 space-y-6">
             <div 
               onClick={() => fileInputRef.current?.click()}
-              className="relative w-full aspect-[16/10] rounded-[28px] border-2 border-dashed border-muted-foreground/20 overflow-hidden flex flex-col items-center justify-center bg-muted/30 hover:bg-muted/50 transition-all cursor-pointer group"
+              className="relative w-full aspect-[16/10] rounded-[24px] border-2 border-dashed border-muted-foreground/20 overflow-hidden flex flex-col items-center justify-center bg-muted/20 hover:bg-muted/40 transition-all cursor-pointer group"
             >
               {previewImage ? (
                 <>
-                  <Image src={previewImage} alt="Luggage" fill className="object-cover" />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                     <div className="bg-white/90 p-3 rounded-2xl shadow-xl text-primary font-bold text-xs">Tap to Change Photo</div>
+                  <Image src={previewImage} alt="Luggage Preview" fill className="object-cover" />
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                     <div className="bg-white/95 px-4 py-2 rounded-xl shadow-xl text-primary font-bold text-[10px] uppercase tracking-widest">Retake Photo</div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="bg-white dark:bg-card p-5 rounded-full shadow-xl">
-                    <Camera className="h-8 w-8 text-primary" />
+                  <div className="bg-white dark:bg-card p-4 rounded-full shadow-lg border border-primary/10">
+                    <Camera className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
                   </div>
-                  <p className="mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Snapshot Luggage</p>
+                  <p className="mt-3 text-[9px] font-bold text-muted-foreground uppercase tracking-[0.15em]">Snapshot Luggage</p>
                 </>
               )}
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                  <CreditCard className="h-3 w-3" /> Student Identity
-                </p>
-                <div className="grid grid-cols-1 gap-3">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Profile Block */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                   <div className="h-6 w-1 bg-primary rounded-full" />
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Student Identity</p>
+                </div>
+                <div className="space-y-3">
                   <div className="relative">
                     <Input 
-                      placeholder="Full Name" 
-                      className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
+                      placeholder="Display Name" 
+                      className="rounded-xl h-12 pl-10 bg-muted/30 border-none shadow-none text-xs" 
                       value={studentName}
                       onChange={(e) => setStudentName(e.target.value)}
                       required 
                     />
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="relative">
                       <Input 
-                        placeholder="Registration No." 
-                        className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
+                        placeholder="Registration ID" 
+                        className="rounded-xl h-12 pl-10 bg-muted/30 border-none shadow-none text-xs" 
                         value={registrationNumber}
                         onChange={(e) => setRegistrationNumber(e.target.value)}
                         required 
                       />
-                      <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                     </div>
                     <div className="relative">
                       <Input 
                         placeholder="Phone Number" 
-                        className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
+                        className="rounded-xl h-12 pl-10 bg-muted/30 border-none shadow-none text-xs" 
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         required 
                       />
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                  <Package className="h-3 w-3" /> Basic Description
-                </p>
-                <div className="grid grid-cols-1 gap-4">
+              {/* Item Details Block */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                   <div className="h-6 w-1 bg-accent rounded-full" />
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Bag Details</p>
+                </div>
+                <div className="space-y-3">
                   <div className="relative">
                     <Input 
-                      placeholder="Bag Type (e.g. Suitcase, Duffle)" 
-                      className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
+                      placeholder="Type (e.g. Suitcase, Duffle)" 
+                      className="rounded-xl h-12 pl-10 bg-muted/30 border-none shadow-none text-xs" 
                       value={itemType}
                       onChange={(e) => setItemType(e.target.value)}
                       required 
                     />
-                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="relative">
                       <Input 
-                        placeholder="Color" 
-                        className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1" 
+                        placeholder="Primary Color" 
+                        className="rounded-xl h-12 pl-10 bg-muted/30 border-none shadow-none text-xs" 
                         value={color}
                         onChange={(e) => setColor(e.target.value)}
                         required 
                       />
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border shadow-sm" style={{ backgroundColor: color || '#ccc' }} />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 h-3 w-3 rounded-full border shadow-sm" style={{ backgroundColor: color || '#ddd' }} />
                     </div>
                     <div className="relative">
                       <Input 
                         type="date" 
-                        className="rounded-2xl h-14 pl-12 bg-muted/20 border-none focus-visible:ring-1 text-xs" 
+                        className="rounded-xl h-12 pl-10 bg-muted/30 border-none shadow-none text-[10px]" 
                         value={returnDate}
                         onChange={(e) => setReturnDate(e.target.value)}
                         required 
                       />
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* Verification Block */}
               <div className="space-y-4 pt-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                  <ShieldCheck className="h-3 w-3" /> Verification Questions
-                </p>
+                <div className="flex items-center gap-2 px-1">
+                   <div className="h-6 w-1 bg-secondary rounded-full" />
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-secondary">Verification Info</p>
+                </div>
                 
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Unique Brand or Markings</Label>
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Brand or Distinctive Marks</Label>
                   <Input 
                     placeholder="e.g. Nike, Red ribbon on handle" 
-                    className="rounded-xl h-12 bg-muted/20 border-none shadow-none"
+                    className="rounded-xl h-12 bg-muted/30 border-none shadow-none text-xs"
                     value={brandMarkings}
                     onChange={(e) => setBrandMarkings(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Internal Contents (2-3 items)</Label>
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Key Internal Contents (2-3 items)</Label>
                   <Textarea 
                     placeholder="e.g. Blue hoodie, Dell laptop" 
-                    className="rounded-xl min-h-[80px] bg-muted/20 border-none resize-none"
+                    className="rounded-xl min-h-[90px] bg-muted/30 border-none resize-none text-xs leading-relaxed"
                     value={contentsVerification}
                     onChange={(e) => setContentsVerification(e.target.value)}
                     required
@@ -291,18 +296,18 @@ export default function StoreItemPage() {
                 type="submit" 
                 size="lg" 
                 disabled={isSubmitting || !previewImage}
-                className="w-full h-16 rounded-[28px] gradient-header font-bold shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                className="w-full h-14 rounded-2xl gradient-header font-bold shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
               >
-                {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <><ShieldCheck className="h-5 w-5" /> Generate Digital Token</>}
+                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ShieldCheck className="h-5 w-5" /> Generate Token</>}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-3xl flex items-start gap-4">
+        <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-2xl flex items-start gap-4 mb-10">
           <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-[10px] text-muted-foreground leading-relaxed">
-            <strong>Security Notice:</strong> Your items are not "Stored" until a guard validates your Check-in Code and places them in a secure rack.
+          <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-relaxed italic">
+            <strong>Disclaimer:</strong> Physical storage is confirmed only after a guard scans your Check-in Code and places the item in a designated rack.
           </p>
         </div>
       </main>
