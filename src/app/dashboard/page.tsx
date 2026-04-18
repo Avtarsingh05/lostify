@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -23,7 +24,8 @@ import {
   AlertCircle,
   Megaphone,
   Archive,
-  Briefcase
+  Briefcase,
+  MessageSquare
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -200,6 +202,10 @@ export default function Dashboard() {
                   <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
                     <Package className="mr-2 h-4 w-4" />
                     <span>My Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/chat')} className="rounded-xl cursor-pointer font-bold text-primary">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    <span>Community Hub</span>
                   </DropdownMenuItem>
                   
                   {isGuard && (
