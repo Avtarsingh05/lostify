@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from "@/firebase"
 import { updateProfile } from "firebase/auth"
 import { doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
@@ -64,6 +65,16 @@ export default function ProfileSettings() {
     e.preventDefault()
     if (!auth.currentUser || !db) return
 
+    // Explicit Validation
+    if (!nickname.trim() || !phoneNumber.trim() || !registrationNumber.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Incomplete Profile",
+        description: "Nickname, Registration Number, and Phone Number are mandatory.",
+      })
+      return
+    }
+
     setIsLoading(true)
     try {
       let photoURL = userData?.photoURL || auth.currentUser.photoURL || ""
@@ -86,17 +97,19 @@ export default function ProfileSettings() {
         setIsUploading(false)
       }
 
-      // 1. Update Firestore User Document (Primary for our UI)
+      // 1. Update Firestore User Document (Using set to ensure creation/update)
       const userRef = doc(db, "users", auth.currentUser.uid)
-      updateDocumentNonBlocking(userRef, {
+      setDocumentNonBlocking(userRef, {
+        id: auth.currentUser.uid,
+        email: auth.currentUser.email,
         username: nickname,
         phoneNumber: phoneNumber,
         registrationNumber: registrationNumber,
         photoURL: photoURL,
         updatedAt: new Date().toISOString()
-      })
+      }, { merge: true })
 
-      // 2. Update Firebase Auth Profile (Secondary, non-critical)
+      // 2. Update Firebase Auth Profile (Secondary)
       updateProfile(auth.currentUser, {
         displayName: nickname,
         photoURL: photoURL
@@ -138,6 +151,7 @@ export default function ProfileSettings() {
             </AvatarFallback>
           </Avatar>
           <button 
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             className="absolute bottom-0 right-0 bg-white text-primary p-2 rounded-full shadow-lg border-2 border-white hover:scale-110 transition-transform"
           >
@@ -163,7 +177,7 @@ export default function ProfileSettings() {
             </CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="space-y-1.5">
-                <Label htmlFor="nickname" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Nickname</Label>
+                <Label htmlFor="nickname" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Nickname *</Label>
                 <Input 
                   id="nickname" 
                   value={nickname} 
@@ -175,7 +189,7 @@ export default function ProfileSettings() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="registrationNumber" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Registration Number</Label>
+                <Label htmlFor="registrationNumber" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Registration Number *</Label>
                 <div className="relative">
                   <Input 
                     id="registrationNumber" 
@@ -190,7 +204,7 @@ export default function ProfileSettings() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Phone Number</Label>
+                <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Phone Number *</Label>
                 <div className="relative">
                   <Input 
                     id="phone" 
@@ -241,6 +255,10 @@ export default function ProfileSettings() {
               </>
             )}
           </Button>
+          
+          <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-medium">
+            * Fields are mandatory for reporting items and chat access.
+          </p>
         </form>
       </main>
     </div>
