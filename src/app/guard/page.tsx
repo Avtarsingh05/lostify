@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -107,7 +108,7 @@ export default function GuardDashboard() {
     updateDocumentNonBlocking(itemRef, {
       status: "In Custody",
       storageOffice: storageLocation,
-      verifiedBy: user?.email,
+      verifiedBy: user?.displayName || user?.email?.split('@')[0] || "Guard",
       lastUpdatedAt: new Date().toISOString()
     })
     toast({
@@ -124,7 +125,7 @@ export default function GuardDashboard() {
     updateDocumentNonBlocking(itemRef, {
       status: "Resolved",
       claimerRegNo: regNumber,
-      resolvedBy: user?.email,
+      resolvedBy: user?.displayName || user?.email?.split('@')[0] || "Guard",
       resolvedAt: new Date().toISOString(),
       lastUpdatedAt: new Date().toISOString()
     })
@@ -154,10 +155,16 @@ export default function GuardDashboard() {
     }
 
     try {
-      const docRef = await addDocumentNonBlocking(collection(db, "handovers"), handoverData)
-      if (docRef) {
-        setHandoverSession({ ...handoverData, id: docRef.id })
-      }
+      const colRef = collection(db, "handovers");
+      const docRef = await addDocumentNonBlocking(colRef, handoverData);
+      // addDocumentNonBlocking returns a promise that resolves once the local write is initiated
+      // We'll set the session locally for the QR code display
+      setHandoverSession({ ...handoverData, id: "session_pending" });
+      
+      toast({
+        title: "Session Initiated",
+        description: "Show the QR code to the student.",
+      });
     } catch (error) {
       toast({ variant: "destructive", title: "Handover Failed", description: "Could not initiate secure session." })
     } finally {
@@ -304,7 +311,7 @@ export default function GuardDashboard() {
                 })}
               </div>
             ) : (
-              <EmptyState icon={CheckCircle2} message="No handovers pending." />
+              <EmptyState icon={CheckCircle2} message="No reports pending." />
             )}
           </TabsContent>
 
@@ -535,7 +542,7 @@ export default function GuardDashboard() {
           <div className="flex flex-col items-center gap-8 py-4">
             <div className="bg-white p-6 rounded-[40px] shadow-inner shadow-black/5 border-2 border-dashed border-primary/20">
               <QRCodeSVG 
-                value={`${window.location.origin}/handover/${handoverSession?.id}`} 
+                value={handoverSession ? `${window.location.origin}/handover/${handoverSession.id}` : ""} 
                 size={200}
                 includeMargin
               />
