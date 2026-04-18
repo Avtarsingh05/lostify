@@ -25,15 +25,25 @@ service cloud.firestore {
 
     /**
      * CLOCK ROOM SECURITY
-     * Allows all authenticated users to read/list to prevent query failures,
-     * while the UI handles personal data filtering.
+     * Explicitly allow all authenticated users to read and list.
+     * The UI logic handles personal data filtering to prevent users seeing others' items.
      */
     match /clockRoomItems/{itemId} {
       allow read, write: if isSignedIn();
     }
 
     /**
+     * COMMUNITY MESSAGES
+     * Allow reading and creating messages for authenticated users.
+     */
+    match /community_messages/{messageId} {
+      allow read, create: if isSignedIn();
+      allow delete, update: if isAdmin();
+    }
+
+    /**
      * GLOBAL AUTHENTICATED ACCESS (Fallback)
+     * Provides a catch-all for signed-in users while explicit matches above handle listing nuances.
      */
     match /{document=**} {
       allow read, write: if isSignedIn();

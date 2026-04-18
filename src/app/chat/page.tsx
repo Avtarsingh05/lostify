@@ -11,7 +11,9 @@ import {
   MessageSquare,
   AlertTriangle,
   Info,
-  Lock
+  Lock,
+  Clock,
+  Sparkles
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,10 +26,11 @@ import {
   useDoc,
   addDocumentNonBlocking 
 } from "@/firebase"
-import { collection, query, orderBy, limit, doc } from "firebase/firestore"
-import { format } from "date-fns"
+import { collection, query, orderBy, limit, doc, where } from "firebase/firestore"
+import { format, subHours } from "date-fns"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 
 export default function CommunityChat() {
   const router = useRouter()
@@ -43,13 +46,18 @@ export default function CommunityChat() {
   }, [db, user])
   const { data: userData } = useDoc(userDocRef)
 
-  // Fetch community messages (last 50)
+  // Fetch community messages (Last 24 Hours only)
   const chatQuery = useMemoFirebase(() => {
     if (!db) return null
+    
+    // Filter for messages created within the last 24 hours
+    const twentyFourHoursAgo = subHours(new Date(), 24).toISOString()
+    
     return query(
       collection(db, "community_messages"),
+      where("createdAt", ">=", twentyFourHoursAgo),
       orderBy("createdAt", "asc"),
-      limit(50)
+      limit(100)
     )
   }, [db])
 
@@ -102,7 +110,12 @@ export default function CommunityChat() {
               <h1 className="text-xl font-headline font-bold flex items-center gap-2">
                 Community Hub <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               </h1>
-              <p className="text-[10px] text-white/70 uppercase tracking-widest font-bold">Public Campus Chat</p>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-white/10 text-white border-white/20 text-[7px] h-4 font-bold uppercase tracking-widest px-1.5">
+                  <Clock className="h-2 w-2 mr-1" /> Auto-clears 24h
+                </Badge>
+                <p className="text-[9px] text-white/70 uppercase tracking-widest font-bold">Public Student Chat</p>
+              </div>
             </div>
           </div>
           <MessageSquare className="h-6 w-6 opacity-40" />
@@ -130,17 +143,17 @@ export default function CommunityChat() {
           <div className="max-w-4xl mx-auto space-y-6 pb-10">
              <div className="flex flex-col items-center justify-center py-10 opacity-30 text-center space-y-2">
                 <div className="bg-muted p-4 rounded-full">
-                   <Info className="h-6 w-6" />
+                   <Sparkles className="h-6 w-6 text-primary" />
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-widest max-w-[200px]">
-                  Welcome to the Hub. Be respectful. Messages are public to all students.
+                <p className="text-[10px] font-bold uppercase tracking-widest max-w-[220px]">
+                  Messages vanish after 24 hours. Be respectful and help your fellow students.
                 </p>
              </div>
 
              {messages?.map((msg, i) => {
                const isMe = msg.senderId === user?.uid
                return (
-                 <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1.5`}>
+                 <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1.5 animate-in fade-in slide-in-from-bottom-1 duration-300`}>
                     <div className={`flex items-center gap-2 mb-0.5 ${isMe ? 'flex-row-reverse' : ''}`}>
                        <p className="text-[10px] font-bold text-muted-foreground">
                          {msg.senderName} 
