@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -93,18 +92,6 @@ export default function GuardDashboard() {
   }, [db, isAuthorized])
 
   const { data: allItems, isLoading } = useCollection(itemsQuery)
-
-  const handoversHistoryQuery = useMemoFirebase(() => {
-    if (!db || !isAuthorized) return null
-    return query(
-      collection(db, "handovers"),
-      where("status", "==", "completed"),
-      orderBy("completedAt", "desc"),
-      limit(50)
-    )
-  }, [db, isAuthorized])
-
-  const { data: handoverHistory } = useCollection(handoversHistoryQuery)
 
   const thirtyDaysAgo = subDays(new Date(), 30)
 
@@ -231,7 +218,7 @@ export default function GuardDashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6 lg:space-y-12">
-        <div className="grid grid-cols-4 gap-2 lg:gap-8">
+        <div className="grid grid-cols-3 gap-2 lg:gap-8">
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-3 lg:p-8 text-center">
               <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Reports</p>
@@ -250,12 +237,6 @@ export default function GuardDashboard() {
               <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-3 lg:p-8 text-center">
-              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Logs</p>
-              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-muted-foreground">{handoverHistory?.length || 0}</h3>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="relative group max-w-2xl mx-auto lg:max-w-none">
@@ -269,7 +250,7 @@ export default function GuardDashboard() {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border overflow-x-auto max-w-2xl mx-auto lg:max-w-none">
+          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border overflow-x-auto max-w-2xl mx-auto lg:max-w-none">
             <TabsTrigger value="pending" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
               <Clock className="h-3 w-3 lg:h-4 lg:w-4" /> Reports
             </TabsTrigger>
@@ -278,9 +259,6 @@ export default function GuardDashboard() {
             </TabsTrigger>
             <TabsTrigger value="lost" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
               <AlertCircle className="h-3 w-3 lg:h-4 lg:w-4" /> Lost
-            </TabsTrigger>
-            <TabsTrigger value="history" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
-              <History className="h-3 w-3 lg:h-4 lg:w-4" /> History
             </TabsTrigger>
           </TabsList>
 
@@ -441,46 +419,6 @@ export default function GuardDashboard() {
             ) : (
               <EmptyState icon={History} message="No active lost reports." />
             )}
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-4">
-            <div className="bg-card/80 backdrop-blur-md rounded-[32px] overflow-hidden shadow-xl border">
-               <CardHeader className="p-6 pb-2">
-                 <CardTitle className="text-sm font-headline font-bold uppercase tracking-widest flex items-center gap-2">
-                   <History className="h-4 w-4 text-primary" /> Handover History
-                 </CardTitle>
-               </CardHeader>
-               <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {handoverHistory && handoverHistory.length > 0 ? (
-                      handoverHistory.map((h) => (
-                        <div key={h.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-dashed border-primary/20">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl relative overflow-hidden shrink-0 shadow-sm">
-                              <Image src={h.itemImageUrl} alt={h.itemName} fill className="object-cover" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold truncate">{h.itemName}</p>
-                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <UserCheck className="h-2 w-2" /> {h.userName || "Student"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                             <p className="text-[9px] font-bold uppercase text-secondary">Completed</p>
-                             <p className="text-[8px] text-muted-foreground">{h.completedAt ? format(new Date(h.completedAt), 'MMM dd, HH:mm') : ""}</p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="py-12 text-center opacity-30">
-                        <Calendar className="h-10 w-10 mx-auto mb-2" />
-                        <p className="text-[10px] font-bold uppercase">No handover logs found</p>
-                      </div>
-                    )}
-                  </div>
-               </CardContent>
-            </div>
           </TabsContent>
         </Tabs>
       </main>
