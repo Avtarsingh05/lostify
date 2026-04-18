@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo } from "react"
@@ -23,7 +22,10 @@ import {
   Tag,
   ChevronRight,
   LayoutGrid,
-  Key
+  Key,
+  Smartphone,
+  Calendar,
+  CreditCard
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -52,6 +54,7 @@ import {
 import { collection, query, doc, orderBy, limit, where, getDocs } from "firebase/firestore"
 import Image from "next/image"
 import { format } from "date-fns"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function GuardDashboard() {
   const router = useRouter()
@@ -66,9 +69,9 @@ export default function GuardDashboard() {
   const [verifyingItem, setVerifyingItem] = useState<any | null>(null)
   const [resolvingItem, setResolvingItem] = useState<any | null>(null)
   const [processingLuggage, setProcessingLuggage] = useState<any | null>(null)
+  const [viewingClockItem, setViewingClockItem] = useState<any | null>(null)
   
   const [storageLocation, setStorageLocation] = useState("")
-  const [regNumber, setRegNumber] = useState("")
   const [rackInput, setRackInput] = useState("")
   const [slotInput, setSlotInput] = useState("")
 
@@ -121,7 +124,6 @@ export default function GuardDashboard() {
       const snapOut = await getDocs(qCheckOut)
       if (!snapOut.empty) {
         const item = { ...snapOut.docs[0].data(), id: snapOut.docs[0].id }
-        // Directly resolve collection
         updateDocumentNonBlocking(doc(db, "clockRoomItems", item.id), {
           status: "collected",
           collectedAt: new Date().toISOString(),
@@ -181,26 +183,33 @@ export default function GuardDashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6">
-        {/* TOKEN PROCESSING PANEL */}
-        <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/90 backdrop-blur-sm">
-          <CardContent className="p-6 lg:p-10 flex flex-col md:flex-row items-center gap-6">
-             <div className="bg-primary/10 p-4 rounded-2xl hidden md:block">
-               <Key className="h-8 w-8 text-primary" />
+        {/* TOKEN PROCESSING PANEL - REFINED SIZE */}
+        <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-sm max-w-3xl mx-auto">
+          <CardContent className="p-6 lg:p-8 flex flex-col md:flex-row items-center gap-6">
+             <div className="bg-primary/10 p-3.5 rounded-2xl hidden md:block">
+               <Key className="h-7 w-7 text-primary" />
              </div>
              <div className="flex-1 space-y-1">
-               <h2 className="text-lg font-headline font-bold">Process Digital Token</h2>
-               <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Verify Check-in or Check-out</p>
+               <h2 className="text-base lg:text-lg font-headline font-bold">Process Digital Token</h2>
+               <p className="text-[9px] lg:text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">Validate Handshake Code</p>
              </div>
-             <div className="w-full md:w-auto flex gap-2">
-                <Input 
-                  placeholder="Enter 4-digit code" 
-                  value={tokenInput} 
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  maxLength={4}
-                  className="h-14 rounded-2xl text-center text-2xl font-bold tracking-[0.5em] w-full md:w-48 bg-muted/30"
-                />
-                <Button onClick={handleProcessToken} disabled={isProcessingToken || tokenInput.length < 4} className="h-14 w-14 rounded-2xl gradient-header shrink-0">
-                  {isProcessingToken ? <Loader2 className="animate-spin" /> : <ChevronRight />}
+             <div className="w-full md:w-auto flex gap-3">
+                <div className="relative flex-1 md:flex-none">
+                  <Input 
+                    placeholder="0000" 
+                    value={tokenInput} 
+                    onChange={(e) => setTokenInput(e.target.value.replace(/\D/g, ''))}
+                    maxLength={4}
+                    className="h-14 rounded-2xl text-center text-2xl font-headline font-black tracking-[0.4em] w-full md:w-44 bg-muted/40 border-none shadow-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                  />
+                  <Smartphone className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30 pointer-events-none" />
+                </div>
+                <Button 
+                  onClick={handleProcessToken} 
+                  disabled={isProcessingToken || tokenInput.length < 4} 
+                  className="h-14 w-14 rounded-2xl gradient-header shadow-lg shadow-primary/20 active:scale-95 transition-all shrink-0"
+                >
+                  {isProcessingToken ? <Loader2 className="animate-spin h-5 w-5" /> : <ChevronRight className="h-6 w-6" />}
                 </Button>
              </div>
           </CardContent>
@@ -208,7 +217,7 @@ export default function GuardDashboard() {
 
         <div className="relative group max-w-2xl mx-auto lg:max-w-none">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input placeholder="Search item or reg..." className="pl-10 h-14 rounded-2xl shadow-lg bg-white/80" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Search items, tags or registration..." className="pl-10 h-14 rounded-2xl shadow-lg bg-white/80 dark:bg-card/80 border-none focus-visible:ring-primary/20" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
 
         <Tabs defaultValue="clock" className="w-full">
@@ -231,7 +240,7 @@ export default function GuardDashboard() {
             {isClockLoading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin" /></div> : filterItems(clockItems || []).length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {filterItems(clockItems || []).map((item) => (
-                  <Card key={item.id} className="border-none shadow-xl rounded-[28px] overflow-hidden bg-card/90 backdrop-blur-sm">
+                  <Card key={item.id} className="border-none shadow-xl rounded-[28px] overflow-hidden bg-card/90 backdrop-blur-sm group hover:scale-[1.01] transition-transform">
                     <div className="flex h-32">
                       <div className="w-32 relative overflow-hidden shrink-0 bg-muted">
                         <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
@@ -246,12 +255,19 @@ export default function GuardDashboard() {
                            <h3 className="font-headline font-bold text-sm truncate">{item.itemType}</h3>
                            <p className="text-[10px] font-bold text-muted-foreground truncate mt-0.5">Reg: {item.registrationNumber}</p>
                            <p className="text-[9px] font-bold text-primary flex items-center gap-1 mt-1">
-                             <Building className="h-3 w-3" /> {item.rackNumber === 'Awaiting Assignment' ? "Awaiting Handshake" : `Rack ${item.rackNumber}, Slot ${item.slotNumber}`}
+                             <Building className="h-3 w-3" /> {item.rackNumber === 'Awaiting Assignment' ? "Pending Handshake" : `Rack ${item.rackNumber}, Slot ${item.slotNumber}`}
                            </p>
                         </div>
                         <div className="flex justify-between items-end">
                            <span className="text-[8px] font-bold uppercase opacity-50">{format(new Date(item.createdAt), 'MMM dd')}</span>
-                           <Button variant="ghost" size="sm" className="h-6 text-[8px] font-bold uppercase">Details</Button>
+                           <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setViewingClockItem(item)}
+                            className="h-6 text-[8px] font-bold uppercase hover:bg-primary/10 hover:text-primary transition-colors"
+                           >
+                            Details
+                           </Button>
                         </div>
                       </div>
                     </div>
@@ -265,13 +281,15 @@ export default function GuardDashboard() {
             {filterItems(pendingFound).length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
                 {filterItems(pendingFound).map((item) => (
-                  <Card key={item.id} className="p-4 rounded-3xl bg-card">
+                  <Card key={item.id} className="p-4 rounded-3xl bg-card border-none shadow-lg">
                     <div className="flex gap-4">
-                      <div className="w-20 h-20 rounded-2xl relative overflow-hidden"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
+                      <div className="w-20 h-20 rounded-2xl relative overflow-hidden shadow-sm">
+                        <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-headline font-bold text-sm truncate">{item.name}</h3>
-                        <p className="text-[10px] text-muted-foreground">{item.locationDescription}</p>
-                        <Button size="sm" onClick={() => setVerifyingItem(item)} className="h-8 rounded-xl text-[10px] font-bold mt-2">Log to Office</Button>
+                        <p className="text-[10px] text-muted-foreground line-clamp-1">{item.locationDescription}</p>
+                        <Button size="sm" onClick={() => setVerifyingItem(item)} className="h-8 rounded-xl text-[10px] font-bold mt-3 gradient-header w-full">Log to Office</Button>
                       </div>
                     </div>
                   </Card>
@@ -282,32 +300,111 @@ export default function GuardDashboard() {
 
           <TabsContent value="office" className="space-y-4">
              {filterItems(inOfficeFound).map((item) => (
-                <Card key={item.id} className="p-4 rounded-3xl bg-card flex items-center justify-between">
+                <Card key={item.id} className="p-4 rounded-3xl bg-card border-none shadow-md flex items-center justify-between">
                    <div className="flex items-center gap-3">
-                     <div className="w-12 h-12 rounded-xl relative overflow-hidden"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
+                     <div className="w-12 h-12 rounded-xl relative overflow-hidden shadow-sm">
+                        <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                     </div>
                      <div>
-                       <h3 className="font-bold text-sm">{item.name}</h3>
+                       <h3 className="font-bold text-sm truncate max-w-[120px]">{item.name}</h3>
                        <p className="text-[9px] text-primary font-bold">{item.storageOffice}</p>
                      </div>
                    </div>
-                   <Button size="sm" variant="outline" onClick={() => setResolvingItem(item)} className="h-8 rounded-xl text-[10px]">Mark Claimed</Button>
+                   <Button size="sm" variant="outline" onClick={() => setResolvingItem(item)} className="h-8 rounded-xl text-[10px] font-bold border-primary/20 text-primary">Mark Claimed</Button>
                 </Card>
              ))}
           </TabsContent>
 
           <TabsContent value="lost" className="space-y-4">
              {filterItems(activeLost).map((item) => (
-                <Card key={item.id} className="p-4 rounded-3xl bg-card flex items-center justify-between">
+                <Card key={item.id} className="p-4 rounded-3xl bg-card border-none shadow-md flex items-center justify-between">
                    <div className="flex items-center gap-3">
-                     <div className="w-12 h-12 rounded-xl relative overflow-hidden"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
-                     <h3 className="font-bold text-sm">{item.name}</h3>
+                     <div className="w-12 h-12 rounded-xl relative overflow-hidden shadow-sm">
+                        <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                     </div>
+                     <h3 className="font-bold text-sm truncate max-w-[150px]">{item.name}</h3>
                    </div>
-                   <Button size="sm" variant="outline" onClick={() => setResolvingItem(item)} className="h-8 rounded-xl text-[10px]">Mark Returned</Button>
+                   <Button size="sm" variant="outline" onClick={() => setResolvingItem(item)} className="h-8 rounded-xl text-[10px] font-bold">Mark Returned</Button>
                 </Card>
              ))}
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* CLOCK ITEM FULL DETAILS MODAL */}
+      <Dialog open={!!viewingClockItem} onOpenChange={() => setViewingClockItem(null)}>
+        <DialogContent className="max-w-[440px] rounded-[40px] p-0 overflow-hidden border-none shadow-2xl">
+          {viewingClockItem && (
+            <div className="flex flex-col">
+              <div className="aspect-video relative overflow-hidden">
+                <Image src={viewingClockItem.imageUrl} alt="Luggage" fill className="object-cover" />
+                <div className="absolute top-4 right-4">
+                   <Badge className="bg-black/60 backdrop-blur-md border-none font-bold uppercase text-[9px] h-6 px-3">
+                     {viewingClockItem.status.replace('_', ' ')}
+                   </Badge>
+                </div>
+              </div>
+              <ScrollArea className="max-h-[60vh]">
+                <div className="p-8 space-y-8">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                       <h2 className="text-2xl font-headline font-bold">{viewingClockItem.itemType}</h2>
+                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                         <CreditCard className="h-3 w-3" /> Reg: {viewingClockItem.registrationNumber}
+                       </p>
+                    </div>
+                    <div className="w-5 h-5 rounded-full border shadow-sm" style={{ backgroundColor: viewingClockItem.color }} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-muted/30 rounded-2xl space-y-1">
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase">Storage Location</p>
+                      <p className="text-xs font-bold flex items-center gap-1.5">
+                         <Building className="h-3.5 w-3.5 text-primary" />
+                         {viewingClockItem.rackNumber === 'Awaiting Assignment' ? 'Reception' : `Rack ${viewingClockItem.rackNumber}, Slot ${viewingClockItem.slotNumber}`}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-2xl space-y-1">
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase">Logged On</p>
+                      <p className="text-xs font-bold flex items-center gap-1.5">
+                         <Calendar className="h-3.5 w-3.5 text-primary" />
+                         {format(new Date(viewingClockItem.createdAt), 'MMM dd')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Verification Answers</p>
+                    <div className="space-y-4 bg-muted/20 p-5 rounded-3xl border border-dashed">
+                       <div className="space-y-1.5">
+                          <Label className="text-[9px] font-bold uppercase text-primary">Unique Brand/Markings</Label>
+                          <p className="text-sm font-medium leading-relaxed italic">"{viewingClockItem.brandMarkings}"</p>
+                       </div>
+                       <div className="space-y-1.5">
+                          <Label className="text-[9px] font-bold uppercase text-primary">Internal Contents</Label>
+                          <p className="text-sm font-medium leading-relaxed italic">"{viewingClockItem.contentsVerification}"</p>
+                       </div>
+                    </div>
+                  </div>
+
+                  {viewingClockItem.status === 'collected' && (
+                    <div className="bg-secondary/10 p-5 rounded-3xl flex items-center gap-4">
+                       <div className="bg-white p-2 rounded-xl shadow-sm"><UserCheck className="h-6 w-6 text-secondary" /></div>
+                       <div className="space-y-0.5">
+                         <p className="text-xs font-bold">Successfully Released</p>
+                         <p className="text-[10px] text-muted-foreground">Handover complete at {format(new Date(viewingClockItem.collectedAt), 'HH:mm on MMM dd')}</p>
+                       </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+              <div className="p-8 pt-0">
+                <Button onClick={() => setViewingClockItem(null)} variant="outline" className="w-full h-14 rounded-2xl font-bold border-2">Close Record</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* RACK ASSIGNMENT MODAL (Check-in Stage) */}
       <Dialog open={!!processingLuggage} onOpenChange={() => setProcessingLuggage(null)}>
@@ -335,7 +432,7 @@ export default function GuardDashboard() {
                <div className="space-y-4">
                  <div className="space-y-1.5">
                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Unique Marks</Label>
-                   <p className="text-xs font-medium px-1">{processingLuggage.brandMarkings}</p>
+                   <p className="text-xs font-medium px-1 leading-relaxed italic">"{processingLuggage.brandMarkings}"</p>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-2">
@@ -351,7 +448,7 @@ export default function GuardDashboard() {
              </div>
           )}
           <DialogFooter>
-            <Button onClick={handleConfirmStorage} disabled={!rackInput || !slotInput} className="w-full h-14 rounded-xl gradient-header font-bold text-sm">
+            <Button onClick={handleConfirmStorage} disabled={!rackInput || !slotInput} className="w-full h-14 rounded-xl gradient-header font-bold text-sm shadow-xl">
               Finalize Check-in
             </Button>
           </DialogFooter>
