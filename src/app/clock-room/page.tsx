@@ -27,15 +27,16 @@ export default function ClockRoomMain() {
   const db = useFirestore()
 
   const itemsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
+    // Crucial: Only execute the query if we have a verified user UID
+    if (!db || !user?.uid) return null
     return query(
       collection(db, "clockRoomItems"),
       where("userId", "==", user.uid),
       orderBy("createdAt", "desc")
     )
-  }, [db, user])
+  }, [db, user?.uid])
 
-  const { data: storedItems, isLoading } = useCollection(itemsQuery)
+  const { data: storedItems, isLoading: isItemsLoading } = useCollection(itemsQuery)
 
   if (isUserLoading) {
     return (
@@ -79,7 +80,7 @@ export default function ClockRoomMain() {
           </Button>
         </div>
 
-        {isLoading ? (
+        {isItemsLoading ? (
           <div className="flex justify-center py-20 opacity-20">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
@@ -112,7 +113,7 @@ export default function ClockRoomMain() {
                     </div>
                     <div className="flex justify-between items-end">
                       <span className="text-[8px] lg:text-[10px] font-bold uppercase opacity-50">
-                        {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                        {item.createdAt ? formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }) : "recently"}
                       </span>
                       <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />

@@ -28,7 +28,7 @@ service cloud.firestore {
 
     function isStaff() {
       // Staff includes Master Admins and users with ADMIN/GUARD roles
-      return isMasterAdmin() || getRole() == "ADMIN" || getRole() == "GUARD";
+      return isMasterAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getRole() == "ADMIN" || getRole() == "GUARD"));
     }
 
     // --- GLOBAL BYPASS FOR MASTER ADMINS ---
@@ -45,16 +45,17 @@ service cloud.firestore {
     }
 
     match /clockRoomItems/{itemId} {
-      // Allow list if staff, or if querying own items
-      allow list: if isSignedIn() && (isStaff() || (resource == null || resource.data.userId == request.auth.uid));
-      allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      allow create, update: if isSignedIn();
+      // Allow list/get if staff, or if querying own items
+      allow read: if isSignedIn() && (isStaff() || (resource == null || resource.data.userId == request.auth.uid));
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       allow delete: if isStaff();
     }
 
     match /handovers/{handoverId} {
-      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
-      allow create, update: if isSignedIn();
+      allow read: if isSignedIn() && (isStaff() || (resource == null || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid));
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid || resource.data.guardId == request.auth.uid);
       allow delete: if isStaff();
     }
 
@@ -80,7 +81,7 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
+      allow read: if isSignedIn() && (isStaff() || (resource == null || resource.data.userId == request.auth.uid));
       allow create, update: if isSignedIn();
     }
 
