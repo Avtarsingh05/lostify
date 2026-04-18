@@ -15,7 +15,10 @@ import {
   CheckCircle2,
   Calendar,
   CreditCard,
-  UserCheck
+  UserCheck,
+  Tag,
+  Archive,
+  Info
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -121,6 +124,27 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
                 )}
               </div>
               <div className="w-4 h-4 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />
+            </div>
+
+            {/* --- VERIFICATION DETAILS SUMMARY --- */}
+            <div className="space-y-4 pt-2 border-t border-b py-6 border-dashed">
+               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Verification Details</p>
+               <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Tag className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase">Markings / Brand</p>
+                      <p className="text-xs font-bold">{item.brandMarkings || "Standard item"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Archive className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase">Stored Contents</p>
+                      <p className="text-xs font-bold italic">"{item.contentsVerification}"</p>
+                    </div>
+                  </div>
+               </div>
             </div>
 
             <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-[32px] border-2 border-dashed gap-4">

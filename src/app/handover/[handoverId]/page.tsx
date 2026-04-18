@@ -17,7 +17,9 @@ import {
   Phone,
   CreditCard,
   Briefcase,
-  AlertTriangle
+  AlertTriangle,
+  Archive,
+  Tag
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -198,7 +200,7 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
                <Badge className="bg-orange-500 text-white border-none font-bold">IN VERIFICATION</Badge>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
                {/* --- STUDENT INFO --- */}
                <div className="bg-muted/30 p-5 rounded-2xl space-y-4">
                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Student Information</p>
@@ -223,8 +225,9 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
                {/* --- LUGGAGE / STORAGE INFO --- */}
                {isClockRoom && item && (
                  <div className="bg-orange-500/5 border border-orange-500/10 p-5 rounded-2xl space-y-4">
-                   <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Storage Details</p>
-                   <div className="grid grid-cols-2 gap-4">
+                   <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Verification Details</p>
+                   
+                   <div className="grid grid-cols-2 gap-4 pb-2">
                       <div className="space-y-1">
                         <p className="text-[8px] font-bold text-muted-foreground uppercase">Location</p>
                         <p className="text-sm font-bold flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-orange-500" /> Rack {item.rackNumber}, Slot {item.slotNumber}</p>
@@ -232,6 +235,19 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
                       <div className="space-y-1">
                         <p className="text-[8px] font-bold text-muted-foreground uppercase">Stored Since</p>
                         <p className="text-sm font-bold flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-orange-500" /> {format(new Date(item.createdAt), 'MMM dd')}</p>
+                      </div>
+                   </div>
+
+                   <div className="space-y-3 pt-2 border-t border-orange-500/10">
+                      <div className="space-y-1">
+                         <p className="text-[8px] font-bold text-muted-foreground uppercase">Unique Markings</p>
+                         <p className="text-xs font-bold text-orange-600 flex items-center gap-2"><Tag className="h-3 w-3" /> {item.brandMarkings || "N/A"}</p>
+                      </div>
+                      <div className="space-y-1">
+                         <p className="text-[8px] font-bold text-muted-foreground uppercase">Internal Contents</p>
+                         <p className="text-xs font-bold text-orange-600 flex items-start gap-2 bg-white/50 p-2 rounded-xl italic">
+                           <Archive className="h-3 w-3 mt-0.5 shrink-0" /> "{item.contentsVerification}"
+                         </p>
                       </div>
                    </div>
                  </div>

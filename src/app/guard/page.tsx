@@ -17,7 +17,11 @@ import {
   UserCheck,
   History,
   QrCode,
-  Package
+  Package,
+  Briefcase,
+  Info,
+  Tag,
+  ChevronRight
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -46,6 +50,7 @@ import {
 import { collection, query, doc, orderBy, limit, where } from "firebase/firestore"
 import Image from "next/image"
 import { QRCodeSVG } from "qrcode.react"
+import { format } from "date-fns"
 
 export default function GuardDashboard() {
   const router = useRouter()
@@ -56,6 +61,7 @@ export default function GuardDashboard() {
 
   const [verifyingItem, setVerifyingItem] = useState<any | null>(null)
   const [resolvingItem, setResolvingItem] = useState<any | null>(null)
+  const [viewingLuggage, setViewingLuggage] = useState<any | null>(null)
   const [storageLocation, setStorageLocation] = useState("")
   const [regNumber, setRegNumber] = useState("")
 
@@ -86,7 +92,17 @@ export default function GuardDashboard() {
     )
   }, [db, isAuthorized])
 
+  const clockItemsQuery = useMemoFirebase(() => {
+    if (!db || !isAuthorized) return null
+    return query(
+      collection(db, "clockRoomItems"),
+      orderBy("createdAt", "desc"),
+      limit(50)
+    )
+  }, [db, isAuthorized])
+
   const { data: allItems, isLoading } = useCollection(itemsQuery)
+  const { data: clockItems, isLoading: isClockLoading } = useCollection(clockItemsQuery)
 
   const pendingFound = useMemo(() => {
     return allItems?.filter(i => i.type === 'found' && i.status === 'Pending Verification') || []
@@ -129,6 +145,29 @@ export default function GuardDashboard() {
     setRegNumber("")
   }
 
+  const handleInitiateClockHandover = async (item: any) => {
+    if (!db || !user) return
+    setIsHandoverLoading(true)
+    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString()
+    const handoverData = {
+      itemId: item.id,
+      userId: item.userId,
+      itemName: item.itemType,
+      itemImageUrl: item.imageUrl,
+      guardId: user.uid,
+      guardName: user.displayName || user.email?.split('@')[0] || "Guard",
+      verificationCode,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+    }
+    
+    addDocumentNonBlocking(collection(db, "clockRoomHandovers"), handoverData).then((docRef) => {
+       setHandoverSession({ ...handoverData, id: docRef?.id || "session_pending" });
+       setIsHandoverLoading(false)
+    });
+  }
+
   const handleInitiateHandover = async (item: any) => {
     if (!db || !user) return
     setIsHandoverLoading(true)
@@ -152,7 +191,7 @@ export default function GuardDashboard() {
 
   const filterItems = (list: any[]) => {
     return list.filter(item => 
-      (item.name || item.itemType)?.toLowerCase().includes(search.toLowerCase()) ||
+      (item.name || item.itemType || item.registrationNumber)?.toLowerCase().includes(search.toLowerCase()) ||
       item.locationDescription?.toLowerCase().includes(search.toLowerCase())
     )
   }
@@ -182,23 +221,29 @@ export default function GuardDashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6 lg:space-y-12">
-        <div className="grid grid-cols-3 gap-2 lg:gap-8">
+        <div className="grid grid-cols-4 gap-2 lg:gap-8">
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-3 lg:p-8 text-center">
               <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Reports</p>
-              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-secondary">{pendingFound.length}</h3>
+              <h3 className="text-xl lg:text-3xl font-headline font-bold mt-1 text-secondary">{pendingFound.length}</h3>
             </CardContent>
           </Card>
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-3 lg:p-8 text-center">
               <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Office</p>
-              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-primary">{inOfficeFound.length}</h3>
+              <h3 className="text-xl lg:text-3xl font-headline font-bold mt-1 text-primary">{inOfficeFound.length}</h3>
             </CardContent>
           </Card>
           <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
             <CardContent className="p-3 lg:p-8 text-center">
               <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Lost</p>
-              <h3 className="text-xl lg:text-4xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
+              <h3 className="text-xl lg:text-3xl font-headline font-bold mt-1 text-accent">{activeLost.length}</h3>
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-xl rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
+            <CardContent className="p-3 lg:p-8 text-center">
+              <p className="text-[8px] lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">Clock</p>
+              <h3 className="text-xl lg:text-3xl font-headline font-bold mt-1 text-orange-500">{clockItems?.filter(i => i.status === 'stored').length || 0}</h3>
             </CardContent>
           </Card>
         </div>
@@ -206,7 +251,7 @@ export default function GuardDashboard() {
         <div className="relative group max-w-2xl mx-auto lg:max-w-none">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input 
-            placeholder="Search all reports..." 
+            placeholder="Search reports or registration..." 
             className="pl-10 h-14 rounded-2xl shadow-lg border-none bg-white dark:bg-card/80 backdrop-blur-md"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -214,7 +259,7 @@ export default function GuardDashboard() {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border max-w-2xl mx-auto lg:max-w-none">
+          <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border max-w-2xl mx-auto lg:max-w-none">
             <TabsTrigger value="pending" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
               <Clock className="h-3 w-3 lg:h-4 lg:w-4" /> Reports
             </TabsTrigger>
@@ -223,6 +268,9 @@ export default function GuardDashboard() {
             </TabsTrigger>
             <TabsTrigger value="lost" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
               <AlertCircle className="h-3 w-3 lg:h-4 lg:w-4" /> Lost
+            </TabsTrigger>
+            <TabsTrigger value="clock" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase tracking-widest gap-1">
+              <Briefcase className="h-3 w-3 lg:h-4 lg:w-4" /> Clock
             </TabsTrigger>
           </TabsList>
 
@@ -306,8 +354,101 @@ export default function GuardDashboard() {
               </div>
             ) : <EmptyState icon={History} message="No active lost reports." />}
           </TabsContent>
+
+          <TabsContent value="clock" className="space-y-4">
+            {isClockLoading ? (
+              <div className="flex justify-center py-12 opacity-20"><Loader2 className="animate-spin" /></div>
+            ) : filterItems(clockItems || []).length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filterItems(clockItems || []).map((item) => (
+                  <Card key={item.id} className="border-none shadow-xl rounded-[28px] overflow-hidden bg-card/90 backdrop-blur-sm group hover:scale-[1.01] transition-transform">
+                    <div className="flex h-36">
+                      <div className="w-36 relative overflow-hidden shrink-0 bg-muted">
+                        <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
+                        <div className="absolute top-2 left-2">
+                           <Badge className={item.status === 'stored' ? 'bg-orange-500' : 'bg-secondary'}>
+                             {item.status.toUpperCase()}
+                           </Badge>
+                        </div>
+                      </div>
+                      <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+                        <div>
+                           <div className="flex justify-between items-start">
+                             <h3 className="font-headline font-bold text-sm lg:text-base truncate">{item.itemType}</h3>
+                             <div className="w-3 h-3 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />
+                           </div>
+                           <p className="text-[10px] font-bold text-primary mt-1 truncate">Reg: {item.registrationNumber}</p>
+                           <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                             <MapPin className="h-3 w-3" /> Rack {item.rackNumber}, Slot {item.slotNumber}
+                           </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <Button 
+                             size="sm" 
+                             variant="outline" 
+                             onClick={() => setViewingLuggage(item)}
+                             className="h-8 rounded-xl text-[10px] font-bold flex-1"
+                           >
+                             <Info className="h-3 w-3 mr-1" /> Answers
+                           </Button>
+                           {item.status === 'stored' && (
+                             <Button 
+                               size="sm" 
+                               onClick={() => handleInitiateClockHandover(item)}
+                               className="h-8 rounded-xl text-[10px] font-bold flex-1 gradient-header"
+                             >
+                               <QrCode className="h-3 w-3 mr-1" /> Pickup
+                             </Button>
+                           )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : <EmptyState icon={Briefcase} message="No luggage stored." />}
+          </TabsContent>
         </Tabs>
       </main>
+
+      {/* --- CLOCK ROOM DETAILS DIALOG --- */}
+      <Dialog open={!!viewingLuggage} onOpenChange={() => setViewingLuggage(null)}>
+        <DialogContent className="max-w-[420px] rounded-[32px] p-8">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-xl flex items-center gap-2">
+              <ShieldCheck className="h-6 w-6 text-primary" /> Verification Answers
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Confirm these details with the student physically.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingLuggage && (
+            <div className="space-y-6 py-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Unique Markings / Brand</Label>
+                <div className="p-4 bg-muted/20 rounded-2xl border flex items-start gap-3">
+                   <Tag className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                   <p className="text-sm font-bold leading-relaxed">{viewingLuggage.brandMarkings || "None provided"}</p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Internal Contents Verification</Label>
+                <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-3">
+                   <Archive className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                   <p className="text-sm font-bold leading-relaxed italic">"{viewingLuggage.contentsVerification}"</p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bag Condition</Label>
+                <p className="text-sm font-medium px-1">{viewingLuggage.itemCondition || "Normal condition"}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+             <Button onClick={() => setViewingLuggage(null)} className="w-full h-12 rounded-xl">Close View</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* --- HANDOVER MODAL --- */}
       <Dialog open={!!handoverSession} onOpenChange={() => setHandoverSession(null)}>
