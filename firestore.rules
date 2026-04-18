@@ -13,14 +13,17 @@ service cloud.firestore {
     /**
      * MASTER AUTHORITY BYPASS
      * Direct root access for super administrators.
+     * Uses prioritized UID checks for speed and reliability.
      */
     function isMasterAdmin() {
       return isSignedIn() && (
         request.auth.uid == "PX8zNjMWBWTFGYnaYWrtxojquD02" ||
         request.auth.uid == "9Qv4QkTuukaYhr2sggnQmQmqgHu1" ||
-        request.auth.token.email == "worker@gmail.com" ||
-        request.auth.token.email == "forigloohelp@gmail.com" ||
-        request.auth.token.email == "avtarsingh9528972330@gmail.com"
+        (request.auth.token.keys().contains('email') && (
+          request.auth.token.email == "worker@gmail.com" ||
+          request.auth.token.email == "forigloohelp@gmail.com" ||
+          request.auth.token.email == "avtarsingh9528972330@gmail.com"
+        ))
       );
     }
 
@@ -32,11 +35,15 @@ service cloud.firestore {
       if (!isSignedIn()) return false;
       if (isMasterAdmin()) return true;
       let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(userDocPath) && (get(userDocPath).data.role == "GUARD" || get(userDocPath).data.role == "ADMIN");
+      return exists(userDocPath) && (
+        get(userDocPath).data.role == "GUARD" || 
+        get(userDocPath).data.role == "ADMIN"
+      );
     }
 
     /**
      * GLOBAL BYPASS
+     * Ensures Master Admins are never blocked by any rules below.
      */
     match /{document=**} {
       allow read, write: if isMasterAdmin();
@@ -53,7 +60,7 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn() && (isStaff() || resource.data.ownerId == request.auth.uid);
       allow create: if isSignedIn();
-      allow update, delete: if isStaff() || (resource.data.ownerId == request.auth.uid);
+      allow update, delete: if isStaff() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
     }
 
     match /notifications/{notifId} {
@@ -67,7 +74,7 @@ service cloud.firestore {
     }
 
     match /shopItems/{itemId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isStaff();
     }
 
@@ -79,9 +86,9 @@ service cloud.firestore {
     }
 
     match /clockRoomItems/{itemId} {
-      // Allow single doc read if staff or owner
+      // Staff can read all. Students only their own.
       allow get: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
-      // Allow list queries only if they filter by userId (for students) or if user is staff
+      // List queries must be filtered by userId for students. Staff can list all.
       allow list: if isSignedIn() && (isStaff() || resource.data.userId == request.auth.uid);
       
       allow create: if isSignedIn();

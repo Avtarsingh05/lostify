@@ -2,7 +2,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { 
   ArrowLeft, 
   Plus, 
@@ -16,8 +16,8 @@ import {
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, where, orderBy } from "firebase/firestore"
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
+import { collection, query, where, orderBy, doc } from "firebase/firestore"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
 
@@ -26,22 +26,42 @@ export default function ClockRoomMain() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
 
-  // Debugging logs
-  useEffect(() => {
-    if (user) {
-      console.log("[ClockRoom] Logged in user UID:", user.uid);
-    }
-  }, [user]);
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+
+  const { data: userData } = useDoc(userDocRef)
+
+  // Master Authority Identifiers
+  const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
+  const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
+
+  const isAuthorized = useMemo(() => {
+    if (!user) return false;
+    const isMaster = adminEmails.includes(user.email?.toLowerCase() || "") || adminUIDs.includes(user.uid);
+    const hasRole = userData?.role === "ADMIN" || userData?.role === "GUARD";
+    return isMaster || hasRole;
+  }, [user, userData]);
 
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
-    // Filtered query is required to satisfy "allow list" rules for non-staff users
+    
+    // For Staff/Admins, we can show all items or filter differently.
+    // For Students, we MUST filter by userId to satisfy security rules.
+    if (isAuthorized) {
+      return query(
+        collection(db, "clockRoomItems"),
+        orderBy("createdAt", "desc")
+      )
+    }
+
     return query(
       collection(db, "clockRoomItems"),
       where("userId", "==", user.uid),
       orderBy("createdAt", "desc")
     )
-  }, [db, user?.uid])
+  }, [db, user?.uid, isAuthorized])
 
   const { data: storedItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
 
@@ -68,16 +88,19 @@ export default function ClockRoomMain() {
               <Briefcase className="h-6 w-6" />
             </div>
           </div>
-          <p className="text-white/80 text-xs font-medium uppercase tracking-widest px-1">
-            Uni Mall Luggage Storage System
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-white/80 text-xs font-medium uppercase tracking-widest px-1">
+              Uni Mall Luggage Storage System
+            </p>
+            {isAuthorized && <Badge className="bg-white/20 text-white border-none text-[8px]">STAFF ACCESS</Badge>}
+          </div>
         </div>
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6">
         <div className="flex justify-between items-center px-2">
           <h2 className="text-sm font-headline font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Clock className="h-4 w-4" /> My Stored Items
+            <Clock className="h-4 w-4" /> {isAuthorized ? "All Stored Items" : "My Stored Items"}
           </h2>
           <Button 
             onClick={() => router.push('/clock-room/store')}
@@ -93,8 +116,8 @@ export default function ClockRoomMain() {
           </div>
         ) : error ? (
           <div className="p-8 text-center bg-destructive/10 rounded-[32px] border border-destructive/20">
-            <p className="text-sm font-bold text-destructive">Permission Error</p>
-            <p className="text-[10px] text-muted-foreground mt-1">Please ensure your profile is fully synchronized.</p>
+            <p className="text-sm font-bold text-destructive">Authorization Error</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Wait for profile synchronization or contact admin.</p>
           </div>
         ) : storedItems && storedItems.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -140,7 +163,7 @@ export default function ClockRoomMain() {
         ) : (
           <div className="text-center py-24 bg-muted/20 rounded-[40px] border-2 border-dashed border-muted/50">
             <Archive className="h-10 w-10 mx-auto text-muted-foreground/30 mb-4" />
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">No items stored in clock room.</p>
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">No items found.</p>
           </div>
         )}
       </main>

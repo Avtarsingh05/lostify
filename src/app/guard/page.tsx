@@ -17,7 +17,6 @@ import {
   UserCheck,
   History,
   QrCode,
-  Smartphone,
   Briefcase,
   Package
 } from "lucide-react"
@@ -47,7 +46,6 @@ import {
 } from "@/firebase"
 import { collection, query, doc, orderBy, limit, where } from "firebase/firestore"
 import Image from "next/image"
-import { format } from "date-fns"
 import { QRCodeSVG } from "qrcode.react"
 
 export default function GuardDashboard() {
@@ -72,13 +70,6 @@ export default function GuardDashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Debugging logs
-  useEffect(() => {
-    if (user) {
-      console.log("[GuardStation] Logged in as:", user.email, "UID:", user.uid);
-    }
-  }, [user]);
-
   // Master Authority Identifiers
   const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
   const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
@@ -90,26 +81,26 @@ export default function GuardDashboard() {
     return isMaster || hasRole;
   }, [user, userData]);
 
-  // General Items Query
+  // General Items Query - Only runs for authorized staff
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
     return query(
       collection(db, "items"),
       orderBy("reportedAt", "desc"),
-      limit(100)
+      limit(50)
     )
   }, [db, isAuthorized])
 
   const { data: allItems, isLoading } = useCollection(itemsQuery)
 
-  // Clock Room Items Query
+  // Clock Room Items Query - Only runs for authorized staff
   const clockRoomQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
-    // Staff can list all stored items without a userId filter
     return query(
       collection(db, "clockRoomItems"),
       where("status", "==", "stored"),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
+      limit(50)
     )
   }, [db, isAuthorized])
 
