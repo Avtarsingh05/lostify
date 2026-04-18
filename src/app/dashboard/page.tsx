@@ -100,7 +100,8 @@ export default function Dashboard() {
 
   const bannersQuery = useMemoFirebase(() => {
     if (!db) return null
-    return query(collection(db, "banners"), orderBy("createdAt", "desc"))
+    // Order by the 'position' field set in Admin Console
+    return query(collection(db, "banners"), orderBy("position", "asc"))
   }, [db])
 
   const { data: displayBanners, isLoading: isBannersLoading } = useCollection(bannersQuery)

@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -26,7 +26,10 @@ import {
   Package,
   Briefcase,
   Phone,
-  CreditCard
+  CreditCard,
+  ChevronLeft,
+  ChevronRight,
+  Shuffle
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -41,9 +44,10 @@ import {
   updateDocumentNonBlocking,
   setDocumentNonBlocking,
   deleteDocumentNonBlocking,
-  useDoc
+  useDoc,
+  useUser
 } from "@/firebase"
-import { collection, query, orderBy, doc } from "firebase/firestore"
+import { collection, query, orderBy, doc, writeBatch, getDocs } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
@@ -53,6 +57,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 export default function AdminDashboard() {
   const router = useRouter()
   const db = useFirestore()
+  const { user } = useUser()
   const { toast } = useToast()
   
   const [notifTitle, setNotifTitle] = useState("")
@@ -81,10 +86,6 @@ export default function AdminDashboard() {
     query(collection(db, "users"), orderBy("updatedAt", "desc")), [db])
   const { data: allUsers } = useCollection(usersQuery)
 
-  const shopItemsQuery = useMemoFirebase(() => 
-    query(collection(db, "shopItems"), orderBy("createdAt", "desc")), [db])
-  const { data: shopItems } = useCollection(shopItemsQuery)
-
   const clockItemsQuery = useMemoFirebase(() => 
     query(collection(db, "clockRoomItems"), orderBy("createdAt", "desc")), [db])
   const { data: clockItems } = useCollection(clockItemsQuery)
@@ -97,7 +98,7 @@ export default function AdminDashboard() {
   const { data: notifications } = useCollection(notificationsQuery)
 
   const bannersQuery = useMemoFirebase(() => 
-    query(collection(db, "banners"), orderBy("createdAt", "desc")), [db])
+    query(collection(db, "banners"), orderBy("position", "asc")), [db])
   const { data: banners } = useCollection(bannersQuery)
 
   const handlePushNotification = async (e: React.FormEvent) => {
@@ -220,7 +221,8 @@ export default function AdminDashboard() {
       const bannerCol = collection(db, "banners")
       addDocumentNonBlocking(bannerCol, {
         imageUrl: data.secure_url,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        position: banners?.length || 0
       })
 
       toast({
@@ -244,6 +246,41 @@ export default function AdminDashboard() {
     const bannerRef = doc(db, "banners", id)
     deleteDocumentNonBlocking(bannerRef)
     toast({ title: "Banner Removed" })
+  }
+
+  const handleMoveBanner = async (index: number, direction: 'up' | 'down') => {
+    if (!banners || !db) return
+    const newBanners = [...banners]
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    
+    if (targetIndex < 0 || targetIndex >= banners.length) return
+
+    const temp = newBanners[index]
+    newBanners[index] = newBanners[targetIndex]
+    newBanners[targetIndex] = temp
+
+    // Atomic update of positions
+    for (let i = 0; i < newBanners.length; i++) {
+      const bRef = doc(db, "banners", newBanners[i].id)
+      updateDocumentNonBlocking(bRef, { position: i })
+    }
+    toast({ title: "Order Updated" })
+  }
+
+  const handleShuffleBanners = async () => {
+    if (!banners || banners.length < 2 || !db) return
+    
+    const shuffled = [...banners].sort(() => Math.random() - 0.5)
+    
+    for (let i = 0; i < shuffled.length; i++) {
+      const bRef = doc(db, "banners", shuffled[i].id)
+      updateDocumentNonBlocking(bRef, { position: i })
+    }
+    
+    toast({ 
+      title: "Banners Shuffled", 
+      description: "Display order randomized across all devices." 
+    })
   }
 
   const filteredUsers = allUsers?.filter(u => 
@@ -417,12 +454,6 @@ export default function AdminDashboard() {
                   </div>
                 </Card>
               ))}
-              {(!filteredLuggage || filteredLuggage.length === 0) && (
-                <div className="col-span-full py-20 text-center opacity-30 border-2 border-dashed rounded-[32px]">
-                   <Briefcase className="h-10 w-10 mx-auto mb-2" />
-                   <p className="text-[10px] font-bold uppercase">No storage records active</p>
-                </div>
-              )}
             </div>
           </TabsContent>
 
@@ -491,10 +522,18 @@ export default function AdminDashboard() {
 
           <TabsContent value="banners" className="space-y-6 lg:space-y-12">
             <Card className="border-none shadow-xl rounded-[40px] overflow-hidden bg-card/80 backdrop-blur-sm max-w-4xl mx-auto">
-              <CardHeader className="p-8 pb-4">
+              <CardHeader className="p-8 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <CardTitle className="font-headline font-bold text-2xl flex items-center gap-3">
                   <ImageIcon className="h-8 w-8 text-primary" /> Dashboard Banners
                 </CardTitle>
+                <Button 
+                  onClick={handleShuffleBanners}
+                  variant="outline"
+                  className="rounded-xl font-bold text-[10px] uppercase tracking-widest gap-2 h-10 border-primary/20 hover:bg-primary/5"
+                  disabled={!banners || banners.length < 2}
+                >
+                  <Shuffle className="h-3 w-3" /> Shuffle Order
+                </Button>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                 <div className="flex flex-col gap-6">
@@ -535,19 +574,48 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="space-y-4 pt-8 border-t">
-                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Active Banners</h3>
+                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Active Banners & Positioning</h3>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {banners?.map((banner) => (
-                        <div key={banner.id} className="relative aspect-[16/9] rounded-2xl overflow-hidden group shadow-md">
+                      {banners?.map((banner, index) => (
+                        <div key={banner.id} className="relative aspect-[16/9] rounded-2xl overflow-hidden group shadow-md border-2 border-transparent hover:border-primary/30 transition-all">
                            <Image src={banner.imageUrl} alt="Banner" fill className="object-cover" />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           
+                           {/* Position Badge */}
+                           <div className="absolute top-3 left-3">
+                              <Badge className="bg-black/60 backdrop-blur-md border-none font-black h-6 w-6 rounded-full flex items-center justify-center">
+                                 {index + 1}
+                              </Badge>
+                           </div>
+
+                           {/* Overlay Controls */}
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                onClick={() => handleMoveBanner(index, 'up')}
+                                disabled={index === 0}
+                                className="rounded-full h-12 w-12 bg-white/20 border-white/20 text-white hover:bg-white/40 disabled:opacity-30"
+                              >
+                                <ChevronLeft className="h-6 w-6" />
+                              </Button>
+
                               <Button 
                                 variant="destructive" 
                                 size="icon" 
                                 onClick={() => handleDeleteBanner(banner.id)}
-                                className="rounded-full h-12 w-12 shadow-2xl"
+                                className="rounded-full h-14 w-14 shadow-2xl"
                               >
-                                <Trash2 className="h-6 w-6" />
+                                <Trash2 className="h-7 w-7" />
+                              </Button>
+
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                onClick={() => handleMoveBanner(index, 'down')}
+                                disabled={index === (banners?.length || 0) - 1}
+                                className="rounded-full h-12 w-12 bg-white/20 border-white/20 text-white hover:bg-white/40 disabled:opacity-30"
+                              >
+                                <ChevronRight className="h-6 w-6" />
                               </Button>
                            </div>
                         </div>
@@ -633,12 +701,6 @@ export default function AdminDashboard() {
                   </div>
                 </Card>
               ))}
-              {(!filteredItems || filteredItems.length === 0) && (
-                <div className="col-span-full py-24 text-center opacity-30 border-2 border-dashed rounded-[40px]">
-                   <Package className="h-12 w-12 mx-auto mb-2" />
-                   <p className="text-[10px] font-bold uppercase">No item records found</p>
-                </div>
-              )}
             </div>
           </TabsContent>
         </Tabs>

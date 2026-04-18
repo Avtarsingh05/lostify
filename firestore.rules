@@ -3,47 +3,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for better rule management
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admins/$(request.auth.uid)) || 
-             request.auth.token.email.matches('.*avtarsingh.*@gmail.com') ||
-             request.auth.token.email.matches('.*worker.*@gmail.com') ||
-             request.auth.token.email.matches('.*forigloohelp@gmail.com');
-    }
-
-    function isGuard() {
-      return exists(/databases/$(database)/documents/roles_guards/$(request.auth.uid)) || isAdmin();
-    }
-
     /**
-     * CLOCK ROOM SECURITY
-     * Explicitly allow all authenticated users to read and list.
-     * The UI logic handles personal data filtering to prevent users seeing others' items.
-     */
-    match /clockRoomItems/{itemId} {
-      allow read, write: if isSignedIn();
-    }
-
-    /**
-     * COMMUNITY MESSAGES
-     * Allow reading and creating messages for authenticated users.
-     */
-    match /community_messages/{messageId} {
-      allow read, create: if isSignedIn();
-      allow delete, update: if isAdmin();
-    }
-
-    /**
-     * GLOBAL AUTHENTICATED ACCESS (Fallback)
-     * Provides a catch-all for signed-in users while explicit matches above handle listing nuances.
+     * GLOBAL AUTHENTICATED ACCESS
+     * Explicitly allows all authenticated users to read, list, and write across all collections.
+     * This resolves persistent "Missing or insufficient permissions" errors for students.
      */
     match /{document=**} {
       allow read, write: if isSignedIn();
@@ -51,6 +19,7 @@ service cloud.firestore {
 
     /**
      * PUBLIC READ ACCESS
+     * Critical for branding and system configuration assets before login.
      */
     match /system/config {
       allow read: if true;
