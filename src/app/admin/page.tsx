@@ -38,7 +38,8 @@ import {
   ShieldCheck,
   Smartphone,
   ExternalLink,
-  Save
+  Save,
+  QrCode
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -88,6 +89,12 @@ export default function AdminDashboard() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState("")
   const logoInputRef = useRef<HTMLInputElement>(null)
+
+  // QR Upload State
+  const [isUploadingQR, setIsUploadingQR] = useState(false)
+  const [qrFile, setQRFile] = useState<File | null>(null)
+  const [qrPreview, setQRPreview] = useState("")
+  const qrInputRef = useRef<HTMLInputElement>(null)
 
   // Banner Management State
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
@@ -207,6 +214,52 @@ export default function AdminDashboard() {
       })
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleQRChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setQRFile(file)
+      setQRPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleSaveQR = async () => {
+    if (!qrFile || !db) return
+
+    setIsUploadingQR(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", qrFile)
+      formData.append("upload_preset", "admin_banner_upload")
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      
+      if (!res.ok) throw new Error("QR upload failed")
+      const data = await res.json()
+      
+      setDocumentNonBlocking(configRef, {
+        appDownloadQR: data.secure_url,
+        updatedAt: new Date().toISOString()
+      }, { merge: true })
+
+      toast({
+        title: "QR Code Updated",
+        description: "Download link is now live on the dashboard.",
+      })
+      setQRFile(null)
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: error.message || "Could not upload QR.",
+      })
+    } finally {
+      setIsUploadingQR(false)
     }
   }
 
@@ -472,32 +525,62 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="branding" className="space-y-6 lg:space-y-12">
-            <Card className="border-none shadow-xl rounded-[40px] overflow-hidden bg-card/80 backdrop-blur-sm max-w-2xl mx-auto">
-              <CardHeader className="p-8 pb-4">
-                <CardTitle className="font-headline font-bold text-2xl flex items-center gap-3">
-                  <Sparkles className="h-8 w-8 text-primary" /> Login Branding
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8 space-y-8 text-center">
-                <div className="flex flex-col items-center gap-6">
-                  <div className="relative group">
-                    <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-[40px] gradient-header shadow-2xl flex items-center justify-center text-white overflow-hidden border-4 border-white/20">
-                      {logoPreview || systemConfig?.appLogo ? (
-                        <Image src={logoPreview || systemConfig?.appLogo} alt="App Logo" fill className="object-cover" />
-                      ) : (
-                        <Sparkles className="h-16 w-16 lg:h-24 lg:w-24" />
-                      )}
+          <TabsContent value="branding" className="space-y-6 lg:space-y-12 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              {/* Logo Settings */}
+              <Card className="border-none shadow-xl rounded-[40px] overflow-hidden bg-card/80 backdrop-blur-sm">
+                <CardHeader className="p-8 pb-4">
+                  <CardTitle className="font-headline font-bold text-2xl flex items-center gap-3">
+                    <Sparkles className="h-8 w-8 text-primary" /> Login Branding
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 space-y-8 text-center">
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="relative group">
+                      <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-[40px] gradient-header shadow-2xl flex items-center justify-center text-white overflow-hidden border-4 border-white/20">
+                        {logoPreview || systemConfig?.appLogo ? (
+                          <Image src={logoPreview || systemConfig?.appLogo} alt="App Logo" fill className="object-cover" />
+                        ) : (
+                          <Sparkles className="h-16 w-16 lg:h-24 lg:w-24" />
+                        )}
+                      </div>
+                      <button onClick={() => logoInputRef.current?.click()} className="absolute -bottom-2 -right-2 bg-white text-primary p-3 rounded-2xl shadow-xl border border-primary/10 hover:scale-110 transition-all"><Camera className="h-6 w-6" /></button>
+                      <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoChange} />
                     </div>
-                    <button onClick={() => logoInputRef.current?.click()} className="absolute -bottom-2 -right-2 bg-white text-primary p-3 rounded-2xl shadow-xl border border-primary/10 hover:scale-110 transition-all"><Camera className="h-6 w-6" /></button>
-                    <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoChange} />
                   </div>
-                </div>
-                <Button onClick={handleSaveLogo} disabled={!logoFile || isUploading} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-xl">
-                  {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Update University Logo"}
-                </Button>
-              </CardContent>
-            </Card>
+                  <Button onClick={handleSaveLogo} disabled={!logoFile || isUploading} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-xl">
+                    {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Update University Logo"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* App QR Code Settings */}
+              <Card className="border-none shadow-xl rounded-[40px] overflow-hidden bg-card/80 backdrop-blur-sm">
+                <CardHeader className="p-8 pb-4">
+                  <CardTitle className="font-headline font-bold text-2xl flex items-center gap-3">
+                    <QrCode className="h-8 w-8 text-secondary" /> App Download QR
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 space-y-8 text-center">
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="relative group">
+                      <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-[40px] bg-muted shadow-2xl flex items-center justify-center text-muted-foreground overflow-hidden border-4 border-white/20">
+                        {qrPreview || systemConfig?.appDownloadQR ? (
+                          <Image src={qrPreview || systemConfig?.appDownloadQR} alt="App QR" fill className="object-contain p-4" />
+                        ) : (
+                          <QrCode className="h-16 w-16 lg:h-24 lg:w-24 opacity-20" />
+                        )}
+                      </div>
+                      <button onClick={() => qrInputRef.current?.click()} className="absolute -bottom-2 -right-2 bg-white text-secondary p-3 rounded-2xl shadow-xl border border-secondary/10 hover:scale-110 transition-all"><Camera className="h-6 w-6" /></button>
+                      <input type="file" ref={qrInputRef} className="hidden" accept="image/*" onChange={handleQRChange} />
+                    </div>
+                  </div>
+                  <Button onClick={handleSaveQR} variant="secondary" disabled={!qrFile || isUploadingQR} className="w-full h-14 rounded-2xl font-bold shadow-xl">
+                    {isUploadingQR ? <Loader2 className="h-5 w-5 animate-spin" /> : "Update Download QR"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="banners" className="space-y-6 lg:space-y-12">

@@ -28,7 +28,8 @@ import {
   Globe,
   Zap,
   TrendingUp,
-  LayoutGrid
+  LayoutGrid,
+  QrCode
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
@@ -69,6 +70,9 @@ export default function Dashboard() {
   }, [db, user])
 
   const { data: userData } = useDoc(userDocRef)
+
+  const configRef = useMemoFirebase(() => doc(db, "system", "config"), [db])
+  const { data: systemConfig } = useDoc(configRef)
 
   const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
   const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
@@ -464,6 +468,23 @@ export default function Dashboard() {
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">{userData?.region || 'LPU Campus'}</p>
                  </div>
                  <Button onClick={() => router.push('/settings/profile')} variant="outline" className="w-full mt-4 rounded-xl h-9 text-[10px] font-bold uppercase tracking-widest">Manage Account</Button>
+              </CardContent>
+           </Card>
+
+           <Card className="rounded-[28px] border-none shadow-lg bg-card overflow-hidden">
+              <CardContent className="p-6 text-center space-y-4">
+                 <div className="space-y-1">
+                    <h3 className="text-sm font-bold font-headline uppercase tracking-widest text-primary">Download App</h3>
+                    <p className="text-[10px] text-muted-foreground font-medium">Scan to download for Android</p>
+                 </div>
+                 <div className="relative aspect-square w-32 mx-auto bg-muted rounded-2xl overflow-hidden border-4 border-white shadow-inner flex items-center justify-center">
+                    {systemConfig?.appDownloadQR ? (
+                       <Image src={systemConfig.appDownloadQR} alt="Download App QR" fill className="object-contain p-2" />
+                    ) : (
+                       <QrCode className="h-10 w-10 text-muted-foreground/30" />
+                    )}
+                 </div>
+                 <p className="text-[9px] text-muted-foreground italic">Optimized for Campus Mobility</p>
               </CardContent>
            </Card>
 
