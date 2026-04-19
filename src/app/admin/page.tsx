@@ -39,7 +39,8 @@ import {
   Smartphone,
   ExternalLink,
   Save,
-  QrCode
+  QrCode,
+  Archive
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -152,16 +153,16 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleDeleteItem = (id: string) => {
+  const handleArchiveItem = (id: string) => {
     const itemRef = doc(db, "items", id)
-    deleteDocumentNonBlocking(itemRef)
-    toast({ title: "Item Record Deleted" })
+    updateDocumentNonBlocking(itemRef, { status: "Archived", updatedAt: new Date().toISOString() })
+    toast({ title: "Item Moved to Archives" })
   }
 
-  const handleDeleteLuggage = (id: string) => {
+  const handleArchiveLuggage = (id: string) => {
     const luggageRef = doc(db, "clockRoomItems", id)
-    deleteDocumentNonBlocking(luggageRef)
-    toast({ title: "Luggage Record Removed" })
+    updateDocumentNonBlocking(luggageRef, { status: "archived", updatedAt: new Date().toISOString() })
+    toast({ title: "Luggage Record Archived" })
   }
 
   const handleToggleRole = (userId: string, currentRole: string) => {
@@ -377,9 +378,9 @@ export default function AdminDashboard() {
   )
 
   const stats = [
-    { label: "Lost Items", value: allItems?.filter(i => i.type === 'lost').length.toString() || "0", icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
-    { label: "Found Items", value: allItems?.filter(i => i.type === 'found').length.toString() || "0", icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
-    { label: "Luggage", value: clockItems?.length.toString() || "0", icon: Briefcase, color: "text-orange-500", bg: "bg-orange-500/10" },
+    { label: "Lost Items", value: allItems?.filter(i => i.type === 'lost' && i.status !== 'Archived').length.toString() || "0", icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
+    { label: "Found Items", value: allItems?.filter(i => i.type === 'found' && i.status !== 'Archived').length.toString() || "0", icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
+    { label: "Luggage", value: clockItems?.filter(l => l.status !== 'archived').length.toString() || "0", icon: Briefcase, color: "text-orange-500", bg: "bg-orange-500/10" },
     { label: "Students", value: allUsers?.length.toString() || "0", icon: Users, color: "text-primary", bg: "bg-primary/10" },
   ]
 
@@ -503,7 +504,7 @@ export default function AdminDashboard() {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 pb-12">
               {filteredLuggage?.map((lug) => (
-                <Card key={lug.id} className="border-none shadow-sm rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm p-4">
+                <Card key={lug.id} className={`border-none shadow-sm rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm p-4 ${lug.status === 'archived' ? 'opacity-50 grayscale' : ''}`}>
                   <div className="flex items-start gap-4">
                     <div className="w-20 h-20 rounded-xl overflow-hidden relative shadow-sm shrink-0">
                       <Image src={lug.imageUrl} alt={lug.itemType} fill className="object-cover" />
@@ -511,7 +512,11 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <h4 className="font-bold text-sm truncate">{lug.itemType}</h4>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteLuggage(lug.id)} className="h-7 w-7 text-destructive rounded-lg"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        {lug.status !== 'archived' && (
+                          <Button variant="ghost" size="icon" onClick={() => handleArchiveLuggage(lug.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive rounded-lg">
+                            <Archive className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                       <p className="text-[10px] text-muted-foreground font-medium uppercase truncate">{lug.studentName}</p>
                       <div className="flex flex-wrap gap-1 mt-2">

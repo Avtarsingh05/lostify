@@ -64,8 +64,14 @@ export default function ClockRoomMain() {
     })
   }, [rawItems])
 
-  const activeItems = useMemo(() => storedItems.filter(i => i.status !== 'collected'), [storedItems])
-  const historyItems = useMemo(() => storedItems.filter(i => i.status === 'collected'), [storedItems])
+  const activeItems = useMemo(() => 
+    storedItems.filter(i => i.status !== 'collected' && i.status !== 'archived'), 
+    [storedItems]
+  )
+  const historyItems = useMemo(() => 
+    storedItems.filter(i => i.status === 'collected' || i.status === 'archived'), 
+    [storedItems]
+  )
 
   if (isUserLoading) {
     return (
@@ -163,7 +169,7 @@ function LuggageCard({ item, router, isHistory }: { item: any, router: any, isHi
         <div className="w-28 sm:w-36 relative overflow-hidden shrink-0">
           <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute top-2 left-2">
-            <Badge className={`text-[8px] px-1.5 h-4 border-none shadow-md ${item.status === 'stored' ? 'bg-primary' : item.status === 'collected' ? 'bg-secondary' : 'bg-accent'}`}>
+            <Badge className={`text-[8px] px-1.5 h-4 border-none shadow-md ${item.status === 'stored' ? 'bg-primary' : item.status === 'collected' ? 'bg-secondary' : item.status === 'archived' ? 'bg-muted text-muted-foreground' : 'bg-accent'}`}>
               {item.status.replace('_', ' ').toUpperCase()}
             </Badge>
           </div>
@@ -186,6 +192,8 @@ function LuggageCard({ item, router, isHistory }: { item: any, router: any, isHi
                <span className="text-[7px] font-bold uppercase opacity-50">
                  {isHistory && item.collectedAt 
                    ? `Out: ${format(new Date(item.collectedAt), 'MMM dd, HH:mm')}` 
+                   : item.status === 'archived' 
+                   ? 'Record Archived'
                    : `Logged ${formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}`}
                </span>
             </div>
