@@ -140,25 +140,25 @@ export default function Dashboard() {
       description: "Help return an item"
     },
     {
-      title: "Campus Shop",
-      icon: ShoppingBag,
-      href: "/shop",
-      gradient: "bg-rose-500",
-      description: "Premium marketplace"
-    },
-    {
-      title: "Campus Gallery",
-      icon: Package,
-      href: "/gallery",
-      gradient: "bg-blue-600",
-      description: "Browse found & lost items"
-    },
-    {
       title: "Interactive Map",
       icon: MapIcon,
       href: "/map",
       gradient: "bg-primary",
       description: "Browse campus matches"
+    },
+    {
+      title: "Campus Gallery",
+      icon: Package,
+      href: "/gallery",
+      gradient: "bg-rose-500", // Color swapped from Shop
+      description: "Browse found & lost items"
+    },
+    {
+      title: "Campus Shop",
+      icon: ShoppingBag,
+      href: "/shop",
+      gradient: "bg-blue-600", // Color swapped from Gallery
+      description: "Premium marketplace"
     },
     {
       title: "Clock Room",

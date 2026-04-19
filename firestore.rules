@@ -11,7 +11,8 @@ service cloud.firestore {
     /**
      * GLOBAL AUTHENTICATED ACCESS
      * Explicitly permit all signed-in users to read and write to all collections.
-     * This fixes the "Missing or insufficient permissions" error for list operations.
+     * This fixes the "Missing or insufficient permissions" error for list operations
+     * across clockRoomItems, items, and community_messages.
      */
     match /{allPaths=**} {
       allow read, write: if isSignedIn();
