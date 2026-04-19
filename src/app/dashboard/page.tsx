@@ -141,11 +141,11 @@ export default function Dashboard() {
       description: "Help return an item"
     },
     {
-      title: "Campus Shop",
-      icon: ShoppingBag,
-      href: "/shop",
-      gradient: "bg-blue-600",
-      description: "Premium marketplace"
+      title: "Interactive Map",
+      icon: MapIcon,
+      href: "/map",
+      gradient: "bg-primary",
+      description: "Browse campus matches"
     },
     {
       title: "Campus Gallery",
@@ -155,11 +155,11 @@ export default function Dashboard() {
       description: "Browse found & lost items"
     },
     {
-      title: "Interactive Map",
-      icon: MapIcon,
-      href: "/map",
-      gradient: "bg-primary",
-      description: "Browse campus matches"
+      title: "Campus Shop",
+      icon: ShoppingBag,
+      href: "/shop",
+      gradient: "bg-blue-600",
+      description: "Premium marketplace"
     },
     {
       title: "Clock Room",
