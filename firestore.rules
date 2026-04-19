@@ -10,10 +10,10 @@ service cloud.firestore {
 
     /**
      * GLOBAL AUTHENTICATED ACCESS
-     * Explicitly allows all authenticated users to read, list, and write across all collections.
-     * This resolves persistent "Missing or insufficient permissions" errors for students.
+     * Using a recursive wildcard to ensure all subcollections and list operations
+     * are permitted for signed-in users. This fixes persistent "Missing or insufficient permissions" errors.
      */
-    match /{document=**} {
+    match /{allPaths=**} {
       allow read, write: if isSignedIn();
     }
 

@@ -148,18 +148,18 @@ export default function Dashboard() {
       description: "Premium marketplace"
     },
     {
-      title: "Interactive Map",
-      icon: MapIcon,
-      href: "/map",
-      gradient: "bg-primary",
-      description: "Browse campus matches"
-    },
-    {
       title: "Campus Gallery",
       icon: Package,
       href: "/gallery",
       gradient: "bg-rose-500",
       description: "Browse found & lost items"
+    },
+    {
+      title: "Interactive Map",
+      icon: MapIcon,
+      href: "/map",
+      gradient: "bg-primary",
+      description: "Browse campus matches"
     },
     {
       title: "Clock Room",
