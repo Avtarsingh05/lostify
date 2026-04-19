@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Image from "next/image"
 import { 
   PlusCircle, 
@@ -24,7 +24,11 @@ import {
   AlertCircle,
   Archive,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  Globe,
+  Zap,
+  TrendingUp,
+  LayoutGrid
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
@@ -37,7 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { collection, query, orderBy, limit, doc, where } from "firebase/firestore"
+import { collection, query, orderBy, doc } from "firebase/firestore"
 import { Badge } from "@/components/ui/badge"
 import {
   Carousel,
@@ -47,6 +51,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import Autoplay from "embla-carousel-autoplay"
 import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent } from "@/components/ui/card"
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser()
@@ -142,21 +147,21 @@ export default function Dashboard() {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
-      gradient: "bg-rose-500", 
+      gradient: "bg-rose-500", // Required Rose color
       description: "Premium marketplace & ad spaces"
     },
     {
       title: "Campus Gallery",
       icon: Package,
       href: "/gallery",
-      gradient: "bg-blue-600", 
+      gradient: "bg-blue-600", // Required Blue color
       description: "Browse found & lost items catalog"
     },
     {
       title: "Interactive Map",
       icon: MapIcon,
       href: "/map",
-      gradient: "bg-primary",
+      gradient: "bg-primary", // Required Indigo/Primary
       description: "Browse campus item matches live"
     },
     {
@@ -169,168 +174,326 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen pb-32 bg-background">
-      {/* Refined Header for Desktop */}
-      <div className="gradient-header pt-12 pb-24 lg:pt-14 lg:pb-28 px-6 rounded-b-[48px] lg:rounded-b-[56px] shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none lg:p-12">
-          <MapIcon size={160} />
-        </div>
-        <div className="max-w-md lg:max-w-5xl mx-auto flex flex-col gap-4 lg:gap-5 relative z-10">
-          <div className="flex justify-between items-center">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 lg:gap-3">
-                <h1 className="text-white text-3xl lg:text-4xl font-headline font-bold">Lostify</h1>
-                {isAdmin ? (
-                  <Badge className="bg-accent text-[8px] lg:text-[9px] font-bold h-4 lg:h-5 px-2">ADMIN</Badge>
-                ) : isGuard ? (
-                  <Badge className="bg-secondary text-[8px] lg:text-[9px] font-bold h-4 lg:h-5 px-2">GUARD</Badge>
-                ) : null}
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* 
+        MOBILE VIEW 
+        - Kept exactly as the "brilliant" UI the user likes.
+      */}
+      <div className="lg:hidden flex flex-col min-h-screen pb-32">
+        <div className="gradient-header pt-12 pb-24 px-6 rounded-b-[48px] shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <MapIcon size={160} />
+          </div>
+          <div className="max-w-md mx-auto flex flex-col gap-4 relative z-10">
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-white text-3xl font-headline font-bold">Lostify</h1>
+                  {isAdmin ? (
+                    <Badge className="bg-accent text-[8px] font-bold h-4 px-2">ADMIN</Badge>
+                  ) : isGuard ? (
+                    <Badge className="bg-secondary text-[8px] font-bold h-4 px-2">GUARD</Badge>
+                  ) : null}
+                </div>
+                <p className="text-white/80 text-xs font-medium truncate max-w-[200px] mt-1 opacity-90">
+                  Welcome back, {userData?.username || user?.displayName || user?.email?.split('@')[0]}
+                </p>
               </div>
-              <p className="text-white/80 text-xs lg:text-sm font-medium truncate max-w-[200px] lg:max-w-lg mt-1 opacity-90">
-                Welcome back, {userData?.username || user?.displayName || user?.email?.split('@')[0]}
-              </p>
-            </div>
-            <div className="flex gap-3 lg:gap-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="bg-white/20 p-0.5 lg:p-1 rounded-full hover:bg-white/30 transition-all hover:scale-105 active:scale-95 shadow-xl">
-                    <Avatar className="h-10 w-10 lg:h-12 lg:w-12 border-2 border-white/20">
-                      <AvatarImage src={userData?.photoURL || user?.photoURL} />
-                      <AvatarFallback className="bg-primary text-white text-xs lg:text-sm font-bold">
-                        {userData?.username?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 lg:w-60 rounded-2xl lg:rounded-[24px] p-2 mt-2 shadow-2xl border-none" align="end">
-                  <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-3">Account Management</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => router.push('/settings/profile')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 font-medium">
-                    <User className="mr-3 h-5 w-5 text-primary" />
-                    <span>My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 font-medium">
-                    <Package className="mr-3 h-5 w-5 text-primary" />
-                    <span>My Items</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/chat')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 font-bold text-primary">
-                    <MessageSquare className="mr-3 h-5 w-5" />
-                    <span>Community Hub</span>
-                  </DropdownMenuItem>
-                  
-                  {isGuard && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-secondary px-3">Staff Utilities</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12">
-                        <ShieldCheck className="mr-3 h-5 w-5 text-secondary" />
-                        <span className="font-bold text-secondary">Guard Station</span>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12">
-                      <LayoutDashboard className="mr-3 h-5 w-5 text-primary" />
-                      <span className="font-bold text-primary">Admin Console</span>
+              <div className="flex gap-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="bg-white/20 p-0.5 rounded-full hover:bg-white/30 transition-all active:scale-95 shadow-xl">
+                      <Avatar className="h-10 w-10 border-2 border-white/20">
+                        <AvatarImage src={userData?.photoURL || user?.photoURL} />
+                        <AvatarFallback className="bg-primary text-white text-xs font-bold">
+                          {userData?.username?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2 shadow-2xl border-none" align="end">
+                    <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-3">Account Management</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => router.push('/settings/profile')} className="rounded-xl cursor-pointer h-12 font-medium">
+                      <User className="mr-3 h-5 w-5 text-primary" />
+                      <span>My Profile</span>
                     </DropdownMenuItem>
-                  )}
-                  
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12">
-                    <Settings className="mr-3 h-5 w-5 text-muted-foreground" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl lg:rounded-2xl cursor-pointer text-destructive font-bold h-12">
-                    <LogOut className="mr-3 h-5 w-5" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer h-12 font-medium">
+                      <Package className="mr-3 h-5 w-5 text-primary" />
+                      <span>My Items</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/chat')} className="rounded-xl cursor-pointer h-12 font-bold text-primary">
+                      <MessageSquare className="mr-3 h-5 w-5" />
+                      <span>Community Hub</span>
+                    </DropdownMenuItem>
+                    {isGuard && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-secondary px-3">Staff Utilities</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer h-12">
+                          <ShieldCheck className="mr-3 h-5 w-5 text-secondary" />
+                          <span className="font-bold text-secondary">Guard Station</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {isAdmin && (
+                      <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl cursor-pointer h-12">
+                        <LayoutDashboard className="mr-3 h-5 w-5 text-primary" />
+                        <span className="font-bold text-primary">Admin Console</span>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer h-12">
+                      <Settings className="mr-3 h-5 w-5 text-muted-foreground" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive font-bold h-12">
+                      <LogOut className="mr-3 h-5 w-5" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <main className="max-w-md lg:max-w-5xl mx-auto px-6 -mt-16 lg:-mt-20 w-full space-y-6 lg:space-y-10">
-        {/* Refined Banner Carousel */}
-        <section className="w-full">
-          <Carousel 
-            plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]} 
-            opts={{ loop: true }}
-            className="w-full"
-          >
+        <main className="max-w-md mx-auto px-6 -mt-16 w-full space-y-6">
+          <Carousel plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]} opts={{ loop: true }} className="w-full">
             <CarouselContent>
               {isBannersLoading ? (
-                <CarouselItem>
-                  <Skeleton className="w-full h-48 lg:h-[340px] rounded-[32px] lg:rounded-[40px]" />
-                </CarouselItem>
+                <CarouselItem><Skeleton className="w-full h-48 rounded-[32px]" /></CarouselItem>
               ) : displayBanners && displayBanners.length > 0 ? (
                 displayBanners.map((banner) => (
                   <CarouselItem key={banner.id}>
                     {banner.targetUrl ? (
                       <a href={banner.targetUrl} target={banner.targetUrl.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer" className="block w-full">
-                        <div className="relative w-full h-48 lg:h-[340px] rounded-[32px] lg:rounded-[40px] overflow-hidden shadow-2xl group border border-white/10 active:scale-[0.99] transition-all">
-                          <Image 
-                            src={banner.imageUrl} 
-                            alt="Promo Banner" 
-                            fill 
-                            className="object-cover transition-transform duration-1000 group-hover:scale-105" 
-                          />
+                        <div className="relative w-full h-48 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10 active:scale-[0.99] transition-all">
+                          <Image src={banner.imageUrl} alt="Promo Banner" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
                         </div>
                       </a>
                     ) : (
-                      <div className="relative w-full h-48 lg:h-[340px] rounded-[32px] lg:rounded-[40px] overflow-hidden shadow-2xl group border border-white/10">
-                        <Image 
-                          src={banner.imageUrl} 
-                          alt="Promo Banner" 
-                          fill 
-                          className="object-cover transition-transform duration-1000 group-hover:scale-105" 
-                        />
+                      <div className="relative w-full h-48 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10">
+                        <Image src={banner.imageUrl} alt="Promo Banner" fill className="object-cover" />
                       </div>
                     )}
                   </CarouselItem>
                 ))
               ) : (
                 <CarouselItem>
-                   <div className="relative w-full h-48 lg:h-[340px] rounded-[32px] lg:rounded-[40px] overflow-hidden shadow-2xl bg-muted flex items-center justify-center border border-dashed">
-                      <div className="text-center opacity-30">
-                        <Sparkles className="h-10 w-10 lg:h-14 lg:w-14 mx-auto mb-2" />
-                        <p className="font-headline font-bold text-[10px] lg:text-lg uppercase tracking-widest">No Banners Active</p>
-                      </div>
+                   <div className="relative w-full h-48 rounded-[32px] overflow-hidden shadow-2xl bg-muted flex items-center justify-center border border-dashed text-center opacity-30">
+                      <Sparkles className="h-10 w-10 mx-auto mb-2" />
+                      <p className="font-headline font-bold text-[10px] uppercase tracking-widest">No Banners Active</p>
                    </div>
                 </CarouselItem>
               )}
             </CarouselContent>
           </Carousel>
-        </section>
+          <div className="grid grid-cols-2 gap-4 pb-12">
+            {menuItems.map((item, index) => (
+              <Link key={index} href={item.href} className="block group">
+                <ThreeDCard className={item.gradient + " p-5 h-40 border-none flex flex-col justify-between group-hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/5"}>
+                  <div className="flex flex-col gap-3 text-white h-full justify-between">
+                    <div className="bg-white/20 w-fit p-2.5 rounded-2xl shadow-lg border border-white/10 backdrop-blur-md">
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-headline font-bold leading-tight">{item.title}</h3>
+                      <p className="text-[9px] opacity-80 mt-1 line-clamp-2 leading-relaxed font-medium">{item.description}</p>
+                    </div>
+                  </div>
+                </ThreeDCard>
+              </Link>
+            ))}
+          </div>
+        </main>
+      </div>
 
-        {/* Refined Dashboard Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 pb-12">
-          {menuItems.map((item, index) => (
-            <Link key={index} href={item.href} className="block group">
-              <ThreeDCard 
-                className={item.gradient + " p-5 lg:p-6 h-40 lg:h-44 border-none flex flex-col justify-between group-hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/5 hover:shadow-primary/10"}
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <div className="flex flex-col gap-3 lg:gap-3 text-white h-full justify-between">
-                  <div className="bg-white/20 w-fit p-2.5 lg:p-3 rounded-2xl lg:rounded-[18px] shadow-lg border border-white/10 backdrop-blur-md">
-                    <item.icon className="h-5 w-5 lg:h-6 lg:w-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm lg:text-lg font-headline font-bold leading-tight flex items-center gap-2">
-                      {item.title}
-                      <ChevronRight className="h-4 w-4 lg:h-4 lg:w-4 opacity-0 group-hover:opacity-100 transition-opacity translate-x-[-10px] group-hover:translate-x-0 transition-transform" />
-                    </h3>
-                    <p className="text-[9px] lg:text-xs opacity-80 mt-1 line-clamp-2 leading-relaxed font-medium">
-                      {item.description}
-                    </p>
-                  </div>
+      {/* 
+        WEB PORTAL VIEW
+        - Sophisticated, high-end "Web Presence".
+      */}
+      <div className="hidden lg:flex min-h-screen bg-background relative">
+        {/* Left Professional Sidebar */}
+        <aside className="w-72 border-r bg-card h-screen sticky top-0 flex flex-col p-8 space-y-10">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-2xl gradient-header flex items-center justify-center text-white shadow-lg">
+                <Sparkles className="h-6 w-6" />
+             </div>
+             <h1 className="text-2xl font-headline font-bold tracking-tight">Lostify Hub</h1>
+          </div>
+
+          <nav className="flex-1 space-y-2">
+             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-4 mb-4">Navigation</p>
+             {menuItems.map((item, i) => (
+                <Link key={i} href={item.href} className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-primary/5 transition-all group group">
+                   <div className={cn("p-2 rounded-xl transition-all shadow-sm group-hover:scale-110", item.gradient === 'gradient-accent' ? 'bg-accent/10 text-accent' : item.gradient.replace('bg-', 'bg-') + '/10 text-' + item.gradient.split('-')[1])}>
+                      <item.icon className="h-5 w-5" />
+                   </div>
+                   <span className="font-bold text-sm group-hover:text-primary transition-colors">{item.title}</span>
+                   <ChevronRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                </Link>
+             ))}
+             
+             <div className="pt-8 space-y-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-4 mb-4">Community</p>
+                <Link href="/chat" className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-primary/5 transition-all text-primary font-bold">
+                   <MessageSquare className="h-5 w-5" />
+                   <span className="text-sm">Community Hub</span>
+                </Link>
+             </div>
+          </nav>
+
+          <div className="pt-6 border-t">
+             <button onClick={handleLogout} className="flex items-center gap-4 px-4 py-3 rounded-2xl w-full text-destructive hover:bg-destructive/5 transition-all">
+                <LogOut className="h-5 w-5" />
+                <span className="font-bold text-sm">Sign Out</span>
+             </button>
+          </div>
+        </aside>
+
+        {/* Main Hub Area */}
+        <main className="flex-1 overflow-y-auto">
+          {/* Web Header */}
+          <header className="h-20 px-10 flex items-center justify-between border-b bg-background/50 backdrop-blur-xl sticky top-0 z-20">
+             <div className="flex items-center gap-2">
+                <LayoutGrid className="h-5 w-5 text-primary" />
+                <span className="text-sm font-bold text-muted-foreground">Campus Dashboard</span>
+             </div>
+             
+             <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3 border-l pl-6">
+                   <div className="text-right">
+                      <p className="text-sm font-bold leading-tight">{userData?.username || user?.displayName}</p>
+                      <p className="text-[10px] text-muted-foreground font-medium">{userData?.registrationNumber || 'Student'}</p>
+                   </div>
+                   <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                         <button className="relative group">
+                            <Avatar className="h-10 w-10 border-2 border-primary/20 ring-4 ring-transparent group-hover:ring-primary/10 transition-all">
+                               <AvatarImage src={userData?.photoURL || user?.photoURL} />
+                               <AvatarFallback className="bg-primary/10 text-primary font-bold">{userData?.username?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                         </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56 rounded-2xl">
+                         <DropdownMenuItem onClick={() => router.push('/settings/profile')}>Profile</DropdownMenuItem>
+                         {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')} className="text-primary font-bold">Admin Console</DropdownMenuItem>}
+                         <DropdownMenuSeparator />
+                         <DropdownMenuItem onClick={handleLogout} className="text-destructive">Log out</DropdownMenuItem>
+                      </DropdownMenuContent>
+                   </DropdownMenu>
                 </div>
-              </ThreeDCard>
-            </Link>
-          ))}
-        </div>
-      </main>
+             </div>
+          </header>
+
+          <div className="p-10 max-w-5xl mx-auto space-y-10">
+             {/* Large Web Banner */}
+             <section>
+                <Carousel plugins={[Autoplay({ delay: 6000 })]} opts={{ loop: true }} className="w-full">
+                  <CarouselContent>
+                    {isBannersLoading ? (
+                      <CarouselItem><Skeleton className="w-full h-80 rounded-[40px]" /></CarouselItem>
+                    ) : displayBanners?.map((banner) => (
+                      <CarouselItem key={banner.id}>
+                        <Link href={banner.targetUrl || '#'} className="block">
+                          <div className="relative w-full h-80 rounded-[40px] overflow-hidden shadow-2xl group border border-white/10">
+                            <Image src={banner.imageUrl} alt="Banner" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-8">
+                               <p className="text-white font-bold text-sm flex items-center gap-2">Explore Promotion <ChevronRight className="h-4 w-4" /></p>
+                            </div>
+                          </div>
+                        </Link>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
+             </section>
+
+             {/* Web Service Grid */}
+             <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                   <h2 className="text-2xl font-headline font-bold">University Modules</h2>
+                   <Badge variant="outline" className="rounded-lg h-7 font-bold uppercase tracking-widest text-[10px]">Verified Access</Badge>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-6">
+                  {menuItems.map((item, index) => (
+                    <Link key={index} href={item.href} className="block group">
+                      <Card className="rounded-[32px] overflow-hidden border-none shadow-xl hover:shadow-2xl transition-all h-full bg-card hover:translate-y-[-4px]">
+                         <CardContent className="p-0 flex flex-col h-full">
+                            <div className={cn("h-24 flex items-center justify-center text-white", item.gradient)}>
+                               <item.icon className="h-10 w-10" />
+                            </div>
+                            <div className="p-6 space-y-2">
+                               <h3 className="text-lg font-bold font-headline">{item.title}</h3>
+                               <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
+                               <div className="pt-4 flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                                  Access Feature <ChevronRight className="h-3 w-3" />
+                               </div>
+                            </div>
+                         </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+             </section>
+
+             {/* Footer Info */}
+             <footer className="pt-10 border-t flex items-center justify-between opacity-50">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Lostify Campus Layer v1.2</p>
+                <div className="flex items-center gap-6">
+                   <p className="text-[9px] font-medium">Support: forigloohelp@gmail.com</p>
+                   <p className="text-[9px] font-medium">Privacy Policy</p>
+                </div>
+             </footer>
+          </div>
+        </main>
+
+        {/* Right Sidebar - Web Stats */}
+        <aside className="w-80 border-l bg-muted/20 h-screen sticky top-0 hidden xl:flex flex-col p-8 space-y-8">
+           <Card className="rounded-[28px] border-none shadow-lg bg-card overflow-hidden">
+              <div className="h-20 gradient-header" />
+              <CardContent className="px-6 -mt-8 text-center pb-6">
+                 <Avatar className="h-16 w-16 border-4 border-card mx-auto shadow-xl">
+                    <AvatarImage src={userData?.photoURL} />
+                    <AvatarFallback className="bg-primary text-white text-xl font-bold">{userData?.username?.charAt(0)}</AvatarFallback>
+                 </Avatar>
+                 <div className="mt-3 space-y-1">
+                    <h3 className="font-bold">{userData?.username || 'Student'}</h3>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">{userData?.region || 'LPU Campus'}</p>
+                 </div>
+                 <Button onClick={() => router.push('/settings/profile')} variant="outline" className="w-full mt-4 rounded-xl h-9 text-[10px] font-bold uppercase tracking-widest">Manage Account</Button>
+              </CardContent>
+           </Card>
+
+           <div className="space-y-4">
+              <div className="flex items-center gap-2 px-2">
+                 <TrendingUp className="h-4 w-4 text-primary" />
+                 <span className="text-[10px] font-bold uppercase tracking-widest">Global Status</span>
+              </div>
+              <div className="grid gap-3">
+                 {[
+                   { label: "Active Items", val: "124", icon: Package, color: "text-blue-500" },
+                   { label: "Storage Capacity", val: "88%", icon: Briefcase, color: "text-orange-500" },
+                   { label: "Users Online", val: "42", icon: User, color: "text-green-500" }
+                 ].map((stat, i) => (
+                   <div key={i} className="bg-card p-4 rounded-2xl flex items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-3">
+                         <stat.icon className={cn("h-4 w-4", stat.color)} />
+                         <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
+                      </div>
+                      <span className="font-bold text-sm">{stat.val}</span>
+                   </div>
+                 ))}
+              </div>
+           </div>
+
+           <div className="mt-auto bg-primary/5 border border-primary/10 p-6 rounded-[28px] space-y-3">
+              <ShieldCheck className="h-6 w-6 text-primary" />
+              <p className="text-xs font-bold text-primary">Trust & Safety</p>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">All campus transactions and handovers are logged via secure digital handshakes for your protection.</p>
+           </div>
+        </aside>
+      </div>
     </div>
   )
 }
