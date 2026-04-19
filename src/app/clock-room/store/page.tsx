@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
 import Image from "next/image"
-import { compressImage } from "@/lib/image-utils"
+import { compressImage, getDataUriSizeMB } from "@/lib/image-utils"
 
 export default function StoreItemPage() {
   const router = useRouter()
@@ -76,12 +76,34 @@ export default function StoreItemPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    const initialSizeMB = file.size / (1024 * 1024);
+    if (initialSizeMB > 15) {
+      toast({
+        variant: "destructive",
+        title: "File Too Large",
+        description: `Image size exceeds upload limit. Selected: ${initialSizeMB.toFixed(1)} MB`,
+      });
+      return;
+    }
+
     const reader = new FileReader()
     reader.onloadend = async () => {
       const dataUri = reader.result as string
       setIsProcessingImage(true)
       try {
         const compressed = await compressImage(dataUri)
+        const finalSizeMB = getDataUriSizeMB(compressed)
+
+        if (finalSizeMB > 1.0) {
+          toast({
+            variant: "destructive",
+            title: "Quality Error",
+            description: `Image size exceeds 1MB limit. Selected: ${finalSizeMB.toFixed(1)} MB`,
+          })
+          setIsProcessingImage(false)
+          return
+        }
+
         setPreviewImage(compressed)
         toast({ title: "Image Optimized", description: "Storage space secured." })
       } catch (err) {

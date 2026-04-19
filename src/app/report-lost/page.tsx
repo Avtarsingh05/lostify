@@ -22,7 +22,7 @@ import { foundItemAIDetails, type FoundItemAIDetailsOutput } from "@/ai/flows/fo
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { compressImage } from "@/lib/image-utils"
+import { compressImage, getDataUriSizeMB } from "@/lib/image-utils"
 
 export default function ReportLost() {
   const router = useRouter()
@@ -61,17 +61,38 @@ export default function ReportLost() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Pre-check for very large files
+    const initialSizeMB = file.size / (1024 * 1024);
+    if (initialSizeMB > 15) {
+      toast({
+        variant: "destructive",
+        title: "File Too Large",
+        description: `Image size exceeds upload limit. Selected: ${initialSizeMB.toFixed(1)} MB`,
+      });
+      return;
+    }
+
     const reader = new FileReader()
     reader.onloadend = async () => {
       const rawDataUri = reader.result as string
       
       setIsScanning(true)
       try {
-        // Step 1: Compress image
         const compressedUri = await compressImage(rawDataUri)
+        const finalSizeMB = getDataUriSizeMB(compressedUri)
+
+        if (finalSizeMB > 1.0) {
+          toast({
+            variant: "destructive",
+            title: "Upload Rejected",
+            description: `Image size exceeds 1MB limit. Selected: ${finalSizeMB.toFixed(1)} MB`,
+          })
+          setIsScanning(false)
+          return
+        }
+
         setPreviewImage(compressedUri)
         
-        // Step 2: AI Details
         const result = await foundItemAIDetails({ photoDataUri: compressedUri })
         setFormData(prev => ({
           ...prev,

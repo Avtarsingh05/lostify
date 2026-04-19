@@ -38,10 +38,20 @@ export async function compressImage(
       ctx.drawImage(img, 0, 0, width, height);
       const compressedDataUri = canvas.toDataURL('image/jpeg', quality);
       
-      // Basic check: if for some reason compression failed to reduce size significantly
-      // we could recurse with lower quality, but 0.7 @ 1024px is generally ~100-300kb
       resolve(compressedDataUri);
     };
     img.onerror = (e) => reject(e);
   });
+}
+
+/**
+ * Calculates the approximate size of a Base64 data URI in Megabytes.
+ */
+export function getDataUriSizeMB(dataUri: string): number {
+  const base64String = dataUri.split(',')[1];
+  if (!base64String) return 0;
+  // Base64 is roughly 1.33x the size of the original binary data
+  const padding = (base64String.match(/=/g) || []).length;
+  const sizeInBytes = (base64String.length * 0.75) - padding;
+  return sizeInBytes / (1024 * 1024);
 }
