@@ -450,14 +450,14 @@ export default function Dashboard() {
           </div>
         </main>
 
-        {/* Right Sidebar - Web Stats */}
+        {/* Right Sidebar - Web Profile & Security */}
         <aside className="w-80 border-l bg-muted/20 h-screen sticky top-0 hidden xl:flex flex-col p-8 space-y-8">
            <Card className="rounded-[28px] border-none shadow-lg bg-card overflow-hidden">
               <div className="h-20 gradient-header" />
               <CardContent className="px-6 -mt-8 text-center pb-6">
                  <Avatar className="h-16 w-16 border-4 border-card mx-auto shadow-xl">
                     <AvatarImage src={userData?.photoURL} />
-                    <AvatarFallback className="bg-primary text-white text-xl font-bold">{userData?.username?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">{userData?.username?.charAt(0)}</AvatarFallback>
                  </Avatar>
                  <div className="mt-3 space-y-1">
                     <h3 className="font-bold">{userData?.username || 'Student'}</h3>
@@ -466,28 +466,6 @@ export default function Dashboard() {
                  <Button onClick={() => router.push('/settings/profile')} variant="outline" className="w-full mt-4 rounded-xl h-9 text-[10px] font-bold uppercase tracking-widest">Manage Account</Button>
               </CardContent>
            </Card>
-
-           <div className="space-y-4">
-              <div className="flex items-center gap-2 px-2">
-                 <TrendingUp className="h-4 w-4 text-primary" />
-                 <span className="text-[10px] font-bold uppercase tracking-widest">Global Status</span>
-              </div>
-              <div className="grid gap-3">
-                 {[
-                   { label: "Active Items", val: "124", icon: Package, color: "text-blue-500" },
-                   { label: "Storage Capacity", val: "88%", icon: Briefcase, color: "text-orange-500" },
-                   { label: "Users Online", val: "42", icon: User, color: "text-green-500" }
-                 ].map((stat, i) => (
-                   <div key={i} className="bg-card p-4 rounded-2xl flex items-center justify-between shadow-sm">
-                      <div className="flex items-center gap-3">
-                         <stat.icon className={cn("h-4 w-4", stat.color)} />
-                         <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
-                      </div>
-                      <span className="font-bold text-sm">{stat.val}</span>
-                   </div>
-                 ))}
-              </div>
-           </div>
 
            <div className="mt-auto bg-primary/5 border border-primary/10 p-6 rounded-[28px] space-y-3">
               <ShieldCheck className="h-6 w-6 text-primary" />
