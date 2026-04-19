@@ -2,7 +2,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { 
   ArrowLeft, 
   Plus, 
@@ -11,7 +11,8 @@ import {
   MapPin, 
   Loader2,
   ChevronRight,
-  Archive
+  Archive,
+  History as HistoryIcon
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { Button } from "@/components/ui/button"
@@ -19,12 +20,14 @@ import { Badge } from "@/components/ui/badge"
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
 import { collection, query, where, orderBy, doc } from "firebase/firestore"
 import Image from "next/image"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow, format } from "date-fns"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function ClockRoomMain() {
   const router = useRouter()
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
+  const [activeTab, setActiveTab] = useState("active")
 
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null
@@ -33,26 +36,14 @@ export default function ClockRoomMain() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  /**
-   * FIX: Permissions and Index Issues
-   * 
-   * The "Missing or insufficient permissions" error is often a side effect of
-   * a "Missing Index" error when combining filters with sorting. 
-   * To resolve this immediately:
-   * 1. Remove orderBy from server-side queries.
-   * 2. Perform sorting in-memory on the client.
-   * 3. Ensure rules permit simple collection listing.
-   */
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid || !userData) return null
     
     const isAdminOrGuard = userData?.role === "ADMIN" || userData?.role === "GUARD";
     
     if (isAdminOrGuard) {
-      // Staff view: Fetch all (No sorting here to avoid index requirements)
       return query(collection(db, "clockRoomItems"))
     } else {
-      // Student view: Filter by userId (No sorting here to avoid index requirements)
       return query(
         collection(db, "clockRoomItems"),
         where("userId", "==", user.uid)
@@ -62,7 +53,6 @@ export default function ClockRoomMain() {
 
   const { data: rawItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
 
-  // In-memory sorting for all users to ensure performance and avoid index errors
   const storedItems = useMemo(() => {
     if (!rawItems) return []
     return [...rawItems].sort((a, b) => {
@@ -71,6 +61,9 @@ export default function ClockRoomMain() {
       return dateB - dateA
     })
   }, [rawItems])
+
+  const activeItems = useMemo(() => storedItems.filter(i => i.status !== 'collected'), [storedItems])
+  const historyItems = useMemo(() => storedItems.filter(i => i.status === 'collected'), [storedItems])
 
   if (isUserLoading) {
     return (
@@ -109,7 +102,7 @@ export default function ClockRoomMain() {
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-10 space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center px-1">
           <h2 className="text-[10px] sm:text-sm font-headline font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Clock className="h-3 w-3 sm:h-4 sm:w-4" /> {isAdminOrGuard ? "All Active Records" : "My Stored Luggage"}
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4" /> Management Portal
           </h2>
           <Button 
             onClick={() => router.push('/clock-room/store')}
@@ -119,65 +112,88 @@ export default function ClockRoomMain() {
           </Button>
         </div>
 
-        {isItemsLoading ? (
-          <div className="flex justify-center py-20 opacity-20">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="p-8 text-center bg-destructive/10 rounded-[32px] border border-destructive/20">
-            <p className="text-sm font-bold text-destructive">Connection Secured</p>
-            <p className="text-[10px] text-muted-foreground mt-1">Permission logic updated. Please refresh if error persists.</p>
-          </div>
-        ) : storedItems && storedItems.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {storedItems.map((item) => (
-              <ThreeDCard 
-                key={item.id} 
-                onClick={() => router.push(`/clock-room/${item.id}`)}
-                className="p-0 border-none shadow-xl bg-card/80 backdrop-blur-sm group cursor-pointer overflow-hidden rounded-[28px]"
-              >
-                <div className="flex h-32 sm:h-36">
-                  <div className="w-28 sm:w-36 relative overflow-hidden shrink-0">
-                    <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute top-2 left-2">
-                      <Badge className={`text-[8px] px-1.5 h-4 border-none ${item.status === 'stored' ? 'bg-primary' : 'bg-secondary'}`}>
-                        {item.status.toUpperCase()}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
-                    <div>
-                      <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-headline font-bold text-xs sm:text-base truncate">{item.itemType}</h3>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                      <p className="text-[9px] sm:text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                        <MapPin className="h-3 w-3" /> Rack {item.rackNumber}
-                      </p>
-                      <p className="text-[8px] font-bold text-primary mt-0.5 truncate uppercase tracking-tighter">
-                        {item.studentName}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-end">
-                      <span className="text-[8px] font-bold uppercase opacity-50">
-                        {item.createdAt ? formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }) : "just now"}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2.5 h-2.5 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </ThreeDCard>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 bg-muted/20 rounded-[32px] border-2 border-dashed border-muted/50 px-6">
-            <Archive className="h-10 w-10 mx-auto text-muted-foreground/30 mb-4" />
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">No active storage found</p>
-          </div>
-        )}
+        <Tabs defaultValue="active" onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 rounded-2xl p-1 bg-card shadow-lg h-12 mb-6 border">
+            <TabsTrigger value="active" className="rounded-xl font-bold text-[10px] uppercase gap-2">
+              <Archive className="h-3.5 w-3.5" /> Active Storage
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-xl font-bold text-[10px] uppercase gap-2">
+              <HistoryIcon className="h-3.5 w-3.5" /> Room History
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active" className="m-0 space-y-4">
+             {isItemsLoading ? (
+               <div className="flex justify-center py-20 opacity-20"><Loader2 className="h-8 w-8 animate-spin" /></div>
+             ) : activeItems.length > 0 ? (
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                 {activeItems.map((item) => <LuggageCard key={item.id} item={item} router={router} />)}
+               </div>
+             ) : <EmptyState message="No active luggage found" />}
+          </TabsContent>
+
+          <TabsContent value="history" className="m-0 space-y-4">
+             {isItemsLoading ? (
+               <div className="flex justify-center py-20 opacity-20"><Loader2 className="h-8 w-8 animate-spin" /></div>
+             ) : historyItems.length > 0 ? (
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                 {historyItems.map((item) => <LuggageCard key={item.id} item={item} router={router} isHistory />)}
+               </div>
+             ) : <EmptyState message="No historical records" />}
+          </TabsContent>
+        </Tabs>
       </main>
+    </div>
+  )
+}
+
+function LuggageCard({ item, router, isHistory }: { item: any, router: any, isHistory?: boolean }) {
+  return (
+    <ThreeDCard 
+      onClick={() => router.push(`/clock-room/${item.id}`)}
+      className={`p-0 border-none shadow-xl bg-card/80 backdrop-blur-sm group cursor-pointer overflow-hidden rounded-[28px] ${isHistory ? 'opacity-80' : ''}`}
+    >
+      <div className="flex h-32 sm:h-36">
+        <div className="w-28 sm:w-36 relative overflow-hidden shrink-0">
+          <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+          <div className="absolute top-2 left-2">
+            <Badge className={`text-[8px] px-1.5 h-4 border-none shadow-md ${item.status === 'stored' ? 'bg-primary' : item.status === 'collected' ? 'bg-secondary' : 'bg-accent'}`}>
+              {item.status.replace('_', ' ').toUpperCase()}
+            </Badge>
+          </div>
+        </div>
+        <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
+          <div>
+            <div className="flex justify-between items-start gap-2">
+              <h3 className="font-headline font-bold text-xs sm:text-base truncate">{item.itemType}</h3>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:translate-x-1 transition-transform" />
+            </div>
+            <p className="text-[9px] sm:text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <MapPin className="h-3 w-3" /> {item.rackNumber === 'Staging' ? 'Uni Mall' : `Rack ${item.rackNumber}`}
+            </p>
+            <p className="text-[8px] font-bold text-primary mt-0.5 truncate uppercase tracking-tighter">
+              {item.studentName}
+            </p>
+          </div>
+          <div className="flex justify-between items-end">
+            <div className="flex flex-col gap-0.5">
+               <span className="text-[7px] font-bold uppercase opacity-50">
+                 {isHistory && item.collectedAt ? `Out: ${format(new Date(item.collectedAt), 'MMM dd, HH:mm')}` : `Logged ${formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}`}
+               </span>
+            </div>
+            <div className="w-2.5 h-2.5 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />
+          </div>
+        </div>
+      </div>
+    </ThreeDCard>
+  )
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="text-center py-20 bg-muted/20 rounded-[32px] border-2 border-dashed border-muted/50 px-6">
+      <Archive className="h-10 w-10 mx-auto text-muted-foreground/30 mb-4" />
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{message}</p>
     </div>
   )
 }

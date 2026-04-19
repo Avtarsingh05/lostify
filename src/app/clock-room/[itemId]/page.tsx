@@ -20,7 +20,8 @@ import {
   Info,
   Building,
   QrCode,
-  ArrowRightCircle
+  ArrowRightCircle,
+  ChevronRight
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -67,7 +68,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
             </button>
             <h1 className="text-xl font-headline font-bold">Digital Token</h1>
           </div>
-          <Badge className="bg-white/20 text-white border-none font-bold text-[8px] sm:text-[10px]">
+          <Badge className={`backdrop-blur-md text-white border-none font-bold text-[8px] sm:text-[10px] ${isCollected ? 'bg-secondary/50' : 'bg-white/20'}`}>
             {item.status.replace('_', ' ').toUpperCase()}
           </Badge>
         </div>
@@ -85,7 +86,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                    <div className="bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5 border border-primary/20">
                      <Building className="h-3 w-3 text-primary" />
-                     <span className={`text-[10px] sm:text-xs font-bold ${isPending ? 'text-accent' : 'text-primary'}`}>
+                     <span className={`text-[10px] sm:text-xs font-bold ${isPending ? 'text-accent' : isCollected ? 'text-secondary' : 'text-primary'}`}>
                        {isPending ? "Uni Mall Staging" : `Rack ${item.rackNumber}`}
                      </span>
                    </div>
@@ -95,17 +96,17 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
             </div>
 
             <div className="bg-muted/30 p-4 sm:p-5 rounded-[24px] border border-dashed flex items-start gap-4">
-               {isPending ? <QrCode className="h-5 w-5 sm:h-6 sm:w-6 text-accent shrink-0" /> : <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />}
+               {isPending ? <QrCode className="h-5 w-5 sm:h-6 sm:w-6 text-accent shrink-0" /> : isCollected ? <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-secondary shrink-0" /> : <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />}
                <div className="space-y-1">
                  <p className="text-[11px] sm:text-xs font-bold leading-tight uppercase tracking-tight text-primary">
-                   {isPending ? "Check-in Handshake" : isStored ? "Retrieval Handshake" : "Record Archived"}
+                   {isPending ? "Check-in Handshake" : isStored ? "Retrieval Handshake" : "Handover Complete"}
                  </p>
                  <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-relaxed italic">
                    {isPending 
                      ? "Show this code to the guard at Uni Mall reception to confirm storage." 
                      : isStored 
                      ? "Present this retrieval token to the guard when you collect your bag." 
-                     : "Handover is complete. Safe travels!"}
+                     : "This item has been successfully returned to the owner."}
                  </p>
                </div>
             </div>
@@ -124,43 +125,57 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ itemId: 
               </div>
             )}
 
-            {isCollected && (
-              <div className="py-10 text-center space-y-4 animate-in fade-in zoom-in duration-700">
-                 <div className="bg-secondary/10 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                    <UserCheck className="h-8 w-8 sm:h-10 sm:w-10 text-secondary" />
-                 </div>
-                 <div className="space-y-1">
-                    <p className="text-base sm:text-lg font-headline font-bold">Item Released</p>
-                    <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
-                      {item.collectedAt ? format(new Date(item.collectedAt), 'MMM dd, HH:mm') : "Completed"}
-                    </p>
-                 </div>
-              </div>
-            )}
-
             <div className="space-y-4 pt-2 border-t py-6 border-dashed">
-               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.15em]">Audit Record</p>
-               <div className="grid grid-cols-2 gap-3 sm:gap-4">
+               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.15em] px-1">Audit Timeline</p>
+               <div className="space-y-3 bg-muted/20 p-5 rounded-[24px]">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-muted-foreground font-bold uppercase">Report Logged</span>
+                    <span className="font-bold flex items-center gap-1.5"><Clock className="h-3 w-3" /> {format(new Date(item.createdAt), 'MMM dd, HH:mm')}</span>
+                  </div>
+                  {item.storedAt && (
+                    <div className="flex justify-between items-center text-[10px] border-t border-black/5 pt-3">
+                      <span className="text-primary font-bold uppercase">Check-In Exact</span>
+                      <span className="font-bold flex items-center gap-1.5"><Archive className="h-3 w-3" /> {format(new Date(item.storedAt), 'MMM dd, HH:mm')}</span>
+                    </div>
+                  )}
+                  {isCollected && item.collectedAt && (
+                    <div className="flex justify-between items-center text-[10px] border-t border-black/5 pt-3">
+                      <span className="text-secondary font-bold uppercase">Check-Out Exact</span>
+                      <span className="font-bold flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3" /> {format(new Date(item.collectedAt), 'MMM dd, HH:mm')}</span>
+                    </div>
+                  )}
+               </div>
+
+               <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4">
                   <div className="p-3 sm:p-4 bg-muted/20 rounded-2xl space-y-1">
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase">Logged</p>
-                    <p className="text-[10px] font-bold flex items-center gap-1">
-                       <Calendar className="h-3 w-3 text-primary" />
-                       {format(new Date(item.createdAt), 'MMM dd')}
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase">Verified By</p>
+                    <p className="text-[10px] font-bold truncate">
+                       <ShieldCheck className="h-2.5 w-2.5 text-primary inline mr-1" />
+                       {item.storedBy || "Staff"}
                     </p>
                   </div>
                   <div className="p-3 sm:p-4 bg-muted/20 rounded-2xl space-y-1">
                     <p className="text-[8px] font-bold text-muted-foreground uppercase">Returns</p>
                     <p className="text-[10px] font-bold flex items-center gap-1">
-                       <Clock className="h-3 w-3 text-primary" />
+                       <Calendar className="h-3 w-3 text-primary" />
                        {item.expectedReturnDate ? format(new Date(item.expectedReturnDate), 'MMM dd') : "N/A"}
                     </p>
                   </div>
                </div>
-               {item.registrationNumber && (
-                  <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1.5 px-1 uppercase tracking-tight">
-                    <CreditCard className="h-3 w-3" /> Student ID: {item.registrationNumber}
-                  </p>
-               )}
+            </div>
+
+            <div className="space-y-4 pt-2 border-t border-dashed">
+               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.15em] px-1">Security Answers</p>
+               <div className="space-y-4 bg-muted/10 p-4 rounded-2xl italic text-[11px] leading-relaxed text-muted-foreground">
+                  <div>
+                    <span className="font-bold text-primary uppercase text-[8px] not-italic block mb-1">Unique Marks</span>
+                    "{item.brandMarkings}"
+                  </div>
+                  <div className="border-t border-black/5 pt-3">
+                    <span className="font-bold text-primary uppercase text-[8px] not-italic block mb-1">Contents Verification</span>
+                    "{item.contentsVerification}"
+                  </div>
+               </div>
             </div>
           </CardContent>
         </Card>

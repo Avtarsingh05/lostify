@@ -139,6 +139,7 @@ export default function GuardDashboard() {
     setIsProcessingToken(true)
 
     try {
+      // 1. Check for Luggage Check-In (Pending -> Stored)
       const qCheckIn = query(collection(db, "clockRoomItems"), where("checkInCode", "==", codeToProcess), where("status", "==", "pending_storage"), limit(1))
       const snapIn = await getDocs(qCheckIn)
       if (!snapIn.empty) {
@@ -147,12 +148,17 @@ export default function GuardDashboard() {
         return
       }
 
+      // 2. Check for Luggage Check-Out (Stored -> Collected)
       const qCheckOut = query(collection(db, "clockRoomItems"), where("checkOutCode", "==", codeToProcess), where("status", "==", "stored"), limit(1))
       const snapOut = await getDocs(qCheckOut)
       if (!snapOut.empty) {
-        const item = { ...snapOut.docs[0].data(), id: snapOut.docs[0].id }
-        deleteDocumentNonBlocking(doc(db, "clockRoomItems", item.id))
-        toast({ title: "Verification Success", description: "Record deleted. Handover complete." })
+        const itemDoc = snapOut.docs[0];
+        updateDocumentNonBlocking(doc(db, "clockRoomItems", itemDoc.id), {
+          status: "collected",
+          collectedAt: new Date().toISOString(),
+          releasedBy: user?.displayName || user?.email?.split('@')[0] || "Guard"
+        });
+        toast({ title: "Verification Success", description: "Item marked as Collected." })
         setTokenInput("")
         return
       }
@@ -281,7 +287,7 @@ export default function GuardDashboard() {
                       <div className="w-24 relative overflow-hidden shrink-0 bg-muted">
                         <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
                         <div className="absolute top-1.5 left-1.5">
-                           <Badge className={`text-[7px] px-1 h-3 border-none ${item.status === 'stored' ? 'bg-primary' : 'bg-accent'}`}>
+                           <Badge className={`text-[7px] px-1 h-3 border-none ${item.status === 'stored' ? 'bg-primary' : item.status === 'collected' ? 'bg-secondary' : 'bg-accent'}`}>
                              {item.status.split('_')[0].toUpperCase()}
                            </Badge>
                         </div>
@@ -291,7 +297,7 @@ export default function GuardDashboard() {
                            <h3 className="font-headline font-bold text-[11px] sm:text-xs truncate">{item.itemType}</h3>
                            <p className="text-[9px] font-medium text-muted-foreground truncate">{item.studentName}</p>
                            <p className="text-[9px] font-bold text-primary flex items-center gap-1 mt-1 truncate">
-                             <Building className="h-2.5 w-2.5" /> Rack {item.rackNumber}
+                             <Building className="h-2.5 w-2.5" /> {item.rackNumber === 'Staging' ? 'Uni Mall' : `Rack ${item.rackNumber}`}
                            </p>
                         </div>
                         <div className="flex justify-between items-end">
@@ -399,7 +405,7 @@ export default function GuardDashboard() {
               <div className="aspect-[16/10] relative overflow-hidden">
                 <Image src={viewingClockItem.imageUrl} alt="Luggage" fill className="object-cover" />
                 <div className="absolute top-3 right-3">
-                   <Badge className="bg-black/60 backdrop-blur-md border-none font-bold uppercase text-[8px] h-5 px-2">
+                   <Badge className={`backdrop-blur-md border-none font-bold uppercase text-[8px] h-5 px-2 ${viewingClockItem.status === 'stored' ? 'bg-primary/80' : viewingClockItem.status === 'collected' ? 'bg-secondary/80' : 'bg-accent/80'}`}>
                      {viewingClockItem.status.replace('_', ' ')}
                    </Badge>
                 </div>
@@ -433,11 +439,33 @@ export default function GuardDashboard() {
                       </div>
                     </div>
                     <div className="p-3 bg-muted/30 rounded-2xl space-y-1">
-                      <p className="text-[7px] font-black text-muted-foreground uppercase tracking-tighter">Date</p>
-                      <div className="text-[10px] font-bold flex items-center gap-1.5">
-                         <Calendar className="h-3 w-3 text-primary" />
-                         {format(new Date(viewingClockItem.createdAt), 'MMM dd')}
+                      <p className="text-[7px] font-black text-muted-foreground uppercase tracking-tighter">Handled By</p>
+                      <div className="text-[10px] font-bold flex items-center gap-1.5 truncate">
+                         <ShieldCheck className="h-3 w-3 text-primary" />
+                         {viewingClockItem.storedBy || "Assigned"}
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">Audit Timeline</p>
+                    <div className="space-y-3 bg-muted/20 p-4 rounded-2xl border border-dashed text-[10px]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Log Created</span>
+                        <span className="font-bold">{format(new Date(viewingClockItem.createdAt), 'MMM dd, HH:mm')}</span>
+                      </div>
+                      {viewingClockItem.storedAt && (
+                        <div className="flex justify-between items-center border-t pt-2">
+                          <span className="text-primary font-bold">Check-in</span>
+                          <span className="font-bold">{format(new Date(viewingClockItem.storedAt), 'MMM dd, HH:mm')}</span>
+                        </div>
+                      )}
+                      {viewingClockItem.collectedAt && (
+                        <div className="flex justify-between items-center border-t pt-2">
+                          <span className="text-secondary font-bold">Check-out</span>
+                          <span className="font-bold">{format(new Date(viewingClockItem.collectedAt), 'MMM dd, HH:mm')}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
