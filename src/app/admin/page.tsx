@@ -36,7 +36,9 @@ import {
   MapPin,
   Mail,
   ShieldCheck,
-  Smartphone
+  Smartphone,
+  ExternalLink,
+  Save
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -91,6 +93,7 @@ export default function AdminDashboard() {
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [bannerPreview, setBannerPreview] = useState("")
+  const [bannerLink, setBannerLink] = useState("")
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
   const itemsQuery = useMemoFirebase(() => query(collection(db, "items"), orderBy("reportedAt", "desc")), [db])
@@ -235,6 +238,7 @@ export default function AdminDashboard() {
       const bannerCol = collection(db, "banners")
       addDocumentNonBlocking(bannerCol, {
         imageUrl: data.secure_url,
+        targetUrl: bannerLink || "",
         createdAt: new Date().toISOString(),
         position: banners?.length || 0
       })
@@ -245,6 +249,7 @@ export default function AdminDashboard() {
       })
       setBannerFile(null)
       setBannerPreview("")
+      setBannerLink("")
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -254,6 +259,13 @@ export default function AdminDashboard() {
     } finally {
       setIsUploadingBanner(false)
     }
+  }
+
+  const handleUpdateBannerLink = (id: string, newLink: string) => {
+    if (!db) return
+    const bannerRef = doc(db, "banners", id)
+    updateDocumentNonBlocking(bannerRef, { targetUrl: newLink })
+    toast({ title: "Link Updated" })
   }
 
   const handleDeleteBanner = (id: string) => {
@@ -503,17 +515,49 @@ export default function AdminDashboard() {
                   {bannerPreview ? <Image src={bannerPreview} alt="Preview" fill className="object-cover" /> : <div className="text-center space-y-2"><div className="bg-primary/10 p-4 rounded-2xl inline-block"><Plus className="h-8 w-8 text-primary" /></div><p className="text-xs font-bold uppercase text-primary">Upload New Banner</p></div>}
                   <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerChange} />
                 </div>
-                {bannerFile && <Button onClick={handleSaveBanner} disabled={isUploadingBanner} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-lg">Push Banner Live</Button>}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {banners?.map((banner, index) => (
-                    <div key={banner.id} className="relative aspect-[16/9] rounded-2xl overflow-hidden group shadow-md border-2 border-transparent hover:border-primary/30 transition-all">
-                      <Image src={banner.imageUrl} alt="Banner" fill className="object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                        <Button variant="outline" size="icon" onClick={() => handleMoveBanner(index, 'up')} disabled={index === 0} className="rounded-full h-10 w-10"><ChevronLeft className="h-4 w-4" /></Button>
-                        <Button variant="destructive" size="icon" onClick={() => handleDeleteBanner(banner.id)} className="rounded-full h-12 w-12"><Trash2 className="h-6 w-6" /></Button>
-                        <Button variant="outline" size="icon" onClick={() => handleMoveBanner(index, 'down')} disabled={index === (banners?.length || 0) - 1} className="rounded-full h-10 w-10"><ChevronRight className="h-4 w-4" /></Button>
-                      </div>
+                
+                {bannerFile && (
+                  <div className="space-y-4 bg-muted/20 p-4 rounded-2xl border border-dashed border-primary/20 animate-in slide-in-from-top-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Redirect URL (Optional)</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="e.g. /shop or https://lpu.in" 
+                        value={bannerLink}
+                        onChange={(e) => setBannerLink(e.target.value)}
+                        className="rounded-xl h-11 bg-white shadow-none"
+                      />
+                      <Button onClick={handleSaveBanner} disabled={isUploadingBanner} className="h-11 rounded-xl gradient-header font-bold px-6 shadow-lg">
+                        {isUploadingBanner ? <Loader2 className="h-4 w-4 animate-spin" /> : "Push Live"}
+                      </Button>
                     </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {banners?.map((banner, index) => (
+                    <Card key={banner.id} className="relative overflow-hidden group shadow-md border-2 border-transparent hover:border-primary/30 transition-all rounded-[24px]">
+                      <div className="relative aspect-[16/9] w-full">
+                        <Image src={banner.imageUrl} alt="Banner" fill className="object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                          <Button variant="outline" size="icon" onClick={() => handleMoveBanner(index, 'up')} disabled={index === 0} className="rounded-full h-10 w-10 bg-white/90"><ChevronLeft className="h-4 w-4" /></Button>
+                          <Button variant="destructive" size="icon" onClick={() => handleDeleteBanner(banner.id)} className="rounded-full h-12 w-12"><Trash2 className="h-6 w-6" /></Button>
+                          <Button variant="outline" size="icon" onClick={() => handleMoveBanner(index, 'down')} disabled={index === (banners?.length || 0) - 1} className="rounded-full h-10 w-10 bg-white/90"><ChevronRight className="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-white/50 backdrop-blur-sm border-t border-dashed">
+                        <div className="flex gap-2 items-center">
+                          <Input 
+                            placeholder="Redirect URL" 
+                            defaultValue={banner.targetUrl || ""} 
+                            onBlur={(e) => handleUpdateBannerLink(banner.id, e.target.value)}
+                            className="h-9 text-[10px] rounded-lg bg-white/80"
+                          />
+                          <Badge variant="outline" className="h-9 px-3 rounded-lg border-primary/20 bg-primary/5 text-primary">
+                             <ExternalLink className="h-3.5 w-3.5" />
+                          </Badge>
+                        </div>
+                      </div>
+                    </Card>
                   ))}
                 </div>
               </CardContent>

@@ -150,14 +150,14 @@ export default function Dashboard() {
       title: "Campus Gallery",
       icon: Package,
       href: "/gallery",
-      gradient: "bg-rose-500", // Color swapped from Shop
+      gradient: "bg-rose-500", 
       description: "Browse found & lost items"
     },
     {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
-      gradient: "bg-blue-600", // Color swapped from Gallery
+      gradient: "bg-blue-600", 
       description: "Premium marketplace"
     },
     {
@@ -252,10 +252,11 @@ export default function Dashboard() {
       </div>
 
       <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-16 w-full space-y-6 lg:space-y-12">
-        {/* Banner Carousel */}
+        {/* Banner Carousel - Circular Loop Enabled */}
         <section className="w-full">
           <Carousel 
-            plugins={[Autoplay({ delay: 4000 })]} 
+            plugins={[Autoplay({ delay: 4500, stopOnInteraction: false })]} 
+            opts={{ loop: true }}
             className="w-full lg:max-w-5xl mx-auto"
           >
             <CarouselContent>
@@ -266,14 +267,27 @@ export default function Dashboard() {
               ) : displayBanners && displayBanners.length > 0 ? (
                 displayBanners.map((banner) => (
                   <CarouselItem key={banner.id}>
-                    <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl group border border-white/10">
-                      <Image 
-                        src={banner.imageUrl} 
-                        alt="Promo Banner" 
-                        fill 
-                        className="object-cover transition-transform duration-700 group-hover:scale-105" 
-                      />
-                    </div>
+                    {banner.targetUrl ? (
+                      <a href={banner.targetUrl} target={banner.targetUrl.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer" className="block w-full">
+                        <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl group border border-white/10 active:scale-[0.99] transition-transform">
+                          <Image 
+                            src={banner.imageUrl} 
+                            alt="Promo Banner" 
+                            fill 
+                            className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                          />
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl group border border-white/10">
+                        <Image 
+                          src={banner.imageUrl} 
+                          alt="Promo Banner" 
+                          fill 
+                          className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                        />
+                      </div>
+                    )}
                   </CarouselItem>
                 ))
               ) : (
