@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -31,6 +30,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
 import Image from "next/image"
+import { compressImage } from "@/lib/image-utils"
 
 export default function StoreItemPage() {
   const router = useRouter()
@@ -39,6 +39,7 @@ export default function StoreItemPage() {
   const db = useFirestore()
   
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   
   const [studentName, setStudentName] = useState("")
@@ -71,15 +72,23 @@ export default function StoreItemPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     const reader = new FileReader()
-    reader.onloadend = () => {
+    reader.onloadend = async () => {
       const dataUri = reader.result as string
-      setPreviewImage(dataUri)
-      toast({ title: "Snapshot Taken", description: "Identity verified visually." })
+      setIsProcessingImage(true)
+      try {
+        const compressed = await compressImage(dataUri)
+        setPreviewImage(compressed)
+        toast({ title: "Image Optimized", description: "Storage space secured." })
+      } catch (err) {
+        toast({ variant: "destructive", title: "Image Error", description: "Could not process photo." })
+      } finally {
+        setIsProcessingImage(false)
+      }
     }
     reader.readAsDataURL(file)
   }
@@ -165,6 +174,12 @@ export default function StoreItemPage() {
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                      <div className="bg-white/95 px-4 py-2 rounded-xl shadow-xl text-primary font-bold text-[10px] uppercase tracking-widest">Retake Photo</div>
                   </div>
+                  {isProcessingImage && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white">
+                       <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                       <p className="text-[10px] font-bold uppercase">Compressing...</p>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -295,7 +310,7 @@ export default function StoreItemPage() {
               <Button 
                 type="submit" 
                 size="lg" 
-                disabled={isSubmitting || !previewImage}
+                disabled={isSubmitting || !previewImage || isProcessingImage}
                 className="w-full h-14 rounded-2xl gradient-header font-bold shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
               >
                 {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ShieldCheck className="h-5 w-5" /> Generate Token</>}

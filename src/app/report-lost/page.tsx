@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -23,6 +22,7 @@ import { foundItemAIDetails, type FoundItemAIDetailsOutput } from "@/ai/flows/fo
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { compressImage } from "@/lib/image-utils"
 
 export default function ReportLost() {
   const router = useRouter()
@@ -63,12 +63,16 @@ export default function ReportLost() {
 
     const reader = new FileReader()
     reader.onloadend = async () => {
-      const dataUri = reader.result as string
-      setPreviewImage(dataUri)
+      const rawDataUri = reader.result as string
       
       setIsScanning(true)
       try {
-        const result = await foundItemAIDetails({ photoDataUri: dataUri })
+        // Step 1: Compress image
+        const compressedUri = await compressImage(rawDataUri)
+        setPreviewImage(compressedUri)
+        
+        // Step 2: AI Details
+        const result = await foundItemAIDetails({ photoDataUri: compressedUri })
         setFormData(prev => ({
           ...prev,
           name: result.itemName,
@@ -76,12 +80,12 @@ export default function ReportLost() {
           description: result.attributes.join(", ")
         }))
         toast({
-          title: "AI Analysis Complete",
-          description: "Details auto-filled based on your photo.",
+          title: "Photo Optimized",
+          description: "AI identified item details automatically.",
         })
       } catch (error) {
         toast({
-          title: "AI Analysis Partial",
+          title: "Processing Partial",
           description: "Could not identify all details. Please fill manually.",
           variant: "destructive"
         })
@@ -184,7 +188,7 @@ export default function ReportLost() {
                     {isScanning && (
                       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white z-10">
                         <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                        <p className="font-headline font-bold text-xs">AI Analyzing...</p>
+                        <p className="font-headline font-bold text-xs">Optimizing Image...</p>
                       </div>
                     )}
                   </>

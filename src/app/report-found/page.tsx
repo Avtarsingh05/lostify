@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -16,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
+import { compressImage } from "@/lib/image-utils"
 
 export default function ReportFound() {
   const router = useRouter()
@@ -57,12 +57,16 @@ export default function ReportFound() {
 
     const reader = new FileReader()
     reader.onloadend = async () => {
-      const dataUri = reader.result as string
-      setPreviewImage(dataUri)
+      const rawDataUri = reader.result as string
       
       setIsScanning(true)
       try {
-        const result = await foundItemAIDetails({ photoDataUri: dataUri })
+        // Step 1: Compress the image to avoid Firestore limit and Permission errors
+        const compressedUri = await compressImage(rawDataUri)
+        setPreviewImage(compressedUri)
+
+        // Step 2: Send compressed image to AI
+        const result = await foundItemAIDetails({ photoDataUri: compressedUri })
         setAiData(result)
         if (!itemName) setItemName(result.itemName)
         if (!category) setCategory(result.category)
@@ -74,7 +78,7 @@ export default function ReportFound() {
         })
       } catch (error) {
         toast({
-          title: "AI Scanning Partial",
+          title: "Processing Partial",
           description: "Please fill details manually.",
           variant: "destructive"
         })
@@ -197,7 +201,7 @@ export default function ReportFound() {
                     {isScanning && (
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center text-white z-10">
                         <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                        <p className="font-headline font-bold text-[10px] uppercase tracking-widest">Scanning...</p>
+                        <p className="font-headline font-bold text-[10px] uppercase tracking-widest">Optimizing...</p>
                       </div>
                     )}
                   </>
