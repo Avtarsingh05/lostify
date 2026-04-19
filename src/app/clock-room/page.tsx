@@ -41,6 +41,7 @@ export default function ClockRoomMain() {
     
     const isAdminOrGuard = userData?.role === "ADMIN" || userData?.role === "GUARD";
     
+    // We remove orderBy from query level to avoid index requirements and hangs
     if (isAdminOrGuard) {
       return query(collection(db, "clockRoomItems"))
     } else {
@@ -51,10 +52,11 @@ export default function ClockRoomMain() {
     }
   }, [db, user?.uid, userData])
 
-  const { data: rawItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
+  const { data: rawItems, isLoading: isItemsLoading } = useCollection(itemsQuery)
 
   const storedItems = useMemo(() => {
     if (!rawItems) return []
+    // Sort in-memory to ensure reliability without needing custom Firestore indexes
     return [...rawItems].sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
@@ -129,7 +131,9 @@ export default function ClockRoomMain() {
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                  {activeItems.map((item) => <LuggageCard key={item.id} item={item} router={router} />)}
                </div>
-             ) : <EmptyState message="No active luggage found" />}
+             ) : (
+               <EmptyState message="No active luggage found" />
+             )}
           </TabsContent>
 
           <TabsContent value="history" className="m-0 space-y-4">
@@ -139,7 +143,9 @@ export default function ClockRoomMain() {
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                  {historyItems.map((item) => <LuggageCard key={item.id} item={item} router={router} isHistory />)}
                </div>
-             ) : <EmptyState message="No historical records" />}
+             ) : (
+               <EmptyState message="No historical records found" />
+             )}
           </TabsContent>
         </Tabs>
       </main>
@@ -178,7 +184,9 @@ function LuggageCard({ item, router, isHistory }: { item: any, router: any, isHi
           <div className="flex justify-between items-end">
             <div className="flex flex-col gap-0.5">
                <span className="text-[7px] font-bold uppercase opacity-50">
-                 {isHistory && item.collectedAt ? `Out: ${format(new Date(item.collectedAt), 'MMM dd, HH:mm')}` : `Logged ${formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}`}
+                 {isHistory && item.collectedAt 
+                   ? `Out: ${format(new Date(item.collectedAt), 'MMM dd, HH:mm')}` 
+                   : `Logged ${formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}`}
                </span>
             </div>
             <div className="w-2.5 h-2.5 rounded-full border shadow-sm" style={{ backgroundColor: item.color }} />

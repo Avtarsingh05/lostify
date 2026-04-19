@@ -98,18 +98,38 @@ export default function GuardDashboard() {
     return adminEmails.includes(user.email?.toLowerCase() || "") || userData?.role === "ADMIN" || userData?.role === "GUARD";
   }, [user, userData]);
 
+  // Remove orderBy at query level to prevent index-related hangs and "Missing Permission" errors
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
-    return query(collection(db, "items"), orderBy("reportedAt", "desc"), limit(30))
+    return query(collection(db, "items"), limit(50))
   }, [db, isAuthorized])
 
   const clockItemsQuery = useMemoFirebase(() => {
     if (!db || !isAuthorized) return null
-    return query(collection(db, "clockRoomItems"), orderBy("createdAt", "desc"), limit(30))
+    return query(collection(db, "clockRoomItems"), limit(50))
   }, [db, isAuthorized])
 
-  const { data: allItems, isLoading } = useCollection(itemsQuery)
-  const { data: clockItems, isLoading: isClockLoading } = useCollection(clockItemsQuery)
+  const { data: rawItems, isLoading: isItemsLoading } = useCollection(itemsQuery)
+  const { data: rawClockItems, isLoading: isClockLoading } = useCollection(clockItemsQuery)
+
+  // Sort raw data in-memory
+  const allItems = useMemo(() => {
+    if (!rawItems) return []
+    return [...rawItems].sort((a, b) => {
+      const dateA = a.reportedAt ? new Date(a.reportedAt).getTime() : 0
+      const dateB = b.reportedAt ? new Date(b.reportedAt).getTime() : 0
+      return dateB - dateA
+    })
+  }, [rawItems])
+
+  const clockItems = useMemo(() => {
+    if (!rawClockItems) return []
+    return [...rawClockItems].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return dateB - dateA
+    })
+  }, [rawClockItems])
 
   const pendingFound = useMemo(() => allItems?.filter(i => i.type === 'found' && i.status === 'Pending Verification') || [], [allItems])
   const inOfficeFound = useMemo(() => allItems?.filter(i => i.type === 'found' && i.status === 'In Custody') || [], [allItems])
@@ -164,6 +184,9 @@ export default function GuardDashboard() {
       }
 
       toast({ variant: "destructive", title: "Access Denied", description: "No matching token found." })
+    } catch (e) {
+      console.error("Token Process Error:", e)
+      toast({ variant: "destructive", title: "System Error", description: "Could not verify PIN." })
     } finally {
       setIsProcessingToken(false)
     }
@@ -385,7 +408,6 @@ export default function GuardDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="aspect-square bg-black rounded-2xl overflow-hidden mt-4 relative border-4 border-muted/20" id="qr-reader">
-             {/* Scanner overlay visuals could go here */}
           </div>
           <DialogFooter className="mt-4">
             <Button onClick={() => setIsScannerOpen(false)} variant="outline" className="w-full rounded-2xl h-12 font-bold text-xs uppercase tracking-widest">Abort Scan</Button>
