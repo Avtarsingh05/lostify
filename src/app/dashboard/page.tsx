@@ -30,6 +30,7 @@ import {
   TrendingUp,
   LayoutGrid
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
 import {
@@ -420,7 +421,7 @@ export default function Dashboard() {
                     <Link key={index} href={item.href} className="block group">
                       <Card className="rounded-[32px] overflow-hidden border-none shadow-xl hover:shadow-2xl transition-all h-full bg-card hover:translate-y-[-4px]">
                          <CardContent className="p-0 flex flex-col h-full">
-                            <div className={cn("h-24 flex items-center justify-center text-white", item.gradient)}>
+                            <div className={cn("h-24 flex items-center justify-center text-white", item.gradient === 'gradient-accent' ? 'gradient-accent' : item.gradient)}>
                                <item.icon className="h-10 w-10" />
                             </div>
                             <div className="p-6 space-y-2">
