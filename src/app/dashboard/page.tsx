@@ -182,6 +182,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      {/* MOBILE VIEW (lg:hidden) */}
       <div className="lg:hidden flex flex-col min-h-screen pb-32">
         <div className="gradient-header pt-12 pb-24 px-6 rounded-b-[48px] shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -268,11 +269,11 @@ export default function Dashboard() {
                 displayBanners.map((banner) => (
                   <CarouselItem key={banner.id}>
                     {banner.targetUrl ? (
-                      <a href={banner.targetUrl} target={banner.targetUrl.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer" className="block w-full">
+                      <Link href={banner.targetUrl} target={banner.targetUrl.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer" className="block w-full">
                         <div className="relative w-full h-48 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10 active:scale-[0.99] transition-all">
                           <Image src={banner.imageUrl} alt="Promo Banner" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
                         </div>
-                      </a>
+                      </Link>
                     ) : (
                       <div className="relative w-full h-48 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10">
                         <Image src={banner.imageUrl} alt="Promo Banner" fill className="object-cover" />
@@ -310,6 +311,7 @@ export default function Dashboard() {
         </main>
       </div>
 
+      {/* WEB PORTAL VIEW (hidden on small, flex on lg) */}
       <div className="hidden lg:flex min-h-screen bg-background relative">
         <aside className="w-72 border-r bg-card h-screen sticky top-0 flex flex-col p-8 space-y-10">
           <div className="flex items-center gap-3">
@@ -382,18 +384,19 @@ export default function Dashboard() {
           </header>
 
           <div className="p-10 max-w-5xl mx-auto space-y-10">
+             {/* WEB BANNER SECTION - CINEMATIC SIZE */}
              <section>
                 <Carousel plugins={[Autoplay({ delay: 6000 })]} opts={{ loop: true }} className="w-full">
                   <CarouselContent>
                     {isBannersLoading ? (
-                      <CarouselItem><Skeleton className="w-full h-80 rounded-[40px]" /></CarouselItem>
+                      <CarouselItem><Skeleton className="w-full h-[440px] rounded-[40px]" /></CarouselItem>
                     ) : displayBanners?.map((banner) => (
                       <CarouselItem key={banner.id}>
                         <Link href={banner.targetUrl || '#'} className="block">
-                          <div className="relative w-full h-80 rounded-[40px] overflow-hidden shadow-2xl group border border-white/10">
+                          <div className="relative w-full h-[440px] rounded-[40px] overflow-hidden shadow-2xl group border border-white/10">
                             <Image src={banner.imageUrl} alt="Banner" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-8">
-                               <p className="text-white font-bold text-sm flex items-center gap-2">Explore Promotion <ChevronRight className="h-4 w-4" /></p>
+                               <p className="text-white font-bold text-sm flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20">Explore Promotion <ChevronRight className="h-4 w-4" /></p>
                             </div>
                           </div>
                         </Link>
@@ -459,6 +462,7 @@ export default function Dashboard() {
                   </CardContent>
                </Card>
 
+               {/* APP DOWNLOAD SECTION - DYNAMIC QR */}
                <Card className="rounded-[28px] border-none shadow-lg bg-card overflow-hidden">
                   <CardContent className="p-6 text-center space-y-5">
                      <div className="space-y-1">
