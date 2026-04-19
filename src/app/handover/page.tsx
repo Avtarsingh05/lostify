@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "navigation"
 import { 
   ArrowLeft, 
   ShieldCheck, 
@@ -110,7 +110,7 @@ export default function HandoverEntry() {
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="0000"
                   maxLength={4}
-                  className="rounded-3xl h-20 text-center text-5xl font-headline font-black tracking-[0.2em] border-primary/20 bg-muted/30 focus-visible:ring-primary focus-visible:bg-white transition-all"
+                  className="rounded-3xl h-20 text-center text-5xl font-mono font-bold tracking-[0.2em] border-primary/20 bg-muted/30 focus-visible:ring-primary focus-visible:bg-background transition-all"
                   autoFocus
                 />
               </div>

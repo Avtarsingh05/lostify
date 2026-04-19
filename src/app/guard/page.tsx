@@ -236,7 +236,7 @@ export default function GuardDashboard() {
                     value={tokenInput} 
                     onChange={(e) => setTokenInput(e.target.value.replace(/\D/g, ''))}
                     maxLength={4}
-                    className="h-12 rounded-xl text-center text-xl font-headline font-black tracking-[0.4em] bg-muted/40 border-none shadow-none focus-visible:ring-1 focus-visible:bg-white transition-all"
+                    className="h-12 rounded-xl text-center text-xl font-mono font-bold tracking-[0.4em] bg-muted/40 border-none shadow-none focus-visible:ring-1 focus-visible:bg-background transition-all"
                   />
                   <Smartphone className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/30 pointer-events-none" />
                 </div>
