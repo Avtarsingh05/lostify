@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "navigation"
+import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
   ShieldCheck, 
