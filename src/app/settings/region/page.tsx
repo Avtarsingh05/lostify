@@ -1,12 +1,14 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Globe, MapPin, Check, ChevronRight } from "lucide-react"
+import { ArrowLeft, Globe, MapPin, Check, ChevronRight, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase"
+import { doc } from "firebase/firestore"
 
 const boysHostels = [
   {
@@ -32,15 +34,52 @@ const campuses = [...boysHostels, ...girlsHostels]
 export default function RegionSettings() {
   const router = useRouter()
   const { toast } = useToast()
-  const [selected, setSelected] = useState("bh-1")
+  const { user } = useUser()
+  const db = useFirestore()
+  const [isUpdating, setIsUpdating] = useState(false)
 
-  const handleSelect = (id: string, name: string) => {
-    setSelected(id)
-    toast({
-      title: "Region Updated",
-      description: `Your primary search region is now set to ${name}.`,
-    })
-    setTimeout(() => router.back(), 500)
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+
+  const { data: userData, isLoading: isDocLoading } = useDoc(userDocRef)
+  const currentRegion = userData?.region || ""
+
+  const handleSelect = async (id: string, name: string) => {
+    if (!user || !db || isUpdating) return
+
+    setIsUpdating(true)
+    try {
+      const userRef = doc(db, "users", user.uid)
+      updateDocumentNonBlocking(userRef, {
+        region: name,
+        updatedAt: new Date().toISOString()
+      })
+
+      toast({
+        title: "Region Updated",
+        description: `Your primary campus area is now set to ${name}.`,
+      })
+      
+      setTimeout(() => router.back(), 800)
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not save your region preference.",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  if (isDocLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -50,7 +89,7 @@ export default function RegionSettings() {
           <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-2xl font-headline font-bold">Region</h1>
+          <h1 className="text-2xl font-headline font-bold">Campus Region</h1>
         </div>
       </div>
 
@@ -64,32 +103,35 @@ export default function RegionSettings() {
           <CardContent className="p-4">
             <ScrollArea className="h-[450px] pr-4">
               <div className="space-y-2">
-                {campuses.map((campus) => (
-                  <div 
-                    key={campus.id}
-                    onClick={() => handleSelect(campus.id, campus.name)}
-                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${
-                      selected === campus.id 
-                        ? 'bg-primary/10 border-2 border-primary/20' 
-                        : 'bg-muted/30 border-2 border-transparent hover:bg-muted/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-xl ${selected === campus.id ? 'bg-primary text-white' : 'bg-white text-muted-foreground shadow-sm'}`}>
-                        <MapPin className="h-4 w-4" />
+                {campuses.map((campus) => {
+                  const isSelected = currentRegion === campus.name
+                  return (
+                    <div 
+                      key={campus.id}
+                      onClick={() => handleSelect(campus.id, campus.name)}
+                      className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'bg-primary/10 border-2 border-primary/20' 
+                          : 'bg-muted/30 border-2 border-transparent hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-xl ${isSelected ? 'bg-primary text-white' : 'bg-white text-muted-foreground shadow-sm'}`}>
+                          <MapPin className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{campus.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{campus.area}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold">{campus.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{campus.area}</p>
-                      </div>
+                      {isSelected ? (
+                        <Check className="h-5 w-5 text-primary" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
                     </div>
-                    {selected === campus.id ? (
-                      <Check className="h-5 w-5 text-primary" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </ScrollArea>
           </CardContent>

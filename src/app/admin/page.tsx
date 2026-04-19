@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef, useMemo } from "react"
@@ -31,7 +32,11 @@ import {
   Shuffle,
   Zap,
   Globe,
-  User
+  User,
+  MapPin,
+  Mail,
+  ShieldCheck,
+  Smartphone
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -288,7 +293,9 @@ export default function AdminDashboard() {
   const filteredUsers = allUsers?.filter(u => 
     u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
     u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.registrationNumber?.toLowerCase().includes(userSearch.toLowerCase())
+    u.registrationNumber?.toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.region?.toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.phoneNumber?.toLowerCase().includes(userSearch.toLowerCase())
   )
 
   const filteredItems = allItems?.filter(i => 
@@ -516,34 +523,85 @@ export default function AdminDashboard() {
           <TabsContent value="users" className="space-y-4 lg:space-y-8">
             <div className="relative max-w-2xl mx-auto lg:max-w-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search users..." className="pl-9 h-12 rounded-2xl" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
+              <Input placeholder="Search name, ID, hostel, or phone..." className="pl-9 h-12 rounded-2xl" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6 pb-12">
               {filteredUsers?.map((u) => (
-                <Card key={u.id} className="border-none shadow-sm rounded-2xl p-4 lg:p-6 bg-card/80 backdrop-blur-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 lg:h-12 lg:w-12"><AvatarImage src={u.photoURL} /><AvatarFallback>{u.username?.charAt(0)}</AvatarFallback></Avatar>
-                      <div className="min-w-0">
-                        <h3 className="text-sm lg:text-base font-bold truncate">{u.username}</h3>
-                        <p className="text-[10px] lg:text-xs text-muted-foreground truncate">{u.id}</p>
+                <Card key={u.id} className="border-none shadow-xl rounded-[32px] p-5 lg:p-7 bg-card/80 backdrop-blur-sm flex flex-col justify-between group hover:shadow-2xl transition-all duration-500 border border-white/10">
+                  <div className="space-y-5">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Avatar className="h-14 w-14 lg:h-16 lg:w-16 border-2 border-primary/20 shadow-md">
+                            <AvatarImage src={u.photoURL} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">{u.username?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          {u.role === 'ADMIN' && (
+                             <div className="absolute -top-1 -right-1 bg-primary text-white p-1 rounded-full shadow-lg">
+                               <ShieldCheck className="h-3.5 w-3.5" />
+                             </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-base lg:text-lg font-headline font-bold truncate leading-tight">{u.username}</h3>
+                          <p className="text-[10px] lg:text-xs text-muted-foreground flex items-center gap-1.5 mt-1 font-medium italic">
+                            <Mail className="h-3 w-3" /> {u.email}
+                          </p>
+                        </div>
                       </div>
+                      <Badge className={`${u.role === 'ADMIN' ? 'bg-primary' : u.role === 'GUARD' ? 'bg-secondary' : 'bg-muted text-muted-foreground'} text-[8px] lg:text-[10px] font-bold tracking-widest px-2 h-5`}>
+                        {u.role}
+                      </Badge>
                     </div>
-                    <Badge className={u.role === 'ADMIN' ? 'bg-primary' : 'bg-secondary'}>{u.role}</Badge>
+
+                    <div className="grid grid-cols-1 gap-2.5 bg-muted/20 p-4 rounded-2xl border border-dashed border-primary/10">
+                       <div className="flex items-center gap-2.5">
+                          <CreditCard className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+                          <div className="min-w-0">
+                             <p className="text-[8px] uppercase font-bold text-muted-foreground tracking-tighter">Registration ID</p>
+                             <p className="text-xs font-bold text-foreground truncate">{u.registrationNumber || "NOT SET"}</p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-2.5">
+                          <Smartphone className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+                          <div className="min-w-0">
+                             <p className="text-[8px] uppercase font-bold text-muted-foreground tracking-tighter">Phone Number</p>
+                             <p className="text-xs font-bold text-foreground truncate">{u.phoneNumber || "NOT SET"}</p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-2.5">
+                          <MapPin className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+                          <div className="min-w-0">
+                             <p className="text-[8px] uppercase font-bold text-muted-foreground tracking-tighter">Hostel / Region</p>
+                             <p className="text-xs font-bold text-foreground truncate">{u.region || "NOT SELECTED"}</p>
+                          </div>
+                       </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    <Button variant="outline" size="sm" onClick={() => {
-                      setNotifTargetId(u.id);
-                      setSendToAll(false);
-                      const el = document.querySelector('[value="push"]');
-                      if (el instanceof HTMLElement) el.click();
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }} className="rounded-xl text-[10px] font-bold h-9">
-                      <Zap className="h-3 w-3 mr-1" /> Alert
+
+                  <div className="grid grid-cols-2 gap-2.5 mt-6 pt-4 border-t border-dashed">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setNotifTargetId(u.id);
+                        setSendToAll(false);
+                        const el = document.querySelector('[value="push"]');
+                        if (el instanceof HTMLElement) el.click();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }} 
+                      className="rounded-xl text-[10px] font-bold h-11 bg-white/50 hover:bg-primary hover:text-white transition-all border-primary/20"
+                    >
+                      <Zap className="h-3.5 w-3.5 mr-1.5" /> Push Alert
                     </Button>
                     {u.role !== 'ADMIN' && (
-                      <Button variant="secondary" size="sm" onClick={() => handleToggleRole(u.id, u.role)} className="rounded-xl text-[10px] font-bold h-9">
-                        {u.role === 'GUARD' ? "Revoke" : "Promote"}
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        onClick={() => handleToggleRole(u.id, u.role)} 
+                        className="rounded-xl text-[10px] font-bold h-11 shadow-sm"
+                      >
+                        {u.role === 'GUARD' ? "Demote to User" : "Promote Guard"}
                       </Button>
                     )}
                   </div>
