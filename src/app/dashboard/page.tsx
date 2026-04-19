@@ -52,6 +52,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import Autoplay from "embla-carousel-autoplay"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent } from "@/components/ui/card"
@@ -181,10 +182,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* 
-        MOBILE VIEW 
-        - Kept exactly as the "brilliant" UI the user likes.
-      */}
       <div className="lg:hidden flex flex-col min-h-screen pb-32">
         <div className="gradient-header pt-12 pb-24 px-6 rounded-b-[48px] shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -313,12 +310,7 @@ export default function Dashboard() {
         </main>
       </div>
 
-      {/* 
-        WEB PORTAL VIEW
-        - Sophisticated, high-end "Web Presence".
-      */}
       <div className="hidden lg:flex min-h-screen bg-background relative">
-        {/* Left Professional Sidebar */}
         <aside className="w-72 border-r bg-card h-screen sticky top-0 flex flex-col p-8 space-y-10">
           <div className="flex items-center gap-3">
              <div className="w-10 h-10 rounded-2xl gradient-header flex items-center justify-center text-white shadow-lg">
@@ -356,9 +348,7 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        {/* Main Hub Area */}
         <main className="flex-1 overflow-y-auto">
-          {/* Web Header */}
           <header className="h-20 px-10 flex items-center justify-between border-b bg-background/50 backdrop-blur-xl sticky top-0 z-20">
              <div className="flex items-center gap-2">
                 <LayoutGrid className="h-5 w-5 text-primary" />
@@ -392,7 +382,6 @@ export default function Dashboard() {
           </header>
 
           <div className="p-10 max-w-5xl mx-auto space-y-10">
-             {/* Large Web Banner */}
              <section>
                 <Carousel plugins={[Autoplay({ delay: 6000 })]} opts={{ loop: true }} className="w-full">
                   <CarouselContent>
@@ -414,7 +403,6 @@ export default function Dashboard() {
                 </Carousel>
              </section>
 
-             {/* Web Service Grid */}
              <section className="space-y-6">
                 <div className="flex items-center justify-between">
                    <h2 className="text-2xl font-headline font-bold">University Modules</h2>
@@ -443,7 +431,6 @@ export default function Dashboard() {
                 </div>
              </section>
 
-             {/* Footer Info */}
              <footer className="pt-10 border-t flex items-center justify-between opacity-50">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Lostify Campus Layer v1.2</p>
                 <div className="flex items-center gap-6">
@@ -454,45 +441,51 @@ export default function Dashboard() {
           </div>
         </main>
 
-        {/* Right Sidebar - Web Profile & Security */}
-        <aside className="w-80 border-l bg-muted/20 h-screen sticky top-0 hidden xl:flex flex-col p-8 space-y-8">
-           <Card className="rounded-[28px] border-none shadow-lg bg-card overflow-hidden">
-              <div className="h-20 gradient-header" />
-              <CardContent className="px-6 -mt-8 text-center pb-6">
-                 <Avatar className="h-16 w-16 border-4 border-card mx-auto shadow-xl">
-                    <AvatarImage src={userData?.photoURL} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">{userData?.username?.charAt(0)}</AvatarFallback>
-                 </Avatar>
-                 <div className="mt-3 space-y-1">
-                    <h3 className="font-bold">{userData?.username || 'Student'}</h3>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase">{userData?.region || 'LPU Campus'}</p>
-                 </div>
-                 <Button onClick={() => router.push('/settings/profile')} variant="outline" className="w-full mt-4 rounded-xl h-9 text-[10px] font-bold uppercase tracking-widest">Manage Account</Button>
-              </CardContent>
-           </Card>
+        <aside className="w-80 border-l bg-muted/20 h-screen sticky top-0 hidden xl:flex flex-col overflow-hidden shadow-inner">
+           <ScrollArea className="h-full">
+             <div className="p-8 space-y-8 pb-12">
+               <Card className="rounded-[28px] border-none shadow-lg bg-card overflow-hidden">
+                  <div className="h-20 gradient-header" />
+                  <CardContent className="px-6 -mt-8 text-center pb-6">
+                     <Avatar className="h-16 w-16 border-4 border-card mx-auto shadow-xl">
+                        <AvatarImage src={userData?.photoURL} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">{userData?.username?.charAt(0)}</AvatarFallback>
+                     </Avatar>
+                     <div className="mt-3 space-y-1">
+                        <h3 className="font-bold">{userData?.username || 'Student'}</h3>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{userData?.region || 'LPU Campus'}</p>
+                     </div>
+                     <Button onClick={() => router.push('/settings/profile')} variant="outline" className="w-full mt-4 rounded-xl h-9 text-[10px] font-bold uppercase tracking-widest">Manage Account</Button>
+                  </CardContent>
+               </Card>
 
-           <Card className="rounded-[28px] border-none shadow-lg bg-card overflow-hidden">
-              <CardContent className="p-6 text-center space-y-4">
-                 <div className="space-y-1">
-                    <h3 className="text-sm font-bold font-headline uppercase tracking-widest text-primary">Download App</h3>
-                    <p className="text-[10px] text-muted-foreground font-medium">Scan to download for Android</p>
-                 </div>
-                 <div className="relative aspect-square w-32 mx-auto bg-muted rounded-2xl overflow-hidden border-4 border-white shadow-inner flex items-center justify-center">
-                    {systemConfig?.appDownloadQR ? (
-                       <Image src={systemConfig.appDownloadQR} alt="Download App QR" fill className="object-contain p-2" />
-                    ) : (
-                       <QrCode className="h-10 w-10 text-muted-foreground/30" />
-                    )}
-                 </div>
-                 <p className="text-[9px] text-muted-foreground italic">Optimized for Campus Mobility</p>
-              </CardContent>
-           </Card>
+               <Card className="rounded-[28px] border-none shadow-lg bg-card overflow-hidden">
+                  <CardContent className="p-6 text-center space-y-5">
+                     <div className="space-y-1">
+                        <h3 className="text-sm font-bold font-headline uppercase tracking-widest text-primary">Download App</h3>
+                        <p className="text-[10px] text-muted-foreground font-medium leading-tight">Official Campus Application</p>
+                     </div>
+                     <div className="relative aspect-square w-36 mx-auto bg-muted rounded-2xl overflow-hidden border-4 border-white shadow-inner flex items-center justify-center bg-white/50 backdrop-blur-sm">
+                        {systemConfig?.appDownloadQR ? (
+                           <Image src={systemConfig.appDownloadQR} alt="Download App QR" fill className="object-contain p-2" />
+                        ) : (
+                           <QrCode className="h-10 w-10 text-muted-foreground/30" />
+                        )}
+                     </div>
+                     <div className="pt-2">
+                        <p className="text-[10px] font-bold text-foreground/80 uppercase tracking-tighter">Scan for Android / iOS</p>
+                        <p className="text-[9px] text-muted-foreground italic mt-1">Optimized for Campus Mobility</p>
+                     </div>
+                  </CardContent>
+               </Card>
 
-           <div className="mt-auto bg-primary/5 border border-primary/10 p-6 rounded-[28px] space-y-3">
-              <ShieldCheck className="h-6 w-6 text-primary" />
-              <p className="text-xs font-bold text-primary">Trust & Safety</p>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">All campus transactions and handovers are logged via secure digital handshakes for your protection.</p>
-           </div>
+               <div className="bg-primary/5 border border-primary/10 p-6 rounded-[28px] space-y-3">
+                  <ShieldCheck className="h-6 w-6 text-primary" />
+                  <p className="text-xs font-bold text-primary uppercase tracking-wider">Trust & Safety</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">All campus transactions and handovers are logged via secure digital handshakes for student protection.</p>
+               </div>
+             </div>
+           </ScrollArea>
         </aside>
       </div>
     </div>
