@@ -100,7 +100,6 @@ export default function Dashboard() {
 
   const bannersQuery = useMemoFirebase(() => {
     if (!db) return null
-    // Order by the 'position' field set in Admin Console
     return query(collection(db, "banners"), orderBy("position", "asc"))
   }, [db])
 
@@ -141,25 +140,25 @@ export default function Dashboard() {
       description: "Help return an item"
     },
     {
-      title: "Interactive Map",
-      icon: MapIcon,
-      href: "/map",
-      gradient: "bg-primary",
-      description: "Browse campus matches"
+      title: "Campus Shop",
+      icon: ShoppingBag,
+      href: "/shop",
+      gradient: "bg-rose-500",
+      description: "Premium marketplace"
     },
     {
       title: "Campus Gallery",
       icon: Package,
       href: "/gallery",
-      gradient: "bg-rose-500",
+      gradient: "bg-blue-600",
       description: "Browse found & lost items"
     },
     {
-      title: "Campus Shop",
-      icon: ShoppingBag,
-      href: "/shop",
-      gradient: "bg-blue-600",
-      description: "Premium marketplace"
+      title: "Interactive Map",
+      icon: MapIcon,
+      href: "/map",
+      gradient: "bg-primary",
+      description: "Browse campus matches"
     },
     {
       title: "Clock Room",

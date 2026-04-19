@@ -10,8 +10,8 @@ service cloud.firestore {
 
     /**
      * GLOBAL AUTHENTICATED ACCESS
-     * Using a recursive wildcard to ensure all subcollections and list operations
-     * are permitted for signed-in users. This fixes persistent "Missing or insufficient permissions" errors.
+     * Explicitly permit all signed-in users to read and write to all collections.
+     * This fixes the "Missing or insufficient permissions" error for list operations.
      */
     match /{allPaths=**} {
       allow read, write: if isSignedIn();
@@ -19,7 +19,7 @@ service cloud.firestore {
 
     /**
      * PUBLIC READ ACCESS
-     * Critical for branding and system configuration assets before login.
+     * Required for branding assets and system config before login.
      */
     match /system/config {
       allow read: if true;

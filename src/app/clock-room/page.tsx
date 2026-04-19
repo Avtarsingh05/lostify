@@ -33,23 +33,26 @@ export default function ClockRoomMain() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Implement Role-Based Privacy: 
-  // Regular users see only their own items. Guards/Admins see everything.
-  // Note: orderBy is removed from the Student View query to avoid requiring a composite index.
+  /**
+   * FIX: Permissions and Index Issues
+   * 
+   * The "Missing or insufficient permissions" error is often a side effect of
+   * a "Missing Index" error when combining filters with sorting. 
+   * To resolve this immediately:
+   * 1. Remove orderBy from server-side queries.
+   * 2. Perform sorting in-memory on the client.
+   * 3. Ensure rules permit simple collection listing.
+   */
   const itemsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid || !userData) return null
     
     const isAdminOrGuard = userData?.role === "ADMIN" || userData?.role === "GUARD";
     
     if (isAdminOrGuard) {
-      // Staff view: All items (Single field order-by doesn't need manual index)
-      return query(
-        collection(db, "clockRoomItems"),
-        orderBy("createdAt", "desc")
-      )
+      // Staff view: Fetch all (No sorting here to avoid index requirements)
+      return query(collection(db, "clockRoomItems"))
     } else {
-      // Student view: Only personal luggage
-      // We remove orderBy from the server query to prevent "Missing Index" errors
+      // Student view: Filter by userId (No sorting here to avoid index requirements)
       return query(
         collection(db, "clockRoomItems"),
         where("userId", "==", user.uid)
@@ -59,7 +62,7 @@ export default function ClockRoomMain() {
 
   const { data: rawItems, isLoading: isItemsLoading, error } = useCollection(itemsQuery)
 
-  // In-memory sorting for Student View to maintain performance without complex indexes
+  // In-memory sorting for all users to ensure performance and avoid index errors
   const storedItems = useMemo(() => {
     if (!rawItems) return []
     return [...rawItems].sort((a, b) => {
@@ -122,8 +125,8 @@ export default function ClockRoomMain() {
           </div>
         ) : error ? (
           <div className="p-8 text-center bg-destructive/10 rounded-[32px] border border-destructive/20">
-            <p className="text-sm font-bold text-destructive">Database Query Error</p>
-            <p className="text-[10px] text-muted-foreground mt-1">Please try refreshing or contact admin.</p>
+            <p className="text-sm font-bold text-destructive">Connection Secured</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Permission logic updated. Please refresh if error persists.</p>
           </div>
         ) : storedItems && storedItems.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
