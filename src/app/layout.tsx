@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { BottomNav } from "@/components/bottom-nav"
 import { FirebaseClientProvider } from "@/firebase/client-provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { OneSignalInitializer } from "@/components/onesignal-initializer"
 import Script from 'next/script'
 
 export const metadata: Metadata = {
@@ -26,10 +27,15 @@ export default function RootLayout({
           src="https://sdk.cashfree.com/js/v3/cashfree.js" 
           strategy="beforeInteractive" 
         />
+        <Script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="afterInteractive"
+        />
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen relative overflow-x-hidden">
         <ThemeProvider>
           <FirebaseClientProvider>
+            <OneSignalInitializer />
             <div className="pb-32 lg:pb-40">
               {children}
             </div>

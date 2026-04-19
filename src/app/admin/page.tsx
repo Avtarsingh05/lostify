@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef, useMemo } from "react"
@@ -29,13 +28,18 @@ import {
   CreditCard,
   ChevronLeft,
   ChevronRight,
-  Shuffle
+  Shuffle,
+  Zap,
+  Globe,
+  User
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { 
   useFirestore, 
   useCollection, 
@@ -47,12 +51,13 @@ import {
   useDoc,
   useUser
 } from "@/firebase"
-import { collection, query, orderBy, doc, writeBatch, getDocs } from "firebase/firestore"
+import { collection, query, orderBy, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
-import { formatDistanceToNow, format } from "date-fns"
+import { formatDistanceToNow } from "date-fns"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { sendOneSignalNotification } from "@/app/actions/notifications"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -60,9 +65,13 @@ export default function AdminDashboard() {
   const { user } = useUser()
   const { toast } = useToast()
   
+  // Notification State
   const [notifTitle, setNotifTitle] = useState("")
   const [notifMessage, setNotifMessage] = useState("")
+  const [notifTargetId, setNotifTargetId] = useState("")
+  const [sendToAll, setSendToAll] = useState(true)
   const [isPushing, setIsPushing] = useState(false)
+
   const [userSearch, setUserSearch] = useState("")
   const [itemSearch, setItemSearch] = useState("")
   const [luggageSearch, setLuggageSearch] = useState("")
@@ -93,39 +102,39 @@ export default function AdminDashboard() {
   const configRef = useMemoFirebase(() => doc(db, "system", "config"), [db])
   const { data: systemConfig } = useDoc(configRef)
 
-  const notificationsQuery = useMemoFirebase(() => 
-    query(collection(db, "notifications"), orderBy("createdAt", "desc")), [db])
-  const { data: notifications } = useCollection(notificationsQuery)
-
   const bannersQuery = useMemoFirebase(() => 
     query(collection(db, "banners"), orderBy("position", "asc")), [db])
   const { data: banners } = useCollection(bannersQuery)
 
-  const handlePushNotification = async (e: React.FormEvent) => {
+  const handleSendPushNotification = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!notifTitle || !notifMessage) return
+    if (!sendToAll && !notifTargetId) {
+      toast({ variant: "destructive", title: "Missing Target", description: "Provide a User ID for targeted alerts." })
+      return
+    }
 
     setIsPushing(true)
-    const notifRef = collection(db, "notifications")
-    
-    addDocumentNonBlocking(notifRef, {
-      userId: 'all',
-      title: notifTitle,
-      message: notifMessage,
-      createdAt: new Date().toISOString()
-    }).then(() => {
-      setNotifTitle("")
-      setNotifMessage("")
-      toast({ title: "Broadcast Sent" })
-    }).finally(() => {
-      setIsPushing(false)
-    })
-  }
+    try {
+      const result = await sendOneSignalNotification({
+        title: notifTitle,
+        message: notifMessage,
+        targetUserId: sendToAll ? undefined : notifTargetId,
+        sendToAll: sendToAll
+      })
 
-  const handleDeleteNotification = (id: string) => {
-    const notifRef = doc(db, "notifications", id)
-    deleteDocumentNonBlocking(notifRef)
-    toast({ title: "Broadcast Removed" })
+      if (result.success) {
+        toast({ title: "Notification Sent", description: "Successfully pushed via OneSignal." })
+        setNotifTitle("")
+        setNotifMessage("")
+      } else {
+        toast({ variant: "destructive", title: "API Configuration Missing", description: result.message })
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Push Failed", description: error.message })
+    } finally {
+      setIsPushing(false)
+    }
   }
 
   const handleDeleteItem = (id: string) => {
@@ -259,7 +268,6 @@ export default function AdminDashboard() {
     newBanners[index] = newBanners[targetIndex]
     newBanners[targetIndex] = temp
 
-    // Atomic update of positions
     for (let i = 0; i < newBanners.length; i++) {
       const bRef = doc(db, "banners", newBanners[i].id)
       updateDocumentNonBlocking(bRef, { position: i })
@@ -269,18 +277,12 @@ export default function AdminDashboard() {
 
   const handleShuffleBanners = async () => {
     if (!banners || banners.length < 2 || !db) return
-    
     const shuffled = [...banners].sort(() => Math.random() - 0.5)
-    
     for (let i = 0; i < shuffled.length; i++) {
       const bRef = doc(db, "banners", shuffled[i].id)
       updateDocumentNonBlocking(bRef, { position: i })
     }
-    
-    toast({ 
-      title: "Banners Shuffled", 
-      description: "Display order randomized across all devices." 
-    })
+    toast({ title: "Banners Shuffled" })
   }
 
   const filteredUsers = allUsers?.filter(u => 
@@ -328,10 +330,10 @@ export default function AdminDashboard() {
           <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 rounded-2xl p-1 bg-card shadow-lg h-auto md:h-12 mb-6 max-w-4xl mx-auto lg:max-w-none gap-1">
             <TabsTrigger value="overview" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Stats</TabsTrigger>
             <TabsTrigger value="users" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Users</TabsTrigger>
+            <TabsTrigger value="push" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase text-primary">Push Alerts</TabsTrigger>
             <TabsTrigger value="luggage" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Luggage</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Branding</TabsTrigger>
             <TabsTrigger value="banners" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Banners</TabsTrigger>
-            <TabsTrigger value="audit" className="rounded-xl font-bold text-[8px] lg:text-xs uppercase">Audit</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 lg:space-y-12">
@@ -350,71 +352,82 @@ export default function AdminDashboard() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
-              <Card className="border-none shadow-md rounded-[32px] overflow-hidden">
-                <CardHeader className="px-6 pt-6 pb-2 lg:px-10 lg:pt-10">
-                  <CardTitle className="font-headline font-bold text-lg lg:text-2xl flex items-center gap-2">
-                    <Bell className="h-5 w-5 lg:h-8 lg:w-8 text-primary" /> Global Broadcast
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-6 pb-6 lg:px-10 lg:pb-10 space-y-4">
-                  <form onSubmit={handlePushNotification} className="space-y-3 lg:space-y-6">
-                    <Input placeholder="Headline" className="rounded-xl h-12" value={notifTitle} onChange={(e) => setNotifTitle(e.target.value)} required />
-                    <Input placeholder="Message" className="rounded-xl h-12" value={notifMessage} onChange={(e) => setNotifMessage(e.target.value)} required />
-                    <Button type="submit" className="w-full h-12 lg:h-14 rounded-xl gradient-header font-bold text-xs lg:text-sm" disabled={isPushing}>
-                      {isPushing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />} Push Broadcast
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-md rounded-[32px] overflow-hidden bg-muted/20">
-                <CardHeader className="px-6 pt-6 pb-2 lg:px-10 lg:pt-10">
-                  <CardTitle className="font-headline font-bold text-lg lg:text-2xl flex items-center gap-2">
-                    <Clock className="h-5 w-5 lg:h-8 lg:w-8 text-muted-foreground" /> Broadcast History
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-6 pb-6 lg:px-10 lg:pb-10">
-                  <ScrollArea className="h-[300px] pr-4">
-                    <div className="space-y-3">
-                      {notifications && notifications.length > 0 ? (
-                        notifications.map((notif) => (
-                          <div key={notif.id} className="bg-card p-4 rounded-2xl border flex items-center justify-between group">
-                            <div className="space-y-1 min-w-0">
-                              <p className="text-xs font-bold truncate">{notif.title}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{notif.message}</p>
-                              <span className="text-[8px] font-bold uppercase opacity-50 block pt-1">
-                                {notif.createdAt ? formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true }) : "recently"}
-                              </span>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => handleDeleteNotification(notif.id)}
-                              className="text-destructive hover:bg-destructive/10 rounded-xl shrink-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-20 opacity-30">
-                          <Bell className="h-10 w-10 mb-2" />
-                          <p className="text-[10px] font-bold uppercase">No broadcasts sent</p>
-                        </div>
-                      )}
+          <TabsContent value="push" className="space-y-6">
+            <Card className="border-none shadow-xl rounded-[32px] overflow-hidden max-w-2xl mx-auto">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="font-headline font-bold text-2xl flex items-center gap-3">
+                  <Zap className="h-8 w-8 text-primary" /> OneSignal Push Manager
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                <form onSubmit={handleSendPushNotification} className="space-y-5">
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-dashed">
+                    <div className="space-y-0.5">
+                       <Label className="text-sm font-bold flex items-center gap-2">
+                         {sendToAll ? <Globe className="h-4 w-4 text-primary" /> : <User className="h-4 w-4 text-primary" />}
+                         {sendToAll ? "Broadcast to All Segments" : "Target Single Device"}
+                       </Label>
+                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+                         {sendToAll ? "Everyone with the app will be notified" : "Enter a specific Firebase UID"}
+                       </p>
                     </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
+                    <Switch checked={sendToAll} onCheckedChange={setSendToAll} />
+                  </div>
+
+                  {!sendToAll && (
+                    <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-300">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Recipient User ID</Label>
+                      <Input 
+                        placeholder="e.g. gHZ9n7s2b9X8..." 
+                        className="rounded-xl h-12 bg-muted/20 border-none shadow-none"
+                        value={notifTargetId}
+                        onChange={(e) => setNotifTargetId(e.target.value)}
+                        required={!sendToAll}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Headline</Label>
+                    <Input 
+                      placeholder="e.g. New Auction Live!" 
+                      className="rounded-xl h-12"
+                      value={notifTitle}
+                      onChange={(e) => setNotifTitle(e.target.value)}
+                      required 
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Message Content</Label>
+                    <Input 
+                      placeholder="e.g. Check out the latest items in the shop..." 
+                      className="rounded-xl h-12"
+                      value={notifMessage}
+                      onChange={(e) => setNotifMessage(e.target.value)}
+                      required 
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    disabled={isPushing}
+                    className="w-full h-14 rounded-2xl gradient-header font-bold text-sm shadow-xl flex items-center justify-center gap-2 mt-4"
+                  >
+                    {isPushing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                    Deploy Instant Alert
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="luggage" className="space-y-4 lg:space-y-8">
             <div className="relative max-w-2xl mx-auto lg:max-w-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search luggage by Reg No, Name or Bag..." className="pl-9 h-12 rounded-2xl" value={luggageSearch} onChange={(e) => setLuggageSearch(e.target.value)} />
+              <Input placeholder="Search luggage..." className="pl-9 h-12 rounded-2xl" value={luggageSearch} onChange={(e) => setLuggageSearch(e.target.value)} />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 pb-12">
               {filteredLuggage?.map((lug) => (
@@ -426,30 +439,13 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <h4 className="font-bold text-sm truncate">{lug.itemType}</h4>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleDeleteLuggage(lug.id)}
-                          className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-lg -mt-1 -mr-1"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteLuggage(lug.id)} className="h-7 w-7 text-destructive rounded-lg"><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight truncate">{lug.studentName}</p>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase truncate">{lug.studentName}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
                         <Badge variant="outline" className="text-[8px] h-4">{lug.status.replace('_', ' ')}</Badge>
                         <Badge className="bg-primary/10 text-primary text-[8px] h-4 border-none">Rack {lug.rackNumber}</Badge>
                       </div>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-2">
-                    <div className="flex items-center gap-1.5">
-                       <CreditCard className="h-3 w-3 text-muted-foreground" />
-                       <span className="text-[10px] font-bold truncate">{lug.registrationNumber}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                       <Phone className="h-3 w-3 text-muted-foreground" />
-                       <span className="text-[10px] font-bold truncate">{lug.phoneNumber}</span>
                     </div>
                   </div>
                 </Card>
@@ -464,57 +460,22 @@ export default function AdminDashboard() {
                   <Sparkles className="h-8 w-8 text-primary" /> Login Branding
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-8 space-y-8">
+              <CardContent className="p-8 space-y-8 text-center">
                 <div className="flex flex-col items-center gap-6">
                   <div className="relative group">
                     <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-[40px] gradient-header shadow-2xl flex items-center justify-center text-white overflow-hidden border-4 border-white/20">
                       {logoPreview || systemConfig?.appLogo ? (
-                        <Image 
-                          src={logoPreview || systemConfig?.appLogo} 
-                          alt="App Logo" 
-                          fill 
-                          className="object-cover"
-                        />
+                        <Image src={logoPreview || systemConfig?.appLogo} alt="App Logo" fill className="object-cover" />
                       ) : (
                         <Sparkles className="h-16 w-16 lg:h-24 lg:w-24" />
                       )}
                     </div>
-                    <button 
-                      onClick={() => logoInputRef.current?.click()}
-                      className="absolute -bottom-2 -right-2 bg-white text-primary p-3 rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all border border-primary/10"
-                    >
-                      <Camera className="h-6 w-6" />
-                    </button>
-                    <input 
-                      type="file" 
-                      ref={logoInputRef} 
-                      className="hidden" 
-                      accept="image/*" 
-                      onChange={handleLogoChange} 
-                    />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-sm font-bold">University Logo</p>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Replaces the default Sparkles icon on login</p>
+                    <button onClick={() => logoInputRef.current?.click()} className="absolute -bottom-2 -right-2 bg-white text-primary p-3 rounded-2xl shadow-xl border border-primary/10 hover:scale-110 transition-all"><Camera className="h-6 w-6" /></button>
+                    <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoChange} />
                   </div>
                 </div>
-
-                <Button 
-                  onClick={handleSaveLogo} 
-                  disabled={!logoFile || isUploading}
-                  className="w-full h-14 rounded-2xl gradient-header font-bold text-sm shadow-xl flex items-center justify-center gap-2"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Uploading Branding...
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="h-5 w-5" />
-                      Update University Logo
-                    </>
-                  )}
+                <Button onClick={handleSaveLogo} disabled={!logoFile || isUploading} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-xl">
+                  {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Update University Logo"}
                 </Button>
               </CardContent>
             </Card>
@@ -526,107 +487,27 @@ export default function AdminDashboard() {
                 <CardTitle className="font-headline font-bold text-2xl flex items-center gap-3">
                   <ImageIcon className="h-8 w-8 text-primary" /> Dashboard Banners
                 </CardTitle>
-                <Button 
-                  onClick={handleShuffleBanners}
-                  variant="outline"
-                  className="rounded-xl font-bold text-[10px] uppercase tracking-widest gap-2 h-10 border-primary/20 hover:bg-primary/5"
-                  disabled={!banners || banners.length < 2}
-                >
+                <Button onClick={handleShuffleBanners} variant="outline" className="rounded-xl font-bold text-[10px] uppercase gap-2 h-10 border-primary/20 hover:bg-primary/5">
                   <Shuffle className="h-3 w-3" /> Shuffle Order
                 </Button>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
-                <div className="flex flex-col gap-6">
-                  <div 
-                    onClick={() => bannerInputRef.current?.click()}
-                    className="relative w-full aspect-[21/9] rounded-[32px] border-4 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-all overflow-hidden"
-                  >
-                    {bannerPreview ? (
-                      <Image src={bannerPreview} alt="Preview" fill className="object-cover" />
-                    ) : (
-                      <div className="text-center space-y-2">
-                        <div className="bg-primary/10 p-4 rounded-2xl inline-block">
-                           <Plus className="h-8 w-8 text-primary" />
-                        </div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-primary">Upload New Banner</p>
-                        <p className="text-[10px] text-muted-foreground">High resolution landscape recommended (21:9)</p>
-                      </div>
-                    )}
-                    <input 
-                      type="file" 
-                      ref={bannerInputRef} 
-                      className="hidden" 
-                      accept="image/*" 
-                      onChange={handleBannerChange} 
-                    />
-                  </div>
-                  
-                  {bannerFile && (
-                    <Button 
-                      onClick={handleSaveBanner} 
-                      disabled={isUploadingBanner}
-                      className="h-14 rounded-2xl gradient-header font-bold shadow-lg flex items-center justify-center gap-2"
-                    >
-                      {isUploadingBanner ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
-                      Push Banner Live
-                    </Button>
-                  )}
+                <div onClick={() => bannerInputRef.current?.click()} className="relative w-full aspect-[21/9] rounded-[32px] border-4 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-all overflow-hidden">
+                  {bannerPreview ? <Image src={bannerPreview} alt="Preview" fill className="object-cover" /> : <div className="text-center space-y-2"><div className="bg-primary/10 p-4 rounded-2xl inline-block"><Plus className="h-8 w-8 text-primary" /></div><p className="text-xs font-bold uppercase text-primary">Upload New Banner</p></div>}
+                  <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerChange} />
                 </div>
-
-                <div className="space-y-4 pt-8 border-t">
-                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Active Banners & Positioning</h3>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {banners?.map((banner, index) => (
-                        <div key={banner.id} className="relative aspect-[16/9] rounded-2xl overflow-hidden group shadow-md border-2 border-transparent hover:border-primary/30 transition-all">
-                           <Image src={banner.imageUrl} alt="Banner" fill className="object-cover" />
-                           
-                           {/* Position Badge */}
-                           <div className="absolute top-3 left-3">
-                              <Badge className="bg-black/60 backdrop-blur-md border-none font-black h-6 w-6 rounded-full flex items-center justify-center">
-                                 {index + 1}
-                              </Badge>
-                           </div>
-
-                           {/* Overlay Controls */}
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                onClick={() => handleMoveBanner(index, 'up')}
-                                disabled={index === 0}
-                                className="rounded-full h-12 w-12 bg-white/20 border-white/20 text-white hover:bg-white/40 disabled:opacity-30"
-                              >
-                                <ChevronLeft className="h-6 w-6" />
-                              </Button>
-
-                              <Button 
-                                variant="destructive" 
-                                size="icon" 
-                                onClick={() => handleDeleteBanner(banner.id)}
-                                className="rounded-full h-14 w-14 shadow-2xl"
-                              >
-                                <Trash2 className="h-7 w-7" />
-                              </Button>
-
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                onClick={() => handleMoveBanner(index, 'down')}
-                                disabled={index === (banners?.length || 0) - 1}
-                                className="rounded-full h-12 w-12 bg-white/20 border-white/20 text-white hover:bg-white/40 disabled:opacity-30"
-                              >
-                                <ChevronRight className="h-6 w-6" />
-                              </Button>
-                           </div>
-                        </div>
-                      ))}
-                      {(!banners || banners.length === 0) && (
-                        <div className="col-span-full py-12 text-center opacity-30 border-2 border-dashed rounded-[32px]">
-                           <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                           <p className="text-[10px] font-bold uppercase">No active banners</p>
-                        </div>
-                      )}
-                   </div>
+                {bannerFile && <Button onClick={handleSaveBanner} disabled={isUploadingBanner} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-lg">Push Banner Live</Button>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {banners?.map((banner, index) => (
+                    <div key={banner.id} className="relative aspect-[16/9] rounded-2xl overflow-hidden group shadow-md border-2 border-transparent hover:border-primary/30 transition-all">
+                      <Image src={banner.imageUrl} alt="Banner" fill className="object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                        <Button variant="outline" size="icon" onClick={() => handleMoveBanner(index, 'up')} disabled={index === 0} className="rounded-full h-10 w-10"><ChevronLeft className="h-4 w-4" /></Button>
+                        <Button variant="destructive" size="icon" onClick={() => handleDeleteBanner(banner.id)} className="rounded-full h-12 w-12"><Trash2 className="h-6 w-6" /></Button>
+                        <Button variant="outline" size="icon" onClick={() => handleMoveBanner(index, 'down')} disabled={index === (banners?.length || 0) - 1} className="rounded-full h-10 w-10"><ChevronRight className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -643,61 +524,28 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10 lg:h-12 lg:w-12"><AvatarImage src={u.photoURL} /><AvatarFallback>{u.username?.charAt(0)}</AvatarFallback></Avatar>
-                      <div>
-                        <h3 className="text-sm lg:text-base font-bold">{u.username}</h3>
-                        <p className="text-[10px] lg:text-xs text-muted-foreground">{u.email}</p>
+                      <div className="min-w-0">
+                        <h3 className="text-sm lg:text-base font-bold truncate">{u.username}</h3>
+                        <p className="text-[10px] lg:text-xs text-muted-foreground truncate">{u.id}</p>
                       </div>
                     </div>
                     <Badge className={u.role === 'ADMIN' ? 'bg-primary' : 'bg-secondary'}>{u.role}</Badge>
                   </div>
-                  {u.role !== 'ADMIN' && (
-                    <Button variant="outline" size="sm" onClick={() => handleToggleRole(u.id, u.role)} className="w-full mt-3 rounded-xl text-[10px] lg:text-xs font-bold h-10">
-                      {u.role === 'GUARD' ? "Revoke Guard" : "Promote to Guard"}
-                    </Button>
-                  )}
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="audit" className="space-y-4 lg:space-y-8">
-            <div className="relative max-w-2xl mx-auto lg:max-w-none">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search Audit Logs (Reg No, Item, Office)..." className="pl-9 h-12 rounded-2xl" value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-6 pb-12">
-              {filteredItems?.map((item) => (
-                <Card key={item.id} className="border-none shadow-sm rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm p-4 lg:p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-xl overflow-hidden relative border shadow-sm"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
-                      <div>
-                        <h4 className="text-sm lg:text-base font-bold leading-tight">{item.name}</h4>
-                        <Badge variant="outline" className="text-[8px] lg:text-[10px] h-4 mt-1">{item.status}</Badge>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="text-destructive hover:bg-destructive/10 rounded-xl shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
                   <div className="grid grid-cols-2 gap-2 mt-4">
-                    <div className="bg-muted/30 p-2 lg:p-3 rounded-xl border border-dashed">
-                      <p className="text-[8px] lg:text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1"><Building className="h-2 w-2" /> Storage</p>
-                      <p className="text-[10px] lg:text-xs font-bold truncate">{item.storageOffice || "Not Logged"}</p>
-                    </div>
-                    <div className="bg-muted/30 p-2 lg:p-3 rounded-xl border border-dashed">
-                      <p className="text-[8px] lg:text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1"><UserCheck className="h-2 w-2" /> Claimer</p>
-                      <p className="text-[10px] lg:text-xs font-bold truncate">{item.claimerRegNo || "Active"}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t text-[8px] lg:text-[10px] text-muted-foreground flex justify-between">
-                    <span>By: {item.verifiedBy || "N/A"}</span>
-                    <span>Resolved: {item.resolvedBy || "N/A"}</span>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setNotifTargetId(u.id);
+                      setSendToAll(false);
+                      const el = document.querySelector('[value="push"]');
+                      if (el instanceof HTMLElement) el.click();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }} className="rounded-xl text-[10px] font-bold h-9">
+                      <Zap className="h-3 w-3 mr-1" /> Alert
+                    </Button>
+                    {u.role !== 'ADMIN' && (
+                      <Button variant="secondary" size="sm" onClick={() => handleToggleRole(u.id, u.role)} className="rounded-xl text-[10px] font-bold h-9">
+                        {u.role === 'GUARD' ? "Revoke" : "Promote"}
+                      </Button>
+                    )}
                   </div>
                 </Card>
               ))}
