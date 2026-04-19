@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
+import { Button } from "@/components/ui/button"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from "@/firebase"
 import {
   DropdownMenu,
@@ -148,21 +149,21 @@ export default function Dashboard() {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
-      gradient: "bg-rose-500", // Required Rose color
+      gradient: "bg-rose-500",
       description: "Premium marketplace & ad spaces"
     },
     {
       title: "Campus Gallery",
       icon: Package,
       href: "/gallery",
-      gradient: "bg-blue-600", // Required Blue color
+      gradient: "bg-blue-600",
       description: "Browse found & lost items catalog"
     },
     {
       title: "Interactive Map",
       icon: MapIcon,
       href: "/map",
-      gradient: "bg-primary", // Required Indigo/Primary
+      gradient: "bg-primary",
       description: "Browse campus item matches live"
     },
     {
