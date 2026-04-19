@@ -63,7 +63,6 @@ export default function Dashboard() {
 
   const { data: userData } = useDoc(userDocRef)
 
-  // Master Admin Identification Logic
   const adminEmails = ["worker@gmail.com", "forigloohelp@gmail.com", "avtarsingh9528972330@gmail.com"];
   const adminUIDs = ["PX8zNjMWBWTFGYnaYWrtxojquD02", "9Qv4QkTuukaYhr2sggnQmQmqgHu1"];
 
@@ -137,112 +136,113 @@ export default function Dashboard() {
       icon: PlusCircle,
       href: "/report-found",
       gradient: "bg-emerald-600",
-      description: "Help return an item"
+      description: "Help return an item to security"
     },
     {
       title: "Interactive Map",
       icon: MapIcon,
       href: "/map",
       gradient: "bg-primary",
-      description: "Browse campus matches"
+      description: "Browse campus item matches live"
     },
     {
       title: "Campus Gallery",
       icon: Package,
       href: "/gallery",
       gradient: "bg-rose-500", 
-      description: "Browse found & lost items"
+      description: "Browse found & lost items catalog"
     },
     {
       title: "Campus Shop",
       icon: ShoppingBag,
       href: "/shop",
       gradient: "bg-blue-600", 
-      description: "Premium marketplace"
+      description: "Premium marketplace & ad spaces"
     },
     {
       title: "Clock Room",
       icon: Briefcase,
       href: "/clock-room",
       gradient: "bg-orange-600",
-      description: "Secure digital luggage storage"
+      description: "Secure digital luggage storage protocol"
     }
   ]
 
   return (
     <div className="flex flex-col min-h-screen pb-32 bg-background">
-      <div className="gradient-header pt-12 pb-24 px-4 rounded-b-[48px] shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-          <MapIcon size={160} />
+      {/* Expanded Header for Desktop */}
+      <div className="gradient-header pt-12 pb-24 lg:pt-20 lg:pb-40 px-6 rounded-b-[48px] lg:rounded-b-[80px] shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none lg:p-20">
+          <MapIcon size={240} />
         </div>
-        <div className="max-w-md lg:max-w-6xl mx-auto flex flex-col gap-4 relative z-10">
+        <div className="max-w-md lg:max-w-7xl mx-auto flex flex-col gap-4 lg:gap-8 relative z-10">
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <h1 className="text-white text-3xl font-headline font-bold">Lostify</h1>
+              <div className="flex items-center gap-2 lg:gap-4">
+                <h1 className="text-white text-3xl lg:text-6xl font-headline font-bold">Lostify</h1>
                 {isAdmin ? (
-                  <Badge className="bg-accent text-[8px] font-bold h-4">ADMIN</Badge>
+                  <Badge className="bg-accent text-[8px] lg:text-xs font-bold h-4 lg:h-6 px-3">ADMIN</Badge>
                 ) : isGuard ? (
-                  <Badge className="bg-secondary text-[8px] font-bold h-4">GUARD</Badge>
+                  <Badge className="bg-secondary text-[8px] lg:text-xs font-bold h-4 lg:h-6 px-3">GUARD</Badge>
                 ) : null}
               </div>
-              <p className="text-white/80 text-xs font-medium truncate max-w-[200px] lg:max-w-md">
-                Welcome, {userData?.username || user?.displayName || user?.email?.split('@')[0]}
+              <p className="text-white/80 text-xs lg:text-xl font-medium truncate max-w-[200px] lg:max-w-2xl mt-1 lg:mt-3 opacity-90">
+                Welcome back, {userData?.username || user?.displayName || user?.email?.split('@')[0]}
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 lg:gap-6">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="bg-white/20 p-0.5 rounded-full hover:bg-white/30 transition-colors">
-                    <Avatar className="h-10 w-10 border-2 border-white/20">
+                  <button className="bg-white/20 p-0.5 lg:p-1 rounded-full hover:bg-white/30 transition-all hover:scale-105 active:scale-95 shadow-xl">
+                    <Avatar className="h-10 w-10 lg:h-16 lg:w-16 border-2 border-white/20">
                       <AvatarImage src={userData?.photoURL || user?.photoURL} />
-                      <AvatarFallback className="bg-primary text-white text-xs">
+                      <AvatarFallback className="bg-primary text-white text-xs lg:text-xl font-bold">
                         {userData?.username?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 rounded-2xl p-2 mt-2" align="end">
-                  <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-3">Account</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => router.push('/settings/profile')} className="rounded-xl cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>My Profile</span>
+                <DropdownMenuContent className="w-56 lg:w-72 rounded-2xl lg:rounded-3xl p-2 lg:p-4 mt-2 lg:mt-4 shadow-2xl border-none" align="end">
+                  <DropdownMenuLabel className="text-[10px] lg:text-xs uppercase font-bold tracking-widest text-muted-foreground px-3">Account Management</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => router.push('/settings/profile')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 lg:h-14 font-medium">
+                    <User className="mr-3 h-5 w-5 lg:h-6 lg:w-6 text-primary" />
+                    <span className="lg:text-base">My Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl cursor-pointer">
-                    <Package className="mr-2 h-4 w-4" />
-                    <span>My Items</span>
+                  <DropdownMenuItem onClick={() => router.push('/my-items')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 lg:h-14 font-medium">
+                    <Package className="mr-3 h-5 w-5 lg:h-6 lg:w-6 text-primary" />
+                    <span className="lg:text-base">My Items</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/chat')} className="rounded-xl cursor-pointer font-bold text-primary">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    <span>Community Hub</span>
+                  <DropdownMenuItem onClick={() => router.push('/chat')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 lg:h-14 font-bold text-primary">
+                    <MessageSquare className="mr-3 h-5 w-5 lg:h-6 lg:w-6" />
+                    <span className="lg:text-base">Community Hub</span>
                   </DropdownMenuItem>
                   
                   {isGuard && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-secondary px-3">Staff Tools</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl cursor-pointer">
-                        <ShieldCheck className="mr-2 h-4 w-4 text-secondary" />
-                        <span>Guard Station</span>
+                      <DropdownMenuLabel className="text-[10px] lg:text-xs uppercase font-bold tracking-widest text-secondary px-3">Staff Utilities</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => router.push('/guard')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 lg:h-14">
+                        <ShieldCheck className="mr-3 h-5 w-5 lg:h-6 lg:w-6 text-secondary" />
+                        <span className="lg:text-base font-bold text-secondary">Guard Station</span>
                       </DropdownMenuItem>
                     </>
                   )}
                   
                   {isAdmin && (
-                    <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl cursor-pointer">
-                      <LayoutDashboard className="mr-2 h-4 w-4 text-primary" />
-                      <span>Admin Console</span>
+                    <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 lg:h-14">
+                      <LayoutDashboard className="mr-3 h-5 w-5 lg:h-6 lg:w-6 text-primary" />
+                      <span className="lg:text-base font-bold text-primary">Admin Console</span>
                     </DropdownMenuItem>
                   )}
                   
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                  <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-xl lg:rounded-2xl cursor-pointer h-12 lg:h-14">
+                    <Settings className="mr-3 h-5 w-5 lg:h-6 lg:w-6 text-muted-foreground" />
+                    <span className="lg:text-base">Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-destructive font-bold">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                  <DropdownMenuItem onClick={handleLogout} className="rounded-xl lg:rounded-2xl cursor-pointer text-destructive font-bold h-12 lg:h-14">
+                    <LogOut className="mr-3 h-5 w-5 lg:h-6 lg:w-6" />
+                    <span className="lg:text-base">Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -251,40 +251,40 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main className="max-w-md lg:max-w-6xl mx-auto px-4 -mt-16 w-full space-y-6 lg:space-y-12">
-        {/* Banner Carousel - Circular Loop Enabled */}
+      <main className="max-w-md lg:max-w-7xl mx-auto px-6 -mt-16 lg:-mt-32 w-full space-y-8 lg:space-y-16">
+        {/* Banner Carousel - circular */}
         <section className="w-full">
           <Carousel 
-            plugins={[Autoplay({ delay: 4500, stopOnInteraction: false })]} 
+            plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]} 
             opts={{ loop: true }}
-            className="w-full lg:max-w-5xl mx-auto"
+            className="w-full"
           >
             <CarouselContent>
               {isBannersLoading ? (
                 <CarouselItem>
-                  <Skeleton className="w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px]" />
+                  <Skeleton className="w-full h-48 lg:h-[500px] rounded-[32px] lg:rounded-[64px]" />
                 </CarouselItem>
               ) : displayBanners && displayBanners.length > 0 ? (
                 displayBanners.map((banner) => (
                   <CarouselItem key={banner.id}>
                     {banner.targetUrl ? (
                       <a href={banner.targetUrl} target={banner.targetUrl.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer" className="block w-full">
-                        <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl group border border-white/10 active:scale-[0.99] transition-transform">
+                        <div className="relative w-full h-48 lg:h-[500px] rounded-[32px] lg:rounded-[64px] overflow-hidden shadow-2xl group border border-white/10 active:scale-[0.99] transition-all">
                           <Image 
                             src={banner.imageUrl} 
                             alt="Promo Banner" 
                             fill 
-                            className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                            className="object-cover transition-transform duration-1000 group-hover:scale-105" 
                           />
                         </div>
                       </a>
                     ) : (
-                      <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl group border border-white/10">
+                      <div className="relative w-full h-48 lg:h-[500px] rounded-[32px] lg:rounded-[64px] overflow-hidden shadow-2xl group border border-white/10">
                         <Image 
                           src={banner.imageUrl} 
                           alt="Promo Banner" 
                           fill 
-                          className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                          className="object-cover transition-transform duration-1000 group-hover:scale-105" 
                         />
                       </div>
                     )}
@@ -292,10 +292,10 @@ export default function Dashboard() {
                 ))
               ) : (
                 <CarouselItem>
-                   <div className="relative w-full h-48 lg:h-[400px] rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl bg-muted flex items-center justify-center border border-dashed">
+                   <div className="relative w-full h-48 lg:h-[500px] rounded-[32px] lg:rounded-[64px] overflow-hidden shadow-2xl bg-muted flex items-center justify-center border border-dashed">
                       <div className="text-center opacity-30">
-                        <Sparkles className="h-12 w-12 mx-auto mb-2" />
-                        <p className="font-headline font-bold text-xs uppercase tracking-widest">No Banners Active</p>
+                        <Sparkles className="h-12 w-12 lg:h-24 lg:w-24 mx-auto mb-2" />
+                        <p className="font-headline font-bold text-xs lg:text-2xl uppercase tracking-widest">No Banners Active</p>
                       </div>
                    </div>
                 </CarouselItem>
@@ -304,20 +304,26 @@ export default function Dashboard() {
           </Carousel>
         </section>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
+        {/* Dashboard Grid - Website Optimized */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-12 pb-12">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href} className="block group">
               <ThreeDCard 
-                className={item.gradient + " p-4 lg:p-8 h-36 lg:h-56 border-none flex flex-col justify-between group-active:scale-[0.98] transition-transform shadow-2xl shadow-black/5"}
+                className={item.gradient + " p-5 lg:p-10 h-40 lg:h-72 border-none flex flex-col justify-between group-hover:scale-[1.03] active:scale-[0.98] transition-all shadow-2xl shadow-black/10 hover:shadow-primary/20"}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <div className="flex flex-col gap-2 lg:gap-4 text-white">
-                  <div className="bg-white/20 w-fit p-2 lg:p-3 rounded-xl">
-                    <item.icon className="h-4 w-4 lg:h-7 lg:w-7" />
+                <div className="flex flex-col gap-3 lg:gap-6 text-white h-full justify-between">
+                  <div className="bg-white/20 w-fit p-2.5 lg:p-5 rounded-2xl lg:rounded-3xl shadow-lg border border-white/10 backdrop-blur-md">
+                    <item.icon className="h-5 w-5 lg:h-10 lg:w-10" />
                   </div>
                   <div>
-                    <h3 className="text-sm lg:text-2xl font-headline font-bold leading-tight">{item.title}</h3>
-                    <p className="text-[9px] lg:text-sm opacity-80 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
+                    <h3 className="text-sm lg:text-3xl font-headline font-bold leading-tight flex items-center gap-2">
+                      {item.title}
+                      <ChevronRight className="h-4 w-4 lg:h-6 lg:w-6 opacity-0 group-hover:opacity-100 transition-opacity translate-x-[-10px] group-hover:translate-x-0 transition-transform" />
+                    </h3>
+                    <p className="text-[9px] lg:text-base opacity-80 mt-1 lg:mt-3 line-clamp-2 leading-relaxed font-medium">
+                      {item.description}
+                    </p>
                   </div>
                 </div>
               </ThreeDCard>

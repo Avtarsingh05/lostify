@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mail, Lock, ArrowRight, Sparkles, UserIcon, Loader2, Info, CreditCard } from "lucide-react"
+import { Mail, Lock, ArrowRight, Sparkles, UserIcon, Loader2, Info, CreditCard, ShieldCheck, Zap, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,7 +30,6 @@ export default function LoginPage() {
   const [nickname, setNickname] = useState("")
   const [registrationNumber, setRegistrationNumber] = useState("")
 
-  // Branding Integration
   const configRef = useMemoFirebase(() => doc(db, "system", "config"), [db])
   const { data: systemConfig } = useDoc(configRef)
 
@@ -101,7 +100,6 @@ export default function LoginPage() {
     
     setIsLoading(true)
     if (isSignup) {
-      // Store temporary data for the dashboard sync effect
       localStorage.setItem('pending_nickname', nickname)
       localStorage.setItem('pending_regno', registrationNumber)
       initiateEmailSignUp(auth, email, password)
@@ -119,141 +117,187 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-background">
-      <div className="w-full max-w-sm space-y-6 animate-in fade-in zoom-in duration-500">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-background">
+      {/* Desktop Left Side - Website Presence Enhancement */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden gradient-header items-center justify-center p-12">
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <Zap className="absolute top-10 left-10 h-64 w-64" />
+          <ShieldCheck className="absolute bottom-10 right-10 h-80 w-80" />
+        </div>
         
-        <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-[32px] gradient-header shadow-2xl flex items-center justify-center text-white mb-2 rotate-2 hover:rotate-0 transition-transform duration-300 relative overflow-hidden">
-            {systemConfig?.appLogo ? (
-              <Image 
-                src={systemConfig.appLogo} 
-                alt="University Logo" 
-                fill 
-                className="object-cover"
-              />
-            ) : (
-              <Sparkles className="h-10 w-10 lg:h-12 lg:w-12" />
-            )}
+        <div className="relative z-10 max-w-xl space-y-8 text-white">
+          <div className="space-y-4">
+             <div className="w-24 h-24 rounded-[32px] bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-2xl border border-white/30">
+               {systemConfig?.appLogo ? (
+                 <Image src={systemConfig.appLogo} alt="Logo" width={80} height={80} className="object-contain" />
+               ) : (
+                 <Sparkles className="h-12 w-12" />
+               )}
+             </div>
+             <h1 className="text-6xl font-headline font-bold leading-tight">Campus Recovery <br/> Redefined.</h1>
+             <p className="text-xl text-white/80 font-medium leading-relaxed">
+               Lostify leverages artificial intelligence to reconnect students with their missing belongings instantly. Secure, verified, and community-driven.
+             </p>
           </div>
-          <div>
-            <h1 className="text-3xl font-headline font-bold text-primary">Lostify</h1>
-            <p className="text-muted-foreground font-medium text-[10px] uppercase tracking-widest">Premium Lost & Found</p>
+
+          <div className="grid grid-cols-2 gap-6 pt-12 border-t border-white/20">
+             <div className="flex items-center gap-4">
+               <div className="bg-white/10 p-3 rounded-2xl"><ShieldCheck className="h-6 w-6" /></div>
+               <p className="font-bold text-sm">Verified Security Handover</p>
+             </div>
+             <div className="flex items-center gap-4">
+               <div className="bg-white/10 p-3 rounded-2xl"><Zap className="h-6 w-6" /></div>
+               <p className="font-bold text-sm">AI Detail Extraction</p>
+             </div>
+             <div className="flex items-center gap-4">
+               <div className="bg-white/10 p-3 rounded-2xl"><Package className="h-6 w-6" /></div>
+               <p className="font-bold text-sm">30-Day Custody Logic</p>
+             </div>
+             <div className="flex items-center gap-4">
+               <div className="bg-white/10 p-3 rounded-2xl"><CreditCard className="h-6 w-6" /></div>
+               <p className="font-bold text-sm">Secure Shop Payments</p>
+             </div>
           </div>
         </div>
+      </div>
 
-        <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-xl">
-          <CardHeader className="pb-2 pt-6">
-            <div className="flex justify-center mb-4">
-               <h2 className="text-xl font-headline font-bold">
-                 {isSignup ? "Create Account" : "Welcome Back"}
-               </h2>
-            </div>
-            
-            <Tabs defaultValue="email" className="w-full" onValueChange={(v) => setIsSignup(v === 'signup')}>
-              <TabsList className="grid w-full grid-cols-2 rounded-xl p-1 bg-muted h-10">
-                <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Login</TabsTrigger>
-                <TabsTrigger value="signup" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Signup</TabsTrigger>
-              </TabsList>
-              
-              <div className="pt-4 space-y-4">
-                <form onSubmit={handleEmailAuth} className="space-y-4">
-                  {isSignup && (
-                    <>
-                    <div className="space-y-1">
-                      <Label htmlFor="nickname" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Full Name</Label>
-                      <div className="relative group">
-                        <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <Input 
-                          id="nickname" 
-                          placeholder="Your campus name" 
-                          className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
-                          value={nickname}
-                          onChange={(e) => setNickname(e.target.value)}
-                          required 
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="regno" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Registration No.</Label>
-                      <div className="relative group">
-                        <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <Input 
-                          id="regno" 
-                          placeholder="e.g. 12200000" 
-                          className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
-                          value={registrationNumber}
-                          onChange={(e) => setRegistrationNumber(e.target.value)}
-                          required 
-                        />
-                      </div>
-                    </div>
-                    </>
-                  )}
-
-                  <div className="space-y-1">
-                    <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Gmail Address</Label>
-                    <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        placeholder="user@gmail.com" 
-                        className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required 
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center px-1">
-                      <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Password</Label>
-                    </div>
-                    <div className="relative group">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        placeholder="••••••••"
-                        className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1" 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required 
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full h-12 rounded-xl gradient-header font-bold text-sm shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all" disabled={isLoading}>
-                    {isLoading ? "Working..." : (isSignup ? "Join Now" : "Sign In")} 
-                    {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
-                  </Button>
-                </form>
-              </div>
-            </Tabs>
-          </CardHeader>
+      {/* Auth Side */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative">
+        <div className="w-full max-w-sm lg:max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
           
-          <CardContent className="pb-8 pt-4">
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative w-full">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-muted" /></div>
-                <div className="relative flex justify-center text-[8px] uppercase font-bold tracking-[0.2em]"><span className="bg-card px-2 text-muted-foreground/60">OR</span></div>
+          <div className="flex flex-col items-center text-center space-y-2 lg:hidden">
+            <div className="w-20 h-20 rounded-[32px] gradient-header shadow-2xl flex items-center justify-center text-white mb-2 rotate-2 hover:rotate-0 transition-transform duration-300 relative overflow-hidden">
+              {systemConfig?.appLogo ? (
+                <Image src={systemConfig.appLogo} alt="University Logo" fill className="object-cover" />
+              ) : (
+                <Sparkles className="h-10 w-10" />
+              )}
+            </div>
+            <div>
+              <h1 className="text-3xl font-headline font-bold text-primary">Lostify</h1>
+              <p className="text-muted-foreground font-medium text-[10px] uppercase tracking-widest">Premium Lost & Found</p>
+            </div>
+          </div>
+
+          <div className="hidden lg:block mb-8">
+             <h2 className="text-3xl font-headline font-bold">Portal Access</h2>
+             <p className="text-muted-foreground mt-2">Sign in using your official campus credentials.</p>
+          </div>
+
+          <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-xl lg:border lg:border-border/50">
+            <CardHeader className="pb-2 pt-6">
+              <div className="flex justify-center mb-4 lg:hidden">
+                 <h2 className="text-xl font-headline font-bold">
+                   {isSignup ? "Create Account" : "Welcome Back"}
+                 </h2>
               </div>
               
-              <button 
-                type="button"
-                onClick={() => setIsSignup(!isSignup)}
-                className="text-xs font-bold text-primary hover:opacity-80 transition-all underline decoration-primary/30 underline-offset-4"
-              >
-                {isSignup ? "Already have an account? Log In" : "New here? Register Now"}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+              <Tabs defaultValue="email" className="w-full" onValueChange={(v) => setIsSignup(v === 'signup')}>
+                <TabsList className="grid w-full grid-cols-2 rounded-xl p-1 bg-muted h-10">
+                  <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Login</TabsTrigger>
+                  <TabsTrigger value="signup" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Signup</TabsTrigger>
+                </TabsList>
+                
+                <div className="pt-4 space-y-4">
+                  <form onSubmit={handleEmailAuth} className="space-y-4">
+                    {isSignup && (
+                      <>
+                      <div className="space-y-1">
+                        <Label htmlFor="nickname" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Full Name</Label>
+                        <div className="relative group">
+                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input 
+                            id="nickname" 
+                            placeholder="Your campus name" 
+                            className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
+                            value={nickname}
+                            onChange={(e) => setNickname(e.target.value)}
+                            required 
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="regno" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Registration No.</Label>
+                        <div className="relative group">
+                          <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input 
+                            id="regno" 
+                            placeholder="e.g. 12200000" 
+                            className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
+                            value={registrationNumber}
+                            onChange={(e) => setRegistrationNumber(e.target.value)}
+                            required 
+                          />
+                        </div>
+                      </div>
+                      </>
+                    )}
 
-        <div className="pt-4 text-center space-y-1 opacity-40">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
-          <p className="text-[9px] font-medium">Powered by Igloo Enterprises</p>
+                    <div className="space-y-1">
+                      <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Gmail Address</Label>
+                      <div className="relative group">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Input 
+                          id="email" 
+                          type="email" 
+                          placeholder="user@gmail.com" 
+                          className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required 
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center px-1">
+                        <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Password</Label>
+                      </div>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Input 
+                          id="password" 
+                          type="password" 
+                          placeholder="••••••••"
+                          className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1" 
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required 
+                        />
+                      </div>
+                    </div>
+
+                    <Button type="submit" className="w-full h-12 lg:h-14 rounded-xl gradient-header font-bold text-sm shadow-lg hover:scale-[1.02] active:scale-[0.99] transition-all" disabled={isLoading}>
+                      {isLoading ? "Working..." : (isSignup ? "Join Now" : "Sign In")} 
+                      {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+                    </Button>
+                  </form>
+                </div>
+              </Tabs>
+            </CardHeader>
+            
+            <CardContent className="pb-8 pt-4">
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative w-full">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-muted" /></div>
+                  <div className="relative flex justify-center text-[8px] uppercase font-bold tracking-[0.2em]"><span className="bg-card px-2 text-muted-foreground/60">OR</span></div>
+                </div>
+                
+                <button 
+                  type="button"
+                  onClick={() => setIsSignup(!isSignup)}
+                  className="text-xs font-bold text-primary hover:opacity-80 transition-all underline decoration-primary/30 underline-offset-4"
+                >
+                  {isSignup ? "Already have an account? Log In" : "New here? Register Now"}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="pt-4 text-center space-y-1 opacity-40">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
+            <p className="text-[9px] font-medium">Powered by Igloo Enterprises</p>
+          </div>
         </div>
       </div>
     </div>
