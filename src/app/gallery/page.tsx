@@ -14,7 +14,8 @@ import {
   Loader2,
   AlertTriangle,
   ChevronRight,
-  Filter
+  Filter,
+  Image as ImageIcon
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
