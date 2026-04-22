@@ -1,13 +1,12 @@
 
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Navigation, Search, Filter, MapPin, Loader2, RefreshCw, X, Globe, ShieldCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query } from "firebase/firestore"
 import Image from "next/image"
@@ -16,6 +15,7 @@ import { isBefore, subDays } from "date-fns"
 const LPU_LAT = "31.2555";
 const LPU_LNG = "75.7051";
 
+// FAST O(1) COORDINATE LOOKUP FOR CAMPUS HOTSPOTS
 const LPU_LOCATION_MAP: Record<string, { x: number, y: number }> = {
   "block 34": { x: 48, y: 35 },
   "block 33": { x: 52, y: 38 },
@@ -24,6 +24,11 @@ const LPU_LOCATION_MAP: Record<string, { x: number, y: number }> = {
   "main gate": { x: 15, y: 45 },
   "canteen": { x: 55, y: 42 },
   "library": { x: 42, y: 32 },
+  "bh-1": { x: 20, y: 20 },
+  "bh-2": { x: 22, y: 20 },
+  "bh-3": { x: 24, y: 20 },
+  "gh-1": { x: 80, y: 20 },
+  "gh-2": { x: 82, y: 20 },
 }
 
 function getCoordinates(locationDesc: string = "") {
@@ -31,6 +36,7 @@ function getCoordinates(locationDesc: string = "") {
   for (const [key, coords] of Object.entries(LPU_LOCATION_MAP)) {
     if (normalized.includes(key)) return coords;
   }
+  // Deterministic hash for unknown locations to prevent pin jitter
   const hash = locationDesc.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return { x: 30 + (hash % 40), y: 30 + ((hash * 7) % 40) };
 }
@@ -39,7 +45,6 @@ export default function MapScreen() {
   const router = useRouter()
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
-  const { toast } = useToast()
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -51,16 +56,20 @@ export default function MapScreen() {
 
   const { data: rawItems, isLoading: isItemsLoading } = useCollection(itemsQuery);
 
-  const items = useMemo(() => {
+  // HIGH PERFORMANCE FILTERING (CLIENT SIDE)
+  const filteredItems = useMemo(() => {
     if (!rawItems) return []
     const thirtyDaysAgo = subDays(new Date(), 30)
+    const search = searchQuery.toLowerCase().trim()
+
     return rawItems.filter(item => {
       const isVisible = item.status === "In Custody" || item.type === "lost" || item.status === "Active"
       if (!isVisible) return false
+      
       const reportDate = item.reportedAt ? new Date(item.reportedAt) : new Date()
       if (isBefore(reportDate, thirtyDaysAgo)) return false
-      if (!searchQuery.trim()) return true
-      const search = searchQuery.toLowerCase()
+      
+      if (!search) return true
       return item.name?.toLowerCase().includes(search) || item.locationDescription?.toLowerCase().includes(search)
     })
   }, [rawItems, searchQuery])
@@ -92,10 +101,10 @@ export default function MapScreen() {
         <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
            <div className="flex items-center justify-between px-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nearby Verified Items</p>
-              <Badge variant="outline" className="text-[8px]">{items.length} Active</Badge>
+              <Badge variant="outline" className="text-[8px]">{filteredItems.length} Active</Badge>
            </div>
            
-           {items.map(item => (
+           {filteredItems.map(item => (
              <button 
                key={item.id} 
                onClick={() => setSelectedItem(item)}
@@ -125,7 +134,6 @@ export default function MapScreen() {
 
       {/* MAP AREA */}
       <div className="flex-1 relative">
-        {/* Mobile Header Overlays */}
         <div className="absolute top-0 left-0 right-0 p-4 z-40 lg:hidden pointer-events-none">
            <div className="flex items-center gap-2 pointer-events-auto">
              <button onClick={() => router.back()} className="bg-background/90 backdrop-blur-xl p-3 rounded-2xl shadow-xl"><ArrowLeft className="h-5 w-5" /></button>
@@ -141,7 +149,7 @@ export default function MapScreen() {
            </div>
         </div>
 
-        {/* The Map */}
+        {/* SAT-MAP WITH OPTIMIZED LOADING */}
         <div className="absolute inset-0 z-0">
           <iframe
             src={`https://maps.google.com/maps?q=${LPU_LAT},${LPU_LNG}&ll=${LPU_LAT},${LPU_LNG}&t=k&z=17&ie=UTF8&iwloc=&output=embed`}
@@ -151,8 +159,8 @@ export default function MapScreen() {
           ></iframe>
         </div>
 
-        {/* Pins */}
-        {isMapReady && items.map((item) => {
+        {/* RENDER PINS ONLY WHEN MAP READY */}
+        {isMapReady && filteredItems.map((item) => {
           const { x, y } = getCoordinates(item.locationDescription);
           const isSelected = selectedItem?.id === item.id;
           return (
@@ -171,7 +179,6 @@ export default function MapScreen() {
           );
         })}
 
-        {/* Mobile Detail Sheet */}
         <div className={`absolute bottom-0 left-0 right-0 p-4 transition-transform duration-500 z-40 lg:hidden ${selectedItem ? 'translate-y-[-100px]' : 'translate-y-full'}`}>
            <Card className="max-w-md mx-auto rounded-[32px] shadow-2xl p-5 bg-background/95 backdrop-blur-2xl">
               <div className="flex items-center gap-4">

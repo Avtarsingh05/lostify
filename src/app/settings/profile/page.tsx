@@ -13,6 +13,7 @@ import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase, setDocumentNon
 import { updateProfile } from "firebase/auth"
 import { doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
+import { compressImage } from "@/lib/image-utils"
 
 export default function ProfileSettings() {
   const router = useRouter()
@@ -75,12 +76,23 @@ export default function ProfileSettings() {
 
     setIsLoading(true)
     try {
-      let photoURL = previewUrl || userData?.photoURL || auth.currentUser.photoURL || ""
+      let finalPhotoURL = previewUrl || userData?.photoURL || auth.currentUser.photoURL || ""
 
       if (imageFile) {
         setIsUploading(true)
+        
+        // CLIENT SIDE COMPRESSION BEFORE CLOUDINARY UPLOAD (MAKES IT FAST)
+        const reader = new FileReader()
+        const compressedDataUri = await new Promise<string>((resolve) => {
+          reader.onload = async (e) => {
+            const result = await compressImage(e.target?.result as string, 400, 0.6)
+            resolve(result)
+          }
+          reader.readAsDataURL(imageFile)
+        })
+
         const formData = new FormData()
-        formData.append("file", imageFile)
+        formData.append("file", compressedDataUri)
         formData.append("upload_preset", "admin_banner_upload")
         
         const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, {
@@ -90,7 +102,7 @@ export default function ProfileSettings() {
         
         if (!res.ok) throw new Error("Image upload failed")
         const data = await res.json()
-        photoURL = data.secure_url
+        finalPhotoURL = data.secure_url
         setIsUploading(false)
       }
 
@@ -101,13 +113,13 @@ export default function ProfileSettings() {
         username: nickname,
         phoneNumber: phoneNumber,
         registrationNumber: registrationNumber,
-        photoURL: photoURL,
+        photoURL: finalPhotoURL,
         updatedAt: new Date().toISOString()
       }, { merge: true })
 
       updateProfile(auth.currentUser, {
         displayName: nickname,
-        photoURL: photoURL
+        photoURL: finalPhotoURL
       }).catch(err => console.error("Auth profile update failed:", err))
 
       toast({
@@ -130,7 +142,6 @@ export default function ProfileSettings() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* MOBILE HEADER */}
       <div className="lg:hidden gradient-header pt-10 pb-20 px-4 rounded-b-[40px] shadow-2xl text-white text-center">
         <div className="max-w-md mx-auto flex items-center justify-between mb-6">
           <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
@@ -158,7 +169,6 @@ export default function ProfileSettings() {
         </div>
       </div>
 
-      {/* WEB HEADER */}
       <div className="hidden lg:flex gradient-header pt-24 pb-48 px-10 rounded-b-[80px] shadow-2xl text-white">
         <div className="max-w-7xl mx-auto flex items-center justify-between w-full">
            <div className="flex items-center gap-8">
@@ -176,7 +186,6 @@ export default function ProfileSettings() {
 
       <main className="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-10 -mt-10 lg:-mt-24">
         <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          {/* Avatar Section for Web (Sidebar-like) */}
           <div className="hidden lg:block lg:col-span-4">
              <Card className="border-none shadow-2xl rounded-[48px] overflow-hidden bg-card/80 backdrop-blur-xl p-10 text-center space-y-8 sticky top-32">
                 <div className="relative inline-block mx-auto group">
@@ -203,7 +212,6 @@ export default function ProfileSettings() {
              </Card>
           </div>
 
-          {/* Form Content */}
           <div className="lg:col-span-8 space-y-8">
             <Card className="border-none shadow-xl rounded-[32px] lg:rounded-[48px] overflow-hidden bg-white dark:bg-card">
               <CardHeader className="pb-0 pt-8 px-8 lg:p-12">
