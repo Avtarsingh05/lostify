@@ -113,11 +113,16 @@ export default function OrderHistory() {
 }
 
 function MobileOrderCard({ order }: { order: any }) {
+  // Use fallback if itemImageUrl is missing or empty string to prevent Next.js console errors
+  const displayImage = order.itemImageUrl && order.itemImageUrl !== "" 
+    ? order.itemImageUrl 
+    : "https://picsum.photos/seed/order/200/200";
+
   return (
     <ThreeDCard className="p-0 overflow-hidden shadow-lg bg-card/80 backdrop-blur-sm">
       <div className="p-4 flex gap-4">
         <div className="w-20 h-20 rounded-2xl overflow-hidden relative shrink-0">
-          <Image src={order.itemImageUrl} alt="Item" fill className="object-cover" />
+          <Image src={displayImage} alt="Item" fill className="object-cover" />
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-between">
           <div className="flex justify-between items-start">
@@ -127,7 +132,7 @@ function MobileOrderCard({ order }: { order: any }) {
           <p className="text-[9px] text-muted-foreground font-mono uppercase">#{order.id.slice(-8)}</p>
           <div className="flex justify-between items-end mt-1">
              <Badge className="text-[7px] h-4 bg-secondary">PAID</Badge>
-             <span className="text-[7px] font-bold opacity-40">{formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}</span>
+             <span className="text-[7px] font-bold opacity-40">{order.createdAt ? formatDistanceToNow(new Date(order.createdAt), { addSuffix: true }) : 'Recently'}</span>
           </div>
         </div>
       </div>
@@ -136,11 +141,16 @@ function MobileOrderCard({ order }: { order: any }) {
 }
 
 function WebOrderCard({ order }: { order: any }) {
+  // Use fallback if itemImageUrl is missing or empty string to prevent Next.js console errors
+  const displayImage = order.itemImageUrl && order.itemImageUrl !== "" 
+    ? order.itemImageUrl 
+    : "https://picsum.photos/seed/order/400/300";
+
   return (
     <ThreeDCard className="p-0 overflow-hidden border-none shadow-2xl bg-card/80 backdrop-blur-xl group">
       <div className="flex items-stretch h-48">
         <div className="w-48 relative overflow-hidden shrink-0">
-          <Image src={order.itemImageUrl} alt="Item" fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+          <Image src={displayImage} alt="Item" fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
         </div>
         <div className="flex-1 p-10 flex flex-col justify-between min-w-0">
           <div className="flex justify-between items-start">
@@ -162,7 +172,7 @@ function WebOrderCard({ order }: { order: any }) {
                </div>
                <div className="flex flex-col border-l pl-6">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase">Acquired On</span>
-                  <span className="text-sm font-bold mt-1">{format(new Date(order.createdAt), 'MMMM dd, yyyy')}</span>
+                  <span className="text-sm font-bold mt-1">{order.createdAt ? format(new Date(order.createdAt), 'MMMM dd, yyyy') : 'N/A'}</span>
                </div>
             </div>
             <Button variant="outline" className="rounded-2xl h-12 px-8 font-bold border-2 hover:bg-primary hover:text-white transition-all">Download Receipt</Button>
