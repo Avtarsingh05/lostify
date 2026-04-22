@@ -269,7 +269,7 @@ export default function Dashboard() {
                 displayBanners.map((banner) => (
                   <CarouselItem key={banner.id}>
                     {banner.targetUrl ? (
-                      <Link href={banner.targetUrl} target={banner.targetUrl.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer" className="block w-full">
+                      <Link href={banner.targetUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
                         <div className="relative w-full h-48 rounded-[32px] overflow-hidden shadow-2xl group border border-white/10 active:scale-[0.99] transition-all">
                           <Image src={banner.imageUrl} alt="Promo Banner" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
                         </div>
@@ -324,7 +324,7 @@ export default function Dashboard() {
           <nav className="flex-1 space-y-2">
              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-4 mb-4">Navigation</p>
              {menuItems.map((item, i) => (
-                <Link key={i} href={item.href} className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-primary/5 transition-all group group">
+                <Link key={i} href={item.href} className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-primary/5 transition-all group">
                    <div className={cn("p-2 rounded-xl transition-all shadow-sm group-hover:scale-110", item.gradient === 'gradient-accent' ? 'bg-accent/10 text-accent' : item.gradient.replace('bg-', 'bg-') + '/10 text-' + item.gradient.split('-')[1])}>
                       <item.icon className="h-5 w-5" />
                    </div>
@@ -392,7 +392,7 @@ export default function Dashboard() {
                       <CarouselItem><Skeleton className="w-full h-[440px] rounded-[40px]" /></CarouselItem>
                     ) : displayBanners?.map((banner) => (
                       <CarouselItem key={banner.id}>
-                        <Link href={banner.targetUrl || '#'} className="block">
+                        <Link href={banner.targetUrl || '#'} target="_blank" rel="noopener noreferrer" className="block">
                           <div className="relative w-full h-[440px] rounded-[40px] overflow-hidden shadow-2xl group border border-white/10">
                             <Image src={banner.imageUrl} alt="Banner" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-8">
