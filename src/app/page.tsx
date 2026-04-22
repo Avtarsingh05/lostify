@@ -65,6 +65,8 @@ export default function LoginPage() {
         message = "Password is too short."
       } else if (error.code === 'auth/invalid-email') {
         message = "Invalid email format."
+      } else if (error.code === 'auth/unauthorized-domain') {
+        message = "This domain is not whitelisted. Please add it in Firebase Console."
       }
 
       toast({
@@ -118,6 +120,7 @@ export default function LoginPage() {
   }
 
   const handleGoogleSignIn = () => {
+    if (!auth) return
     setIsLoading(true)
     initiateGoogleSignIn(auth)
   }
