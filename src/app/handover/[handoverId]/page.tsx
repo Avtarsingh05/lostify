@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, use, useMemo, useEffect } from "react"
+import { useState, use, useMemo, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -37,8 +37,7 @@ import { doc } from "firebase/firestore"
 import Image from "next/image"
 import { format } from "date-fns"
 
-export default function HandoverVerification({ params }: { params: Promise<{ handoverId: string }> }) {
-  const { handoverId } = use(params)
+function HandoverContent({ handoverId }: { handoverId: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -207,7 +206,6 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
             </div>
 
             <div className="space-y-6">
-               {/* --- STUDENT INFO --- */}
                <div className="bg-muted/30 p-5 rounded-2xl space-y-4">
                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Student Information</p>
                  <div className="flex items-center gap-4">
@@ -228,7 +226,6 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
                  </div>
                </div>
 
-               {/* --- LUGGAGE / STORAGE INFO --- */}
                {isClockRoom && item && (
                  <div className="bg-orange-500/5 border border-orange-500/10 p-5 rounded-2xl space-y-4">
                    <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Verification Details</p>
@@ -302,5 +299,14 @@ export default function HandoverVerification({ params }: { params: Promise<{ han
         </Card>
       </main>
     </div>
+  )
+}
+
+export default function HandoverVerification({ params }: { params: Promise<{ handoverId: string }> }) {
+  const { handoverId } = use(params)
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <HandoverContent handoverId={handoverId} />
+    </Suspense>
   )
 }

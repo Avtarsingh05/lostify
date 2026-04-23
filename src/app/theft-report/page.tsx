@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -34,7 +34,7 @@ import { compressImage, getDataUriSizeMB } from "@/lib/image-utils"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
-export default function TheftReport() {
+function TheftReportForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -63,7 +63,7 @@ export default function TheftReport() {
 
   useEffect(() => {
     if (!isUserLoading && !user) router.push("/")
-    if (navigator.geolocation) {
+    if (typeof window !== "undefined" && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => console.warn("GPS Access Denied:", err)
@@ -242,5 +242,13 @@ export default function TheftReport() {
       </Dialog>
       <canvas ref={canvasRef} className="hidden" />
     </div>
+  )
+}
+
+export default function TheftReport() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <TheftReportForm />
+    </Suspense>
   )
 }

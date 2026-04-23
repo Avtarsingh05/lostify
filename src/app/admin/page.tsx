@@ -12,35 +12,20 @@ import {
   Send,
   Loader2,
   Search,
-  ShoppingBag,
-  Building,
-  UserCheck,
-  Camera,
   Sparkles,
-  UploadCloud,
   Trash2,
   Clock,
   Image as ImageIcon,
   Plus,
   Package,
-  Briefcase,
   Phone,
   CreditCard,
-  ChevronLeft,
   ChevronRight,
-  Shuffle,
-  Zap,
-  Globe,
   User,
-  MapPin,
-  Mail,
   ShieldCheck,
   Smartphone,
-  ExternalLink,
   Save,
   QrCode,
-  Archive,
-  LayoutGrid,
   ShieldAlert,
   Trophy,
   Megaphone
@@ -75,8 +60,7 @@ import { collection, query, orderBy, doc, increment } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
-import { formatDistanceToNow, format } from "date-fns"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { format } from "date-fns"
 import { sendOneSignalNotification } from "@/app/actions/notifications"
 
 export default function AdminDashboard() {
@@ -291,22 +275,24 @@ export default function AdminDashboard() {
                 {theftReports?.map(report => (
                   <Card key={report.id} className="border-none shadow-xl rounded-[24px] overflow-hidden bg-card/80 backdrop-blur-sm">
                     <div className="aspect-[16/9] relative overflow-hidden bg-muted">
-                      <Image src={report.mediaUrl} alt="Proof" fill className="object-cover" />
+                      {report.mediaUrl && <Image src={report.mediaUrl} alt="Proof" fill className="object-cover" />}
                       <div className="absolute top-3 left-3">
                         <Badge className={`${report.status === 'pending' ? 'bg-orange-500' : report.status === 'verified' ? 'bg-secondary' : 'bg-destructive'} border-none font-bold text-[8px] h-5`}>
-                           {report.status.toUpperCase()}
+                           {report.status?.toUpperCase() || "PENDING"}
                         </Badge>
                       </div>
                     </div>
                     <CardContent className="p-4 space-y-3">
                        <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-bold text-xs leading-tight line-clamp-1">{report.locationName}</h3>
-                            <p className="text-[8px] text-muted-foreground mt-0.5">{format(new Date(report.timestamp), 'MMM dd, HH:mm')}</p>
+                            <h3 className="font-bold text-xs leading-tight line-clamp-1">{report.locationName || "No Location"}</h3>
+                            <p className="text-[8px] text-muted-foreground mt-0.5">
+                              {report.timestamp ? format(new Date(report.timestamp), 'MMM dd, HH:mm') : "Recent"}
+                            </p>
                           </div>
                           <Badge variant="outline" className="text-[7px] h-4 px-1.5">{report.itemType === 'clock' ? 'CLOCK' : 'LOST'}</Badge>
                        </div>
-                       <p className="text-[10px] text-muted-foreground italic line-clamp-2 leading-relaxed">"{report.description}"</p>
+                       <p className="text-[10px] text-muted-foreground italic line-clamp-2 leading-relaxed">"{report.description || "No description provided."}"</p>
                        <div className="flex gap-2 pt-1">
                           <Button onClick={() => handleVerifyTheft(report.id, report.reporterId, 'verified')} disabled={report.status !== 'pending'} className="flex-1 rounded-lg h-8 bg-secondary text-[9px] font-bold">Verify & Reward</Button>
                           <Button onClick={() => handleVerifyTheft(report.id, report.reporterId, 'rejected')} disabled={report.status !== 'pending'} variant="outline" className="flex-1 rounded-lg h-8 text-[9px] font-bold border-destructive text-destructive">Reject</Button>
@@ -314,7 +300,7 @@ export default function AdminDashboard() {
                     </CardContent>
                   </Card>
                 ))}
-                {theftReports?.length === 0 && <div className="col-span-full py-20 text-center opacity-30"><ShieldAlert className="h-12 w-12 mx-auto mb-4" /><p className="font-bold uppercase tracking-widest">No theft reports active</p></div>}
+                {(!theftReports || theftReports.length === 0) && <div className="col-span-full py-20 text-center opacity-30"><ShieldAlert className="h-12 w-12 mx-auto mb-4" /><p className="font-bold uppercase tracking-widest">No theft reports active</p></div>}
              </div>
           </TabsContent>
 
@@ -326,13 +312,13 @@ export default function AdminDashboard() {
              <div className="grid grid-cols-3 gap-6">
                 {filteredUsers?.map(u => (
                   <Card key={u.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-4">
-                     <Avatar className="h-12 w-12"><AvatarImage src={u.photoURL} /><AvatarFallback>{u.username?.charAt(0)}</AvatarFallback></Avatar>
+                     <Avatar className="h-12 w-12"><AvatarImage src={u.photoURL} /><AvatarFallback className="bg-primary/10 text-primary font-bold">{u.username?.charAt(0)}</AvatarFallback></Avatar>
                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-sm truncate">{u.username}</h3>
+                        <h3 className="font-bold text-sm truncate">{u.username || "Anonymous"}</h3>
                         <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge className="bg-primary/10 text-primary text-[8px] font-bold">{u.points || 0} pts</Badge>
-                          <Badge variant="outline" className="text-[8px]">{u.role}</Badge>
+                          <Badge variant="outline" className="text-[8px]">{u.role || "USER"}</Badge>
                         </div>
                      </div>
                      <Button variant="ghost" size="icon" onClick={() => setViewingUser(u)} className="shrink-0"><Settings className="h-4 w-4" /></Button>
@@ -380,8 +366,8 @@ export default function AdminDashboard() {
           <TabsContent value="branding" className="m-0 grid grid-cols-2 gap-10">
              <Card className="rounded-[48px] p-10 text-center space-y-6">
                 <CardTitle className="flex items-center gap-3 justify-center"><Sparkles className="h-6 w-6 text-primary" /> App Logo</CardTitle>
-                <div className="w-48 h-48 mx-auto rounded-[32px] gradient-header flex items-center justify-center overflow-hidden">
-                  {logoPreview || systemConfig?.appLogo ? <Image src={logoPreview || systemConfig?.appLogo} alt="Logo" width={192} height={192} className="object-cover" /> : <Sparkles className="h-12 w-12 text-white" />}
+                <div className="w-48 h-48 mx-auto rounded-[32px] gradient-header flex items-center justify-center overflow-hidden relative">
+                  {logoPreview || systemConfig?.appLogo ? <Image src={logoPreview || systemConfig?.appLogo} alt="Logo" fill className="object-cover" /> : <Sparkles className="h-12 w-12 text-white" />}
                 </div>
                 <input type="file" ref={logoInputRef} className="hidden" onChange={e => { const f = e.target.files?.[0]; if(f){ setLogoFile(f); setLogoPreview(URL.createObjectURL(f)) } }} />
                 <div className="flex gap-4">
@@ -392,8 +378,8 @@ export default function AdminDashboard() {
 
              <Card className="rounded-[48px] p-10 text-center space-y-6">
                 <CardTitle className="flex items-center gap-3 justify-center"><QrCode className="h-6 w-6 text-primary" /> Download QR</CardTitle>
-                <div className="w-48 h-48 mx-auto rounded-[32px] bg-muted flex items-center justify-center overflow-hidden">
-                   {qrPreview || systemConfig?.appDownloadQR ? <Image src={qrPreview || systemConfig?.appDownloadQR} alt="QR" width={192} height={192} className="object-cover" /> : <QrCode className="h-12 w-12 opacity-20" />}
+                <div className="w-48 h-48 mx-auto rounded-[32px] bg-muted flex items-center justify-center overflow-hidden relative">
+                   {qrPreview || systemConfig?.appDownloadQR ? <Image src={qrPreview || systemConfig?.appDownloadQR} alt="QR" fill className="object-cover" /> : <QrCode className="h-12 w-12 opacity-20" />}
                 </div>
                 <input type="file" ref={qrInputRef} className="hidden" onChange={e => { const f = e.target.files?.[0]; if(f){ setQRFile(f); setQRPreview(URL.createObjectURL(f)) } }} />
                 <div className="flex gap-4">
@@ -457,7 +443,7 @@ export default function AdminDashboard() {
                            </div>
                         </Card>
                       ))}
-                      {banners?.length === 0 && (
+                      {(!banners || banners.length === 0) && (
                         <div className="py-20 text-center opacity-30 bg-muted/10 rounded-[40px] border-4 border-dashed">
                            <Megaphone className="h-12 w-12 mx-auto mb-4" />
                            <p className="font-bold uppercase tracking-widest">No Active Campaigns</p>
@@ -481,12 +467,12 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-6">
                 <Avatar className="h-20 w-20 border-4 border-primary/10 shadow-xl">
                   <AvatarImage src={viewingUser.photoURL} />
-                  <AvatarFallback className="bg-primary text-white text-3xl font-bold">{viewingUser.username?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-white text-3xl font-bold">{viewingUser.username?.charAt(0) || "U"}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-2xl font-bold leading-tight">{viewingUser.username}</h3>
+                  <h3 className="text-2xl font-bold leading-tight">{viewingUser.username || "Anonymous"}</h3>
                   <p className="text-sm text-muted-foreground">{viewingUser.email}</p>
-                  <Badge className="mt-2 bg-primary/10 text-primary border-none font-bold uppercase text-[9px] tracking-widest px-2 h-5">{viewingUser.role}</Badge>
+                  <Badge className="mt-2 bg-primary/10 text-primary border-none font-bold uppercase text-[9px] tracking-widest px-2 h-5">{viewingUser.role || "USER"}</Badge>
                 </div>
               </div>
 
@@ -505,13 +491,15 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-muted/30 p-5 rounded-2xl space-y-1">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Last Active</p>
-                  <p className="text-sm font-bold flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> {viewingUser.updatedAt ? format(new Date(viewingUser.updatedAt), 'MMM dd') : "N/A"}</p>
+                  <p className="text-sm font-bold flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> 
+                    {viewingUser.updatedAt ? format(new Date(viewingUser.updatedAt), 'MMM dd') : "N/A"}
+                  </p>
                 </div>
               </div>
 
               <div className="pt-6 border-t border-dashed">
                 <Button 
-                  onClick={() => { handleToggleRole(viewingUser.id, viewingUser.role); setViewingUser(null); }} 
+                  onClick={() => { handleToggleRole(viewingUser.id, viewingUser.role || "USER"); setViewingUser(null); }} 
                   className="w-full h-14 rounded-2xl font-bold gradient-header shadow-xl"
                   variant={viewingUser.role === 'GUARD' ? 'outline' : 'default'}
                 >
