@@ -17,18 +17,29 @@ import {
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { useAuth, useUser } from "@/firebase"
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { useTheme } from "@/components/theme-provider"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { doc } from "firebase/firestore"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { user } = useUser()
   const auth = useAuth()
+  const db = useFirestore()
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
 
   const [notifications, setNotifications] = useState(true)
+
+  // Fetch live user data for the most up-to-date profile picture
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+
+  const { data: userData } = useDoc(userDocRef)
 
   const handleLogout = async () => {
     try {
@@ -80,18 +91,26 @@ export default function SettingsPage() {
         <Card className="border-none shadow-xl rounded-[32px] overflow-hidden">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-xl text-primary border-2 border-primary/20">
-                {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
-              </div>
-              <div className="flex-1">
+              <Avatar className="h-16 w-16 rounded-2xl border-2 border-primary/20 shadow-lg">
+                <AvatarImage src={userData?.photoURL || user?.photoURL || ""} />
+                <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
+                  {userData?.username?.charAt(0).toUpperCase() || user?.displayName?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
                 <h2 className="font-headline font-bold text-lg leading-tight truncate">
-                  {user?.displayName || "Campus User"}
+                  {userData?.username || user?.displayName || "Campus User"}
                 </h2>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                <div className="flex items-center gap-2 mt-1">
+                   <span className="text-[8px] font-bold uppercase tracking-widest bg-primary/5 text-primary px-2 py-0.5 rounded-full border border-primary/10">
+                     {userData?.registrationNumber || 'Student'}
+                   </span>
+                </div>
               </div>
               <button 
                 onClick={() => router.push('/settings/profile')}
-                className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
+                className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline shrink-0"
               >
                 Edit
               </button>
