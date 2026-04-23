@@ -53,6 +53,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { 
   useFirestore, 
   useCollection, 
   useMemoFirebase, 
@@ -84,6 +92,7 @@ export default function AdminDashboard() {
   const [isPushing, setIsPushing] = useState(false)
 
   const [userSearch, setUserSearch] = useState("")
+  const [viewingUser, setViewingUser] = useState<any | null>(null)
 
   const [isUploading, setIsUploading] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -280,27 +289,27 @@ export default function AdminDashboard() {
           <TabsContent value="theft" className="m-0 space-y-6">
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {theftReports?.map(report => (
-                  <Card key={report.id} className="border-none shadow-xl rounded-[32px] overflow-hidden bg-card/80 backdrop-blur-sm">
-                    <div className="aspect-video relative overflow-hidden bg-muted">
+                  <Card key={report.id} className="border-none shadow-xl rounded-[24px] overflow-hidden bg-card/80 backdrop-blur-sm">
+                    <div className="aspect-[16/9] relative overflow-hidden bg-muted">
                       <Image src={report.mediaUrl} alt="Proof" fill className="object-cover" />
-                      <div className="absolute top-4 left-4">
-                        <Badge className={`${report.status === 'pending' ? 'bg-orange-500' : report.status === 'verified' ? 'bg-secondary' : 'bg-destructive'} border-none font-bold`}>
+                      <div className="absolute top-3 left-3">
+                        <Badge className={`${report.status === 'pending' ? 'bg-orange-500' : report.status === 'verified' ? 'bg-secondary' : 'bg-destructive'} border-none font-bold text-[8px] h-5`}>
                            {report.status.toUpperCase()}
                         </Badge>
                       </div>
                     </div>
-                    <CardContent className="p-6 space-y-4">
+                    <CardContent className="p-4 space-y-3">
                        <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-bold text-sm leading-tight">{report.locationName}</h3>
-                            <p className="text-[10px] text-muted-foreground mt-1">{format(new Date(report.timestamp), 'MMM dd, HH:mm')}</p>
+                            <h3 className="font-bold text-xs leading-tight line-clamp-1">{report.locationName}</h3>
+                            <p className="text-[8px] text-muted-foreground mt-0.5">{format(new Date(report.timestamp), 'MMM dd, HH:mm')}</p>
                           </div>
-                          <Badge variant="outline" className="text-[8px]">{report.itemType === 'clock' ? 'CLOCK ROOM' : 'LOST ITEM'}</Badge>
+                          <Badge variant="outline" className="text-[7px] h-4 px-1.5">{report.itemType === 'clock' ? 'CLOCK' : 'LOST'}</Badge>
                        </div>
-                       <p className="text-xs text-muted-foreground italic line-clamp-3">"{report.description}"</p>
-                       <div className="flex gap-2 pt-2">
-                          <Button onClick={() => handleVerifyTheft(report.id, report.reporterId, 'verified')} disabled={report.status !== 'pending'} className="flex-1 rounded-xl h-10 bg-secondary text-[10px] font-bold">Verify & Reward</Button>
-                          <Button onClick={() => handleVerifyTheft(report.id, report.reporterId, 'rejected')} disabled={report.status !== 'pending'} variant="outline" className="flex-1 rounded-xl h-10 text-[10px] font-bold border-destructive text-destructive">Reject</Button>
+                       <p className="text-[10px] text-muted-foreground italic line-clamp-2 leading-relaxed">"{report.description}"</p>
+                       <div className="flex gap-2 pt-1">
+                          <Button onClick={() => handleVerifyTheft(report.id, report.reporterId, 'verified')} disabled={report.status !== 'pending'} className="flex-1 rounded-lg h-8 bg-secondary text-[9px] font-bold">Verify & Reward</Button>
+                          <Button onClick={() => handleVerifyTheft(report.id, report.reporterId, 'rejected')} disabled={report.status !== 'pending'} variant="outline" className="flex-1 rounded-lg h-8 text-[9px] font-bold border-destructive text-destructive">Reject</Button>
                        </div>
                     </CardContent>
                   </Card>
@@ -326,7 +335,7 @@ export default function AdminDashboard() {
                           <Badge variant="outline" className="text-[8px]">{u.role}</Badge>
                         </div>
                      </div>
-                     <Button variant="ghost" size="icon" onClick={() => handleToggleRole(u.id, u.role)} className="shrink-0"><Settings className="h-4 w-4" /></Button>
+                     <Button variant="ghost" size="icon" onClick={() => setViewingUser(u)} className="shrink-0"><Settings className="h-4 w-4" /></Button>
                   </Card>
                 ))}
              </div>
@@ -460,6 +469,60 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog open={!!viewingUser} onOpenChange={() => setViewingUser(null)}>
+        <DialogContent className="rounded-[32px] p-8 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-headline font-bold">User Registry Details</DialogTitle>
+            <DialogDescription className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Verification & Identity Audit</DialogDescription>
+          </DialogHeader>
+          {viewingUser && (
+            <div className="space-y-8 pt-6">
+              <div className="flex items-center gap-6">
+                <Avatar className="h-20 w-20 border-4 border-primary/10 shadow-xl">
+                  <AvatarImage src={viewingUser.photoURL} />
+                  <AvatarFallback className="bg-primary text-white text-3xl font-bold">{viewingUser.username?.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-2xl font-bold leading-tight">{viewingUser.username}</h3>
+                  <p className="text-sm text-muted-foreground">{viewingUser.email}</p>
+                  <Badge className="mt-2 bg-primary/10 text-primary border-none font-bold uppercase text-[9px] tracking-widest px-2 h-5">{viewingUser.role}</Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-muted/30 p-5 rounded-2xl space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Registration ID</p>
+                  <p className="text-sm font-bold flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> {viewingUser.registrationNumber || "Unverified"}</p>
+                </div>
+                <div className="bg-muted/30 p-5 rounded-2xl space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Phone Number</p>
+                  <p className="text-sm font-bold flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> {viewingUser.phoneNumber || "No Data"}</p>
+                </div>
+                <div className="bg-muted/30 p-5 rounded-2xl space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Reward Ledger</p>
+                  <p className="text-sm font-bold flex items-center gap-2"><Trophy className="h-4 w-4 text-accent" /> {viewingUser.points || 0} pts</p>
+                </div>
+                <div className="bg-muted/30 p-5 rounded-2xl space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Last Active</p>
+                  <p className="text-sm font-bold flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> {viewingUser.updatedAt ? format(new Date(viewingUser.updatedAt), 'MMM dd') : "N/A"}</p>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-dashed">
+                <Button 
+                  onClick={() => { handleToggleRole(viewingUser.id, viewingUser.role); setViewingUser(null); }} 
+                  className="w-full h-14 rounded-2xl font-bold gradient-header shadow-xl"
+                  variant={viewingUser.role === 'GUARD' ? 'outline' : 'default'}
+                >
+                  Promote to {viewingUser.role === 'GUARD' ? 'REGULAR STUDENT' : 'CAMPUS GUARD'}
+                </Button>
+                <p className="text-[9px] text-center text-muted-foreground mt-4 italic">Security Note: Role changes are logged and impact system-wide permissions instantly.</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
