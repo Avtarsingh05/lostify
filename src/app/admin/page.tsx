@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef } from "react"
@@ -43,7 +42,8 @@ import {
   Archive,
   LayoutGrid,
   ShieldAlert,
-  Trophy
+  Trophy,
+  Megaphone
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -181,19 +181,6 @@ export default function AdminDashboard() {
     } finally { setIsUploading(false) }
   }
 
-  const handleSaveQR = async () => {
-    if (!qrFile || !db) return
-    setIsUploadingQR(true)
-    try {
-      const formData = new FormData(); formData.append("file", qrFile); formData.append("upload_preset", "admin_banner_upload");
-      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, { method: "POST", body: formData })
-      if (!res.ok) throw new Error("Upload failed")
-      const data = await res.json()
-      setDocumentNonBlocking(configRef, { appDownloadQR: data.secure_url, updatedAt: new Date().toISOString() }, { merge: true })
-      toast({ title: "QR Updated" }); setQRFile(null)
-    } finally { setIsUploadingQR(false) }
-  }
-
   const handleSaveBanner = async () => {
     if (!bannerFile || !db) return
     setIsUploadingBanner(true)
@@ -205,6 +192,12 @@ export default function AdminDashboard() {
       addDocumentNonBlocking(collection(db, "banners"), { imageUrl: data.secure_url, targetUrl: bannerLink || "", createdAt: new Date().toISOString(), position: banners?.length || 0 })
       toast({ title: "Banner Live" }); setBannerFile(null); setBannerPreview(""); setBannerLink("")
     } finally { setIsUploadingBanner(false) }
+  }
+
+  const handleDeleteBanner = (bannerId: string) => {
+    if (!db) return
+    deleteDocumentNonBlocking(doc(db, "banners", bannerId))
+    toast({ title: "Banner Removed" })
   }
 
   const filteredUsers = allUsers?.filter(u => 
@@ -320,6 +313,42 @@ export default function AdminDashboard() {
              </div>
           </TabsContent>
 
+          <TabsContent value="push" className="m-0">
+            <Card className="max-w-2xl mx-auto rounded-[48px] p-10 space-y-8">
+              <div className="text-center space-y-2">
+                 <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto"><Bell className="h-8 w-8 text-primary" /></div>
+                 <h2 className="text-2xl font-headline font-bold">Broadcast Push Alert</h2>
+                 <p className="text-sm text-muted-foreground">Instantly notify all users or a specific student via OneSignal</p>
+              </div>
+              <form onSubmit={handleSendPushNotification} className="space-y-6">
+                 <div className="space-y-2">
+                   <Label className="text-xs font-bold">Notification Title</Label>
+                   <Input value={notifTitle} onChange={(e) => setNotifTitle(e.target.value)} placeholder="e.g. Item Found!" className="rounded-xl h-12" required />
+                 </div>
+                 <div className="space-y-2">
+                   <Label className="text-xs font-bold">Message Body</Label>
+                   <Input value={notifMessage} onChange={(e) => setNotifMessage(e.target.value)} placeholder="A wallet was found in Block 34..." className="rounded-xl h-12" required />
+                 </div>
+                 <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl">
+                    <div className="space-y-0.5">
+                       <p className="text-xs font-bold">Broadcast to Everyone</p>
+                       <p className="text-[10px] text-muted-foreground">Toggle off to target a specific User ID</p>
+                    </div>
+                    <Switch checked={sendToAll} onCheckedChange={setSendToAll} />
+                 </div>
+                 {!sendToAll && (
+                   <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                     <Label className="text-xs font-bold">Target User ID</Label>
+                     <Input value={notifTargetId} onChange={(e) => setNotifTargetId(e.target.value)} placeholder="Paste Firebase UID here" className="rounded-xl h-12" />
+                   </div>
+                 )}
+                 <Button type="submit" disabled={isPushing} className="w-full h-14 rounded-2xl font-bold gradient-header shadow-xl">
+                    {isPushing ? <Loader2 className="animate-spin" /> : <><Send className="h-5 w-5 mr-2" /> Send via OneSignal</>}
+                 </Button>
+              </form>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="branding" className="m-0 grid grid-cols-2 gap-10">
              <Card className="rounded-[48px] p-10 text-center space-y-6">
                 <CardTitle className="flex items-center gap-3 justify-center"><Sparkles className="h-6 w-6 text-primary" /> App Logo</CardTitle>
@@ -332,6 +361,83 @@ export default function AdminDashboard() {
                   <Button onClick={handleSaveLogo} disabled={!logoFile || isUploading} className="flex-1 rounded-2xl h-12 gradient-header">{isUploading ? <Loader2 className="animate-spin" /> : "Save"}</Button>
                 </div>
              </Card>
+
+             <Card className="rounded-[48px] p-10 text-center space-y-6">
+                <CardTitle className="flex items-center gap-3 justify-center"><QrCode className="h-6 w-6 text-primary" /> Download QR</CardTitle>
+                <div className="w-48 h-48 mx-auto rounded-[32px] bg-muted flex items-center justify-center overflow-hidden">
+                   {qrPreview || systemConfig?.appDownloadQR ? <Image src={qrPreview || systemConfig?.appDownloadQR} alt="QR" width={192} height={192} className="object-cover" /> : <QrCode className="h-12 w-12 opacity-20" />}
+                </div>
+                <input type="file" ref={qrInputRef} className="hidden" onChange={e => { const f = e.target.files?.[0]; if(f){ setQRFile(f); setQRPreview(URL.createObjectURL(f)) } }} />
+                <div className="flex gap-4">
+                  <Button onClick={() => qrInputRef.current?.click()} variant="outline" className="flex-1 rounded-2xl h-12">Choose</Button>
+                  <Button onClick={handleSaveQR} disabled={!qrFile || isUploadingQR} className="flex-1 rounded-2xl h-12 gradient-header">{isUploadingQR ? <Loader2 className="animate-spin" /> : "Save"}</Button>
+                </div>
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="banners" className="m-0 space-y-10">
+             <div className="grid grid-cols-12 gap-10">
+                <div className="col-span-4">
+                   <Card className="rounded-[40px] p-10 space-y-6 bg-card border-none shadow-xl sticky top-10">
+                      <h2 className="text-xl font-headline font-bold flex items-center gap-2"><Megaphone className="h-6 w-6 text-primary" /> Create Campaign</h2>
+                      <div className="space-y-4">
+                         <div 
+                           onClick={() => bannerInputRef.current?.click()}
+                           className="aspect-video w-full rounded-2xl border-2 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-all overflow-hidden relative"
+                         >
+                            {bannerPreview ? <Image src={bannerPreview} alt="Preview" fill className="object-cover" /> : (
+                              <>
+                                <ImageIcon className="h-8 w-8 text-primary/40" />
+                                <p className="text-[10px] font-bold uppercase mt-2">1200 x 600 suggested</p>
+                              </>
+                            )}
+                         </div>
+                         <input type="file" ref={bannerInputRef} className="hidden" onChange={e => { const f = e.target.files?.[0]; if(f){ setBannerFile(f); setBannerPreview(URL.createObjectURL(f)) } }} />
+                         
+                         <div className="space-y-1.5">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Target URL (Optional)</Label>
+                            <Input value={bannerLink} onChange={(e) => setBannerLink(e.target.value)} placeholder="https://..." className="rounded-xl h-12" />
+                         </div>
+
+                         <Button onClick={handleSaveBanner} disabled={!bannerFile || isUploadingBanner} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-xl">
+                            {isUploadingBanner ? <Loader2 className="animate-spin" /> : "Deploy Banner"}
+                         </Button>
+                      </div>
+                   </Card>
+                </div>
+
+                <div className="col-span-8">
+                   <div className="grid grid-cols-1 gap-6">
+                      {banners?.map((banner) => (
+                        <Card key={banner.id} className="rounded-[32px] overflow-hidden border-none shadow-lg bg-card/80 flex items-center group">
+                           <div className="w-64 aspect-video relative overflow-hidden shrink-0">
+                              <Image src={banner.imageUrl} alt="Banner" fill className="object-cover" />
+                           </div>
+                           <div className="flex-1 p-8 flex items-center justify-between">
+                              <div className="space-y-1">
+                                 <p className="text-[10px] font-bold text-muted-foreground uppercase">Target Link</p>
+                                 <p className="text-sm font-bold truncate max-w-[300px]">{banner.targetUrl || "None"}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <Button variant="ghost" size="icon" onClick={() => handleDeleteBanner(banner.id)} className="h-12 w-12 rounded-xl text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="h-6 w-6" />
+                                 </Button>
+                                 <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <ChevronRight className="h-6 w-6" />
+                                 </div>
+                              </div>
+                           </div>
+                        </Card>
+                      ))}
+                      {banners?.length === 0 && (
+                        <div className="py-20 text-center opacity-30 bg-muted/10 rounded-[40px] border-4 border-dashed">
+                           <Megaphone className="h-12 w-12 mx-auto mb-4" />
+                           <p className="font-bold uppercase tracking-widest">No Active Campaigns</p>
+                        </div>
+                      )}
+                   </div>
+                </div>
+             </div>
           </TabsContent>
         </Tabs>
       </main>
