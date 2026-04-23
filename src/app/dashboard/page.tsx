@@ -447,6 +447,15 @@ export default function Dashboard() {
                   ))}
                 </div>
              </section>
+
+             <footer className="pt-20 pb-10 border-t border-dashed flex flex-col md:flex-row items-center justify-between gap-6">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">© 2025 Lostify Recovery Network</p>
+                <div className="flex items-center gap-8">
+                  <Link href="/terms" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest hover:text-primary transition-colors">Terms of Service</Link>
+                  <Link href="/privacy" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest hover:text-primary transition-colors">Privacy Policy</Link>
+                  <Link href="/help" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest hover:text-primary transition-colors">Help Center</Link>
+                </div>
+             </footer>
           </div>
         </main>
       </div>
