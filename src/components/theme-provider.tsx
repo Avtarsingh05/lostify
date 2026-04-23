@@ -11,13 +11,24 @@ const ThemeContext = createContext<{
 } | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Initialize with 'light' to match server-side rendering
   const [theme, setThemeState] = useState<Theme>('light');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Force light mode on initial load as requested
-    setThemeState('light');
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
+    // Check for saved theme in localStorage on mount
+    const savedTheme = localStorage.getItem('theme') as Theme | null;
+    
+    if (savedTheme) {
+      setThemeState(savedTheme);
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    } else {
+      // If no preference saved, default to light
+      setThemeState('light');
+      document.documentElement.classList.remove('dark');
+    }
+    
+    setMounted(true);
   }, []);
 
   const setTheme = (newTheme: Theme) => {
@@ -26,6 +37,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
+  // Prevent hydration mismatch by not rendering UI that depends on theme until mounted
+  // In this app, we wrap the whole layout, so we just provide the context.
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
