@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText, AlertTriangle, LayoutGrid } from "lucide-react"
+import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText, AlertTriangle, LayoutGrid, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -20,10 +20,11 @@ import { useToast } from "@/hooks/use-toast"
 import { foundItemAIDetails, type FoundItemAIDetailsOutput } from "@/ai/flows/found-item-ai-details-flow"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
 import { compressImage, getDataUriSizeMB } from "@/lib/image-utils"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 export default function ReportFound() {
   const router = useRouter()
@@ -48,6 +49,12 @@ export default function ReportFound() {
   const [guardName, setGuardName] = useState("")
   const [badgeNumber, setBadgeNumber] = useState("")
   const [securityPost, setSecurityPost] = useState("")
+
+  // Camera States
+  const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -57,74 +64,99 @@ export default function ReportFound() {
     if (!isUserLoading && !user) router.push("/")
   }, [user, isUserLoading, router])
 
+  const startCamera = async () => {
+    setIsCameraOpen(true)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      setHasCameraPermission(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Camera Access Denied',
+        description: 'Please enable camera permissions in your browser settings.',
+      });
+    }
+  }
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+    }
+    setIsCameraOpen(false);
+  }
+
+  const capturePhoto = async () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUri = canvas.toDataURL('image/jpeg');
+        processPhoto(dataUri);
+        stopCamera();
+      }
+    }
+  }
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    const initialSizeMB = file.size / (1024 * 1024);
-    if (initialSizeMB > 15) {
-      toast({
-        variant: "destructive",
-        title: "File Too Large",
-        description: `Image size exceeds upload limit. Selected: ${initialSizeMB.toFixed(1)} MB`,
-      });
-      return;
-    }
-
     const reader = new FileReader()
-    reader.onloadend = async () => {
-      const rawDataUri = reader.result as string
-      
-      setIsScanning(true)
-      try {
-        const compressedUri = await compressImage(rawDataUri)
-        const finalSizeMB = getDataUriSizeMB(compressedUri)
-
-        if (finalSizeMB > 1.0) {
-          toast({
-            variant: "destructive",
-            title: "Upload Rejected",
-            description: `Image size exceeds 1MB limit. Selected: ${finalSizeMB.toFixed(1)} MB`,
-          })
-          setIsScanning(false)
-          return
-        }
-
-        setPreviewImage(compressedUri)
-
-        // 5-SECOND AI TIMEOUT AS REQUESTED
-        const aiPromise = foundItemAIDetails({ photoDataUri: compressedUri });
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('AI Timeout')), 5000));
-
-        const result = await Promise.race([aiPromise, timeoutPromise]) as FoundItemAIDetailsOutput;
-        
-        if (!itemName) setItemName(result.itemName)
-        if (!category) setCategory(result.category.toLowerCase())
-        if (!description) setDescription(result.attributes.join(", "))
-        
-        toast({
-          title: "AI Analysis Complete",
-          description: "Details identified automatically.",
-        })
-      } catch (error: any) {
-        toast({
-          title: error.message === 'AI Timeout' ? "AI Slow" : "Processing Partial",
-          description: error.message === 'AI Timeout' ? "Please fill details manually for faster reporting." : "Could not identify all details. Please fill manually.",
-          variant: "default"
-        })
-      } finally {
-        setIsScanning(false)
-      }
-    }
+    reader.onloadend = () => processPhoto(reader.result as string)
     reader.readAsDataURL(file)
+  }
+
+  const processPhoto = async (rawDataUri: string) => {
+    setIsScanning(true)
+    try {
+      const compressedUri = await compressImage(rawDataUri)
+      const finalSizeMB = getDataUriSizeMB(compressedUri)
+
+      if (finalSizeMB > 1.0) {
+        toast({
+          variant: "destructive",
+          title: "Upload Rejected",
+          description: `Image size exceeds 1MB. Selected: ${finalSizeMB.toFixed(1)} MB`,
+        })
+        setIsScanning(false)
+        return
+      }
+
+      setPreviewImage(compressedUri)
+
+      const aiPromise = foundItemAIDetails({ photoDataUri: compressedUri });
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('AI Timeout')), 5000));
+
+      const result = await Promise.race([aiPromise, timeoutPromise]) as FoundItemAIDetailsOutput;
+      
+      if (!itemName) setItemName(result.itemName)
+      if (!category) setCategory(result.category.toLowerCase())
+      if (!description) setDescription(result.attributes.join(", "))
+      
+      toast({ title: "AI Analysis Complete", description: "Details identified automatically." })
+    } catch (error: any) {
+      toast({
+        title: error.message === 'AI Timeout' ? "AI Slow" : "Processing Partial",
+        description: error.message === 'AI Timeout' ? "Please fill details manually." : "Could not identify all details.",
+      })
+    } finally {
+      setIsScanning(false)
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !db || !hasCompleteProfile) return
-
     setIsSubmitting(true)
-    
     const itemsRef = collection(db, "items")
     const itemData = {
       ownerId: user.uid,
@@ -143,18 +175,12 @@ export default function ReportFound() {
       reportedAt: new Date().toISOString(),
       lastUpdatedAt: new Date().toISOString()
     }
-
     addDocumentNonBlocking(itemsRef, itemData)
       .then(() => {
-        toast({
-          title: "Report Submitted!",
-          description: "Waiting for guard approval to pin on map.",
-        })
+        toast({ title: "Report Submitted!", description: "Waiting for guard approval." })
         router.push("/dashboard")
       })
-      .finally(() => {
-        setIsSubmitting(false)
-      })
+      .finally(() => setIsSubmitting(false))
   }
 
   if (isUserLoading || isDocLoading) {
@@ -164,18 +190,12 @@ export default function ReportFound() {
   if (!hasCompleteProfile) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center space-y-6">
-        <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center">
-          <AlertTriangle className="h-10 w-10 text-accent" />
-        </div>
+        <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center"><AlertTriangle className="h-10 w-10 text-accent" /></div>
         <div className="space-y-2">
           <h2 className="text-2xl font-headline font-bold">Profile Incomplete</h2>
-          <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-            You must provide your <strong>Registration Number</strong> and <strong>Phone Number</strong> in your profile before filing a report.
-          </p>
+          <p className="text-muted-foreground text-sm max-w-xs mx-auto">You must provide your <strong>Registration Number</strong> and <strong>Phone Number</strong> first.</p>
         </div>
-        <Button onClick={() => router.push("/settings/profile")} className="rounded-xl h-12 px-8 gradient-header font-bold">
-          Complete Profile
-        </Button>
+        <Button onClick={() => router.push("/settings/profile")} className="rounded-xl h-12 px-8 gradient-header font-bold">Complete Profile</Button>
       </div>
     )
   }
@@ -184,9 +204,7 @@ export default function ReportFound() {
     <div className="min-h-screen bg-background pb-24">
       <div className="gradient-success pt-10 pb-20 px-4 rounded-b-[40px] shadow-xl text-white">
         <div className="max-w-md mx-auto flex items-center gap-3">
-          <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+          <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full"><ArrowLeft className="h-5 w-5" /></button>
           <h1 className="text-xl font-headline font-bold">Report Found Item</h1>
         </div>
       </div>
@@ -194,16 +212,20 @@ export default function ReportFound() {
       <main className="max-w-md lg:max-w-4xl mx-auto px-4 -mt-10 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none">
-            <CardHeader className="pb-0 pt-8 px-8">
-              <CardTitle className="text-lg font-headline font-bold flex items-center gap-2">
-                <Camera className="h-5 w-5 text-secondary" /> 1. Visual Capture
-              </CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-0 pt-8 px-8"><CardTitle className="text-lg font-headline font-bold flex items-center gap-2"><Camera className="h-5 w-5 text-secondary" /> 1. Visual Capture</CardTitle></CardHeader>
             <CardContent className="p-8 space-y-8">
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="relative w-full aspect-[16/10] rounded-[32px] border-2 border-dashed border-muted-foreground/20 overflow-hidden flex flex-col items-center justify-center bg-muted/30 hover:bg-muted/50 transition-all cursor-pointer group"
-              >
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <Button type="button" onClick={startCamera} variant="outline" className="rounded-xl h-14 border-dashed border-2 flex flex-col items-center justify-center gap-1">
+                  <Camera className="h-5 w-5 text-secondary" />
+                  <span className="text-[10px] font-bold uppercase">Live Camera</span>
+                </Button>
+                <Button type="button" onClick={() => fileInputRef.current?.click()} variant="outline" className="rounded-xl h-14 border-dashed border-2 flex flex-col items-center justify-center gap-1">
+                  <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-[10px] font-bold uppercase">Upload File</span>
+                </Button>
+              </div>
+
+              <div className="relative w-full aspect-[16/10] rounded-[32px] border-2 border-dashed border-muted-foreground/20 overflow-hidden flex flex-col items-center justify-center bg-muted/30">
                 {previewImage ? (
                   <>
                     <Image src={previewImage} alt="Found item" fill className="object-cover" />
@@ -215,12 +237,7 @@ export default function ReportFound() {
                     )}
                   </>
                 ) : (
-                  <>
-                    <div className="bg-white p-5 rounded-full shadow-2xl border border-secondary/10">
-                      <Camera className="h-8 w-8 text-secondary" />
-                    </div>
-                    <p className="mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Snap Evidence Photo</p>
-                  </>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Snap Evidence Photo</p>
                 )}
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
               </div>
@@ -228,24 +245,12 @@ export default function ReportFound() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Item Name</Label>
-                  <Input 
-                    placeholder="e.g. Blue Umbrella" 
-                    className="rounded-xl h-12 bg-muted/20 border-none" 
-                    value={itemName}
-                    onChange={(e) => setItemName(e.target.value)}
-                    required 
-                  />
+                  <Input placeholder="e.g. Blue Umbrella" className="rounded-xl h-12 bg-muted/20 border-none" value={itemName} onChange={(e) => setItemName(e.target.value)} required />
                 </div>
                 <div className="space-y-1.5">
                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Category *</Label>
-                   <Select 
-                     value={category} 
-                     onValueChange={(val) => setCategory(val)} 
-                     required
-                   >
-                     <SelectTrigger className="rounded-xl h-12 bg-muted/20 border-none shadow-none">
-                       <SelectValue placeholder="Select type" />
-                     </SelectTrigger>
+                   <Select value={category} onValueChange={(val) => setCategory(val)} required>
+                     <SelectTrigger className="rounded-xl h-12 bg-muted/20 border-none shadow-none"><SelectValue placeholder="Select type" /></SelectTrigger>
                      <SelectContent className="rounded-2xl">
                        <SelectItem value="electronics">Electronics</SelectItem>
                        <SelectItem value="documents">Documents</SelectItem>
@@ -259,33 +264,18 @@ export default function ReportFound() {
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Found Location</Label>
-                <Input 
-                  placeholder="e.g. Block 34 Canteen" 
-                  className="rounded-xl h-12 bg-muted/20 border-none" 
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  required 
-                />
+                <Input placeholder="e.g. Block 34 Canteen" className="rounded-xl h-12 bg-muted/20 border-none" value={location} onChange={(e) => setLocation(e.target.value)} required />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
-                <Textarea 
-                  placeholder="Identifying marks, brand, or condition..." 
-                  className="rounded-xl min-h-[100px] bg-muted/20 border-none p-4 resize-none leading-relaxed"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
+                <Textarea placeholder="Identifying marks, brand, or condition..." className="rounded-xl min-h-[100px] bg-muted/20 border-none p-4 resize-none leading-relaxed" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
             </CardContent>
           </Card>
 
           <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none bg-white dark:bg-card">
-            <CardHeader className="pb-0 pt-8 px-8">
-              <CardTitle className="text-lg font-headline font-bold flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-primary" /> 2. Security Registry
-              </CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-0 pt-8 px-8"><CardTitle className="text-lg font-headline font-bold flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> 2. Security Registry</CardTitle></CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Guard Name *</Label>
@@ -304,16 +294,25 @@ export default function ReportFound() {
             </CardContent>
           </Card>
 
-          <Button 
-            type="submit" 
-            size="lg" 
-            disabled={isSubmitting} 
-            className="w-full rounded-2xl gradient-success h-16 text-base font-headline font-bold shadow-2xl flex items-center justify-center gap-4"
-          >
+          <Button type="submit" size="lg" disabled={isSubmitting} className="w-full rounded-2xl gradient-success h-16 text-base font-headline font-bold shadow-2xl flex items-center justify-center gap-4">
             {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <><Send className="h-6 w-6" /> Finalize Handover</>}
           </Button>
         </form>
       </main>
+
+      <Dialog open={isCameraOpen} onOpenChange={(open) => !open && stopCamera()}>
+        <DialogContent className="max-w-md rounded-[32px] p-0 overflow-hidden bg-black border-none">
+          <div className="relative aspect-[3/4] w-full">
+            <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+            <div className="absolute top-4 right-4 z-20"><Button variant="ghost" size="icon" onClick={stopCamera} className="text-white bg-black/20 rounded-full"><X className="h-6 w-6" /></Button></div>
+            {hasCameraPermission === false && (
+              <div className="absolute inset-0 flex items-center justify-center p-6 text-center z-10"><Alert variant="destructive"><AlertTitle>Camera Required</AlertTitle><AlertDescription>Access denied. Check browser settings.</AlertDescription></Alert></div>
+            )}
+          </div>
+          <div className="p-8 bg-black flex justify-center"><button onClick={capturePhoto} disabled={!hasCameraPermission} className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center group"><div className="w-16 h-16 rounded-full bg-white group-active:scale-90 transition-transform" /></button></div>
+        </DialogContent>
+      </Dialog>
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }

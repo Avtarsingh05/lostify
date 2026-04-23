@@ -17,7 +17,9 @@ import {
   User,
   Fingerprint,
   CheckCircle2,
-  Lock
+  Lock,
+  X,
+  LayoutGrid
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,6 +31,8 @@ import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase,
 import { collection, doc } from "firebase/firestore"
 import Image from "next/image"
 import { compressImage, getDataUriSizeMB } from "@/lib/image-utils"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function TheftReport() {
   const router = useRouter()
@@ -38,7 +42,7 @@ export default function TheftReport() {
   const db = useFirestore()
   
   const itemId = searchParams.get('itemId')
-  const itemType = searchParams.get('type') || 'lost' // 'lost' or 'clock'
+  const itemType = searchParams.get('type') || 'lost' 
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isProcessingMedia, setIsProcessingMedia] = useState(false)
@@ -48,13 +52,17 @@ export default function TheftReport() {
   const [description, setDescription] = useState("")
   const [suspectDetails, setSuspectDetails] = useState("")
   const [locationName, setLocationName] = useState("")
+
+  // Camera States
+  const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isUserLoading && !user) router.push("/")
-    
-    // Auto-get GPS
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
@@ -63,37 +71,70 @@ export default function TheftReport() {
     }
   }, [user, isUserLoading, router])
 
+  const startCamera = async () => {
+    setIsCameraOpen(true)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      setHasCameraPermission(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setHasCameraPermission(false);
+      toast({ variant: 'destructive', title: 'Camera Error', description: 'Permissions denied.' });
+    }
+  }
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+    }
+    setIsCameraOpen(false);
+  }
+
+  const capturePhoto = async () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUri = canvas.toDataURL('image/jpeg');
+        handleMediaProcessing(dataUri);
+        stopCamera();
+      }
+    }
+  }
+
   const handleMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    const initialSizeMB = file.size / (1024 * 1024);
-    if (initialSizeMB > 15) {
-      toast({ variant: "destructive", title: "File Too Large", description: "Max 15MB allowed." });
-      return;
-    }
-
     const reader = new FileReader()
-    reader.onloadend = async () => {
-      const dataUri = reader.result as string
-      setIsProcessingMedia(true)
-      try {
-        const compressed = await compressImage(dataUri)
-        setPreviewMedia(compressed)
-      } catch (err) {
-        toast({ variant: "destructive", title: "Error", description: "Could not process media." });
-      } finally {
-        setIsProcessingMedia(false)
-      }
-    }
+    reader.onloadend = () => handleMediaProcessing(reader.result as string)
     reader.readAsDataURL(file)
+  }
+
+  const handleMediaProcessing = async (dataUri: string) => {
+    setIsProcessingMedia(true)
+    try {
+      const compressed = await compressImage(dataUri)
+      setPreviewMedia(compressed)
+    } catch (err) {
+      toast({ variant: "destructive", title: "Error", description: "Media failed." });
+    } finally {
+      setIsProcessingMedia(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !db) return
     if (!previewMedia) {
-      toast({ variant: "destructive", title: "Proof Required", description: "Mandatory photo/video proof for security verify." });
+      toast({ variant: "destructive", title: "Proof Required", description: "Mandatory visual proof required." });
       return
     }
 
@@ -115,21 +156,16 @@ export default function TheftReport() {
 
     try {
       await addDocumentNonBlocking(collection(db, "theftReports"), reportData)
-      
-      // IF CLOCK ROOM ITEM, LOCK IT
       if (itemId && itemType === 'clock') {
-        const itemRef = doc(db, "clockRoomItems", itemId)
-        updateDocumentNonBlocking(itemRef, { 
+        updateDocumentNonBlocking(doc(db, "clockRoomItems", itemId), { 
           status: "under_investigation",
           lockReason: "Theft Report Filed",
           lockedAt: new Date().toISOString()
         })
       } else if (itemId && itemType === 'lost') {
-        const itemRef = doc(db, "items", itemId)
-        updateDocumentNonBlocking(itemRef, { status: "Under Investigation" })
+        updateDocumentNonBlocking(doc(db, "items", itemId), { status: "Under Investigation" })
       }
-
-      toast({ title: "Report Submitted", description: "Security notified. Checking proof..." })
+      toast({ title: "Report Live", description: "Security dispatching..." })
       router.push("/dashboard")
     } catch (err) {
       toast({ variant: "destructive", title: "System Error", description: "Could not file report." })
@@ -142,9 +178,7 @@ export default function TheftReport() {
     <div className="min-h-screen bg-background pb-24 overflow-x-hidden">
       <div className="bg-destructive pt-12 pb-24 px-4 rounded-b-[40px] shadow-xl text-white">
         <div className="max-w-md mx-auto flex items-center gap-3">
-          <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+          <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full"><ArrowLeft className="h-5 w-5" /></button>
           <h1 className="text-xl font-headline font-bold">Theft Report Protocol</h1>
         </div>
       </div>
@@ -154,76 +188,59 @@ export default function TheftReport() {
           <CardContent className="p-6 space-y-6">
             <div className="bg-destructive/5 border border-destructive/20 p-4 rounded-2xl flex items-start gap-3">
                <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-               <p className="text-[10px] text-destructive font-bold uppercase tracking-wider leading-relaxed">
-                 Warning: False reporting is a campus offense. Mandatory proof required for +100 point reward.
-               </p>
+               <p className="text-[10px] text-destructive font-bold uppercase tracking-wider leading-relaxed">Mandatory proof required for reward eligibility.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="relative w-full aspect-video rounded-2xl border-4 border-dashed border-destructive/20 overflow-hidden flex flex-col items-center justify-center bg-muted/30 group cursor-pointer"
-              >
+              <div className="grid grid-cols-2 gap-4">
+                <Button type="button" onClick={startCamera} variant="outline" className="rounded-xl h-14 border-destructive/20 text-destructive flex flex-col items-center justify-center gap-1">
+                  <Camera className="h-5 w-5" />
+                  <span className="text-[10px] font-bold uppercase">Evidence Cam</span>
+                </Button>
+                <Button type="button" onClick={() => fileInputRef.current?.click()} variant="outline" className="rounded-xl h-14 border-dashed border-2 flex flex-col items-center justify-center gap-1">
+                  <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-[10px] font-bold uppercase">Attach Media</span>
+                </Button>
+              </div>
+
+              <div className="relative w-full aspect-video rounded-2xl border-4 border-dashed border-destructive/20 overflow-hidden flex flex-col items-center justify-center bg-muted/30">
                 {previewMedia ? (
                   <Image src={previewMedia} alt="Proof" fill className="object-cover" />
                 ) : (
-                  <>
-                    <Camera className="h-10 w-10 text-destructive/40 group-hover:scale-110 transition-transform" />
-                    <p className="mt-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mandatory Evidence</p>
-                  </>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Visual Evidence Required</p>
                 )}
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*" onChange={handleMediaChange} />
               </div>
 
               <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Event Coordinates *</Label>
-                  <Input 
-                    placeholder="e.g. Block 34, 1st Floor Hallway" 
-                    className="rounded-xl h-12 bg-muted/20 border-none" 
-                    value={locationName}
-                    onChange={(e) => setLocationName(e.target.value)}
-                    required 
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Theft Narrative *</Label>
-                  <Textarea 
-                    placeholder="Explain what happened in detail..." 
-                    className="rounded-xl min-h-[120px] bg-muted/20 border-none p-4 resize-none leading-relaxed"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Suspect Details (Optional)</Label>
-                  <Input 
-                    placeholder="Clothes, appearance, direction of flight" 
-                    className="rounded-xl h-12 bg-muted/20 border-none"
-                    value={suspectDetails}
-                    onChange={(e) => setSuspectDetails(e.target.value)}
-                  />
-                </div>
+                <div className="space-y-1.5"><Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Event Coordinates *</Label><Input placeholder="e.g. Block 34, 1st Floor Hallway" className="rounded-xl h-12 bg-muted/20 border-none" value={locationName} onChange={(e) => setLocationName(e.target.value)} required /></div>
+                <div className="space-y-1.5"><Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Theft Narrative *</Label><Textarea placeholder="Explain what happened in detail..." className="rounded-xl min-h-[120px] bg-muted/20 border-none p-4 resize-none leading-relaxed" value={description} onChange={(e) => setDescription(e.target.value)} required /></div>
+                <div className="space-y-1.5"><Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Suspect Details (Optional)</Label><Input placeholder="Appearance, clothing, direction of flight" className="rounded-xl h-12 bg-muted/20 border-none" value={suspectDetails} onChange={(e) => setSuspectDetails(e.target.value)} /></div>
               </div>
 
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || isProcessingMedia}
-                className="w-full h-14 rounded-2xl bg-destructive hover:bg-destructive/90 text-white font-bold shadow-xl shadow-destructive/20 flex items-center justify-center gap-2"
-              >
+              <Button type="submit" disabled={isSubmitting || isProcessingMedia} className="w-full h-14 rounded-2xl bg-destructive hover:bg-destructive/90 text-white font-bold shadow-xl shadow-destructive/20 flex items-center justify-center gap-2">
                 {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ShieldAlert className="h-5 w-5" /> Deploy Emergency Alert</>}
               </Button>
             </form>
           </CardContent>
         </Card>
-
-        <div className="bg-muted/10 p-5 rounded-2xl text-center opacity-40">
-           <p className="text-[8px] font-bold uppercase tracking-[0.2em]">Lostify Security Response Layer v1.0</p>
-        </div>
       </main>
+
+      <Dialog open={isCameraOpen} onOpenChange={(open) => !open && stopCamera()}>
+        <DialogContent className="max-w-md rounded-[32px] p-0 overflow-hidden bg-black border-none">
+          <div className="relative aspect-[3/4] w-full">
+            <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+            <div className="absolute top-4 right-4 z-20"><Button variant="ghost" size="icon" onClick={stopCamera} className="text-white bg-black/20 rounded-full"><X className="h-6 w-6" /></Button></div>
+            {hasCameraPermission === false && (
+              <div className="absolute inset-0 flex items-center justify-center p-6 text-center z-10">
+                <Alert variant="destructive"><AlertTitle>Camera Locked</AlertTitle><AlertDescription>Check browser permissions.</AlertDescription></Alert>
+              </div>
+            )}
+          </div>
+          <div className="p-8 bg-black flex justify-center"><button onClick={capturePhoto} disabled={!hasCameraPermission} className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center group"><div className="w-16 h-16 rounded-full bg-white group-active:scale-90 transition-transform" /></button></div>
+        </DialogContent>
+      </Dialog>
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }
