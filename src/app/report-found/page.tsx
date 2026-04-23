@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText, AlertTriangle } from "lucide-react"
+import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText, AlertTriangle, LayoutGrid } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -55,7 +55,6 @@ export default function ReportFound() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Pre-check for very large files
     const initialSizeMB = file.size / (1024 * 1024);
     if (initialSizeMB > 15) {
       toast({
@@ -187,7 +186,8 @@ export default function ReportFound() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="gradient-success pt-10 pb-20 px-4 rounded-b-[40px] shadow-xl text-white">
+      {/* MOBILE HEADER */}
+      <div className="lg:hidden gradient-success pt-10 pb-20 px-4 rounded-b-[40px] shadow-xl text-white">
         <div className="max-w-md mx-auto flex items-center gap-3">
           <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full">
             <ArrowLeft className="h-5 w-5" />
@@ -196,150 +196,181 @@ export default function ReportFound() {
         </div>
       </div>
 
-      <main className="max-w-md mx-auto px-4 -mt-10 space-y-4">
-        <Alert className="bg-white/95 border-secondary/20 rounded-2xl shadow-lg py-3">
-          <Info className="h-4 w-4 text-secondary" />
-          <AlertDescription className="text-[10px] text-muted-foreground font-medium">
-            Hand over to campus security. The item will appear on the map once verified by a guard.
-          </AlertDescription>
-        </Alert>
+      {/* WEB HEADER */}
+      <div className="hidden lg:flex gradient-success pt-24 pb-48 px-10 rounded-b-[80px] shadow-2xl text-white">
+        <div className="max-w-7xl mx-auto flex items-center justify-between w-full">
+           <div className="flex items-center gap-8">
+              <button onClick={() => router.back()} className="bg-white/20 p-4 rounded-full hover:bg-white/30 transition-all">
+                <ArrowLeft className="h-8 w-8" />
+              </button>
+              <div>
+                <h1 className="text-6xl font-headline font-bold">Handover Protocol</h1>
+                <p className="text-xl text-white/70 mt-2">Professional digital verification for campus security custody</p>
+              </div>
+           </div>
+           <div className="bg-white/20 p-8 rounded-[40px] shadow-2xl border border-white/10"><LayoutGrid className="h-12 w-12 text-white" /></div>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Card className="rounded-[28px] overflow-hidden shadow-xl border-none">
-            <CardHeader className="pb-0 pt-6 px-6">
-              <CardTitle className="text-sm font-headline font-bold flex items-center gap-2">
-                <Camera className="h-4 w-4 text-secondary" /> 1. Item Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="relative w-full aspect-[16/10] rounded-2xl border-2 border-dashed border-muted-foreground/20 overflow-hidden flex flex-col items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-              >
-                {previewImage ? (
-                  <>
-                    <Image src={previewImage} alt="Found item" fill className="object-cover" />
-                    {isScanning && (
-                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center text-white z-10">
-                        <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                        <p className="font-headline font-bold text-[10px] uppercase tracking-widest">Optimizing...</p>
+      <main className="max-w-md lg:max-w-7xl mx-auto px-4 lg:px-10 -mt-10 lg:-mt-24 space-y-6 lg:space-y-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+           {/* Sidebar Widget for Web */}
+           <div className="hidden lg:flex lg:col-span-4 flex-col gap-8">
+              <Card className="rounded-[40px] border-none shadow-2xl overflow-hidden bg-card/80 backdrop-blur-xl p-10 space-y-8">
+                 <div className="space-y-4">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Handover Security</h3>
+                    <div className="flex items-start gap-4">
+                       <div className="bg-secondary/10 p-3 rounded-2xl"><ShieldCheck className="h-6 w-6 text-secondary" /></div>
+                       <p className="text-sm text-muted-foreground leading-relaxed">This report creates a legal digital receipt. Ensure the guard confirms physical receipt of the item.</p>
+                    </div>
+                 </div>
+              </Card>
+
+              <Alert className="bg-secondary/5 border-secondary/20 rounded-[32px] p-8 shadow-xl py-6">
+                <Info className="h-6 w-6 text-secondary" />
+                <AlertDescription className="text-sm font-medium text-secondary/80 mt-2 leading-relaxed">
+                   Reports verified by security personnel are prioritized in the Campus Gallery.
+                </AlertDescription>
+              </Alert>
+           </div>
+
+           {/* Main Form Area */}
+           <div className="lg:col-span-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <Card className="rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl border-none bg-white dark:bg-card">
+                  <CardHeader className="pb-0 pt-8 px-8 lg:p-12">
+                    <CardTitle className="text-xl lg:text-3xl font-headline font-bold flex items-center gap-4">
+                      <Camera className="h-6 w-6 lg:h-10 lg:w-10 text-secondary" /> 1. Visual Capture
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-8 lg:p-12 space-y-8">
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative w-full aspect-[16/10] rounded-[32px] border-4 border-dashed border-muted-foreground/20 overflow-hidden flex flex-col items-center justify-center bg-muted/30 hover:bg-muted/50 transition-all cursor-pointer group"
+                    >
+                      {previewImage ? (
+                        <>
+                          <Image src={previewImage} alt="Found item" fill className="object-cover" />
+                          {isScanning && (
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white z-10">
+                              <Loader2 className="h-10 w-10 animate-spin mb-4" />
+                              <p className="font-headline font-bold text-sm uppercase tracking-widest">GenAI Extraction...</p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="bg-white dark:bg-card p-6 rounded-full shadow-2xl border border-secondary/10 group-hover:scale-110 transition-transform">
+                            <Camera className="h-10 w-10 text-secondary" />
+                          </div>
+                          <p className="mt-4 text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">Snap Evidence Photo</p>
+                        </>
+                      )}
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-1.5 lg:space-y-3">
+                        <Label htmlFor="itemName" className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Item Name</Label>
+                        <div className="relative">
+                          <Input 
+                            id="itemName" 
+                            placeholder={isScanning ? "AI Analyzing..." : "e.g. Blue Umbrella"} 
+                            className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg bg-muted/20 border-none" 
+                            value={itemName}
+                            onChange={(e) => setItemName(e.target.value)}
+                            required 
+                          />
+                          <Sparkles className={`absolute left-3.5 lg:left-5 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-6 lg:w-6 transition-colors ${isScanning ? 'text-secondary animate-pulse' : 'text-muted-foreground/40'}`} />
+                        </div>
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="bg-white dark:bg-card p-3 rounded-full shadow-md">
-                      <Camera className="h-6 w-6 text-secondary" />
+
+                      <div className="space-y-1.5 lg:space-y-3">
+                        <Label htmlFor="foundLocation" className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Found Location</Label>
+                        <div className="relative">
+                          <Input 
+                            id="foundLocation" 
+                            placeholder="e.g. Block 34 Canteen" 
+                            className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg bg-muted/20 border-none" 
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            required 
+                          />
+                          <MapPin className="absolute left-3.5 lg:left-5 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground/40" />
+                        </div>
+                      </div>
                     </div>
-                    <p className="mt-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Snap Photo</p>
-                  </>
-                )}
-                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
-              </div>
 
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="itemName" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Item Name</Label>
-                  <div className="relative">
-                    <Input 
-                      id="itemName" 
-                      placeholder={isScanning ? "AI Analyzing..." : "e.g. Blue Umbrella"} 
-                      className="rounded-xl h-11 pl-9 text-sm" 
-                      value={itemName}
-                      onChange={(e) => setItemName(e.target.value)}
-                      required 
-                    />
-                    <Sparkles className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${isScanning ? 'text-secondary animate-pulse' : 'text-muted-foreground'}`} />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="description" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Physical Description</Label>
-                  <div className="relative">
-                    <Textarea 
-                      id="description" 
-                      placeholder="Add identifying marks or type manually..." 
-                      className="rounded-xl min-h-[80px] pl-9 text-sm resize-none"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                    <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="foundLocation" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Found At</Label>
-                  <div className="relative">
-                    <Input 
-                      id="foundLocation" 
-                      placeholder="e.g. Block 34 Canteen" 
-                      className="rounded-xl h-11 pl-9 text-sm" 
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      required 
-                    />
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-[28px] overflow-hidden shadow-xl border-none">
-            <CardHeader className="pb-0 pt-6 px-6">
-              <CardTitle className="text-sm font-headline font-bold flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary" /> 2. Security Receipt
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="guardName" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Guard Name</Label>
-                  <div className="relative">
-                    <Input id="guardName" placeholder="Guard's full name" className="rounded-xl h-11 pl-9 text-sm" value={guardName} onChange={(e) => setGuardName(e.target.value)} required />
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="guardId" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Badge ID</Label>
-                    <div className="relative">
-                      <Input id="guardId" placeholder="SEC-0000" className="rounded-xl h-11 pl-9 text-xs" value={badgeNumber} onChange={(e) => setBadgeNumber(e.target.value)} required />
-                      <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-1.5 lg:space-y-3">
+                      <Label htmlFor="description" className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Physical Description</Label>
+                      <div className="relative">
+                        <Textarea 
+                          id="description" 
+                          placeholder="Identifying marks, brand, or condition..." 
+                          className="rounded-xl lg:rounded-2xl min-h-[100px] pl-10 lg:pl-14 text-sm lg:text-lg bg-muted/20 border-none p-5 resize-none leading-relaxed"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                        />
+                        <FileText className="absolute left-3.5 lg:left-5 top-6 h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground/40" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="guardPost" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Post Location</Label>
-                    <div className="relative">
-                      <Input id="guardPost" placeholder="e.g. Main Gate" className="rounded-xl h-11 pl-9 text-xs" value={securityPost} onChange={(e) => setSecurityPost(e.target.value)} required />
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-[32px] lg:rounded-[48px] overflow-hidden shadow-2xl border-none bg-white dark:bg-card">
+                  <CardHeader className="pb-0 pt-8 px-8 lg:p-12">
+                    <CardTitle className="text-xl lg:text-3xl font-headline font-bold flex items-center gap-4">
+                      <ShieldCheck className="h-6 w-6 lg:h-10 lg:w-10 text-primary" /> 2. Security Registry
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-8 lg:p-12 space-y-8">
+                    <div className="space-y-1.5 lg:space-y-3">
+                      <Label htmlFor="guardName" className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Guard Name *</Label>
+                      <div className="relative">
+                        <Input id="guardName" placeholder="Name on badge" className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg bg-muted/20 border-none" value={guardName} onChange={(e) => setGuardName(e.target.value)} required />
+                        <User className="absolute left-3.5 lg:left-5 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground/40" />
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-1.5 lg:space-y-3">
+                        <Label htmlFor="guardId" className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Badge Number *</Label>
+                        <div className="relative">
+                          <Input id="guardId" placeholder="SEC-0000" className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg bg-muted/20 border-none" value={badgeNumber} onChange={(e) => setBadgeNumber(e.target.value)} required />
+                          <Fingerprint className="absolute left-3.5 lg:left-5 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground/40" />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 lg:space-y-3">
+                        <Label htmlFor="guardPost" className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Assigned Post *</Label>
+                        <div className="relative">
+                          <Input id="guardPost" placeholder="e.g. Main Gate" className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg bg-muted/20 border-none" value={securityPost} onChange={(e) => setSecurityPost(e.target.value)} required />
+                          <MapPin className="absolute left-3.5 lg:left-5 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground/40" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-          <Button 
-            type="submit" 
-            size="lg" 
-            disabled={isSubmitting} 
-            className="w-full rounded-2xl gradient-success h-14 text-sm font-headline font-bold shadow-xl flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                <Send className="h-4 w-4" /> Log Secure Handover
-              </>
-            )}
-          </Button>
-
-          <div className="pt-8 pb-4 text-center space-y-1 opacity-40">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
-            <p className="text-[9px] font-medium">Powered by Igloo Enterprises</p>
-          </div>
-        </form>
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  disabled={isSubmitting} 
+                  className="w-full rounded-3xl lg:rounded-[40px] gradient-success h-16 lg:h-24 text-base lg:text-2xl font-headline font-bold shadow-2xl flex items-center justify-center gap-4"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-6 w-6 lg:h-10 lg:w-10 animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="h-6 w-6 lg:h-8 lg:w-8" /> Finalize Digital Handover
+                    </>
+                  )}
+                </Button>
+                
+                <p className="text-[10px] lg:text-xs text-center text-muted-foreground uppercase tracking-[0.2em] font-bold py-6 opacity-60">
+                   OFFICIAL CAMPUS SECURITY HANDOVER RECORD v1.0
+                </p>
+              </form>
+           </div>
+        </div>
       </main>
     </div>
   )

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo } from "react"
@@ -266,7 +265,7 @@ function WebItemCard({ item, type }: { item: any, type: 'found' | 'lost' }) {
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="text-center py-20 lg:py-32 bg-muted/20 rounded-[40px] lg:rounded-[64px] border-4 border-dashed border-muted/50 px-6">
-      <Package className="h-12 w-12 lg:h-16 lg:w-16 mx-auto text-muted-foreground/30 mb-4" />
+      <ImageIcon className="h-12 w-12 lg:h-16 lg:w-16 mx-auto text-muted-foreground/30 mb-4" />
       <p className="text-sm lg:text-2xl font-bold text-muted-foreground uppercase tracking-widest">{message}</p>
     </div>
   )

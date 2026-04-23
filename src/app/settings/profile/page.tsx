@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -142,6 +141,7 @@ export default function ProfileSettings() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* MOBILE HEADER */}
       <div className="lg:hidden gradient-header pt-10 pb-20 px-4 rounded-b-[40px] shadow-2xl text-white text-center">
         <div className="max-w-md mx-auto flex items-center justify-between mb-6">
           <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
@@ -169,6 +169,7 @@ export default function ProfileSettings() {
         </div>
       </div>
 
+      {/* WEB HEADER */}
       <div className="hidden lg:flex gradient-header pt-24 pb-48 px-10 rounded-b-[80px] shadow-2xl text-white">
         <div className="max-w-7xl mx-auto flex items-center justify-between w-full">
            <div className="flex items-center gap-8">
@@ -186,6 +187,7 @@ export default function ProfileSettings() {
 
       <main className="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-10 -mt-10 lg:-mt-24">
         <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          {/* Sidebar for Web */}
           <div className="hidden lg:block lg:col-span-4">
              <Card className="border-none shadow-2xl rounded-[48px] overflow-hidden bg-card/80 backdrop-blur-xl p-10 text-center space-y-8 sticky top-32">
                 <div className="relative inline-block mx-auto group">
@@ -212,6 +214,7 @@ export default function ProfileSettings() {
              </Card>
           </div>
 
+          {/* Form Content */}
           <div className="lg:col-span-8 space-y-8">
             <Card className="border-none shadow-xl rounded-[32px] lg:rounded-[48px] overflow-hidden bg-white dark:bg-card">
               <CardHeader className="pb-0 pt-8 px-8 lg:p-12">
@@ -227,7 +230,7 @@ export default function ProfileSettings() {
                     value={nickname} 
                     onChange={(e) => setNickname(e.target.value)}
                     placeholder="Your campus nickname" 
-                    className="rounded-xl lg:rounded-2xl h-12 lg:h-16 text-sm lg:text-lg lg:px-6"
+                    className="rounded-xl lg:rounded-2xl h-12 lg:h-16 text-sm lg:text-lg lg:px-6 bg-muted/20 border-none"
                     required 
                   />
                 </div>
@@ -241,7 +244,7 @@ export default function ProfileSettings() {
                         value={registrationNumber} 
                         onChange={(e) => setRegistrationNumber(e.target.value)}
                         placeholder="e.g. 12200000"
-                        className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg"
+                        className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg bg-muted/20 border-none"
                         required
                       />
                       <CreditCard className="absolute left-3.5 lg:left-5 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground/40" />
@@ -256,7 +259,7 @@ export default function ProfileSettings() {
                         value={phoneNumber} 
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         placeholder="+91 9876543210"
-                        className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg"
+                        className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 text-sm lg:text-lg bg-muted/20 border-none"
                         required
                       />
                       <Phone className="absolute left-3.5 lg:left-5 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground/40" />
@@ -267,7 +270,7 @@ export default function ProfileSettings() {
                 <div className="space-y-1.5 lg:space-y-3 opacity-60">
                   <Label htmlFor="email" className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Official Registry Email</Label>
                   <div className="relative">
-                    <Input id="email" value={user?.email || ""} disabled className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 bg-muted/20" />
+                    <Input id="email" value={user?.email || ""} disabled className="rounded-xl lg:rounded-2xl h-12 lg:h-16 pl-10 lg:pl-14 bg-muted/20 border-none" />
                     <Mail className="absolute left-3.5 lg:left-5 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-6 lg:w-6 text-muted-foreground/40" />
                   </div>
                 </div>

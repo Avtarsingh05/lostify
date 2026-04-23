@@ -52,6 +52,7 @@ export default function LoginPage() {
     const handleAuthError = (error: any) => {
       setIsLoading(false)
       let message = "Something went wrong."
+      let title = "Access Denied"
       
       if (error.code === 'auth/user-not-found') {
         message = "Account not found. Register now?"
@@ -66,12 +67,13 @@ export default function LoginPage() {
       } else if (error.code === 'auth/invalid-email') {
         message = "Invalid email format."
       } else if (error.code === 'auth/unauthorized-domain') {
-        message = "This domain is not whitelisted. Please add it in Firebase Console."
+        title = "Domain Not Whitelisted"
+        message = "Please add this domain to 'Authorized Domains' in Firebase Console Settings."
       }
 
       toast({
         variant: "destructive",
-        title: "Access Denied",
+        title: title,
         description: message,
       })
     }
