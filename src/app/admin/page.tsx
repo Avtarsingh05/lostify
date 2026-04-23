@@ -177,8 +177,25 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error("Upload failed")
       const data = await res.json()
       setDocumentNonBlocking(configRef, { appLogo: data.secure_url, updatedAt: new Date().toISOString() }, { merge: true })
-      toast({ title: "Logo Updated" }); setLogoFile(null)
+      toast({ title: "Logo Updated" }); setLogoFile(null); setLogoPreview("")
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Logo update failed", description: error.message })
     } finally { setIsUploading(false) }
+  }
+
+  const handleSaveQR = async () => {
+    if (!qrFile || !db) return
+    setIsUploadingQR(true)
+    try {
+      const formData = new FormData(); formData.append("file", qrFile); formData.append("upload_preset", "admin_banner_upload");
+      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, { method: "POST", body: formData })
+      if (!res.ok) throw new Error("Upload failed")
+      const data = await res.json()
+      setDocumentNonBlocking(configRef, { appDownloadQR: data.secure_url, updatedAt: new Date().toISOString() }, { merge: true })
+      toast({ title: "QR Updated" }); setQRFile(null); setQRPreview("")
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "QR update failed", description: error.message })
+    } finally { setIsUploadingQR(false) }
   }
 
   const handleSaveBanner = async () => {
@@ -191,6 +208,8 @@ export default function AdminDashboard() {
       const data = await res.json()
       addDocumentNonBlocking(collection(db, "banners"), { imageUrl: data.secure_url, targetUrl: bannerLink || "", createdAt: new Date().toISOString(), position: banners?.length || 0 })
       toast({ title: "Banner Live" }); setBannerFile(null); setBannerPreview(""); setBannerLink("")
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Banner deployment failed", description: error.message })
     } finally { setIsUploadingBanner(false) }
   }
 
