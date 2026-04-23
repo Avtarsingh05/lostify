@@ -54,7 +54,7 @@ export default function LoginPage() {
       let message = "Something went wrong."
       let title = "Access Denied"
       
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
         // Specifically check for non-existent user or invalid creds to prompt signup
         message = "Account not found. Please signup."
         setIsSignup(true)

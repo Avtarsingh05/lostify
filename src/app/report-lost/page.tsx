@@ -300,12 +300,9 @@ export default function ReportLost() {
                            </SelectTrigger>
                            <SelectContent className="rounded-2xl">
                              <SelectItem value="electronics">Electronics</SelectItem>
-                             <SelectItem value="clothing">Clothing</SelectItem>
-                             <SelectItem value="jewelry">Jewelry</SelectItem>
-                             <SelectItem value="wallet">Wallet / Purse</SelectItem>
                              <SelectItem value="documents">Documents</SelectItem>
-                             <SelectItem value="keys">Keys</SelectItem>
-                             <SelectItem value="other">Other</SelectItem>
+                             <SelectItem value="bags">Bags</SelectItem>
+                             <SelectItem value="accessories">Accessories</SelectItem>
                            </SelectContent>
                          </Select>
                        </div>

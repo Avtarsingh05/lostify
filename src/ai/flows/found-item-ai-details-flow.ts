@@ -21,7 +21,7 @@ export type FoundItemAIDetailsInput = z.infer<typeof FoundItemAIDetailsInputSche
 
 const FoundItemAIDetailsOutputSchema = z.object({
   itemName: z.string().describe('The name of the item identified in the photo.'),
-  category: z.string().describe('The most appropriate category for the identified item (e.g., Electronics, Clothing, Jewelry, Documents, Bag, Key, Wallet, etc.).'),
+  category: z.string().describe('The most appropriate category for the identified item (e.g., Electronics, Documents, Bags, Accessories).'),
   attributes: z.array(z.string()).describe('A list of key attributes describing the item (e.g., color, material, brand, distinguishing marks, model number if visible).'),
 });
 export type FoundItemAIDetailsOutput = z.infer<typeof FoundItemAIDetailsOutputSchema>;
@@ -34,7 +34,7 @@ const foundItemPrompt = ai.definePrompt({
 
 Please identify the item in the image and provide:
 1.  **itemName**: A concise name for the item.
-2.  **category**: A suitable category from a predefined list (e.g., Electronics, Clothing, Jewelry, Documents, Bag, Key, Wallet, etc.). Choose the most specific and appropriate category.
+2.  **category**: A suitable category from a predefined list (e.g., Electronics, Documents, Bags, Accessories). Choose the most specific and appropriate category.
 3.  **attributes**: A list of descriptive attributes such as color, material, brand, size, distinguishing marks, or any other important details visible in the image.
 
 Output the information as a JSON object, adhering strictly to the following schema:
