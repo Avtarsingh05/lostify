@@ -54,8 +54,9 @@ export default function LoginPage() {
       let message = "Something went wrong."
       let title = "Access Denied"
       
-      if (error.code === 'auth/user-not-found') {
-        message = "Account not found. Register now?"
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        // Specifically check for non-existent user or invalid creds to prompt signup
+        message = "Account not found. Please signup."
         setIsSignup(true)
       } else if (error.code === 'auth/wrong-password') {
         message = "Wrong password."
@@ -66,9 +67,6 @@ export default function LoginPage() {
         message = "Password is too short."
       } else if (error.code === 'auth/invalid-email') {
         message = "Invalid email format."
-      } else if (error.code === 'auth/unauthorized-domain') {
-        title = "Domain Not Whitelisted"
-        message = "Please add this domain to 'Authorized Domains' in Firebase Console Settings."
       }
 
       toast({
@@ -137,7 +135,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-background">
-      {/* Desktop Left Side - Website Presence Enhancement */}
+      {/* Desktop Left Side */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden gradient-header items-center justify-center p-12">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <Zap className="absolute top-10 left-10 h-64 w-64" />
@@ -157,25 +155,6 @@ export default function LoginPage() {
              <p className="text-xl text-white/80 font-medium leading-relaxed">
                Lostify leverages artificial intelligence to reconnect students with their missing belongings instantly. Secure, verified, and community-driven.
              </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 pt-12 border-t border-white/20">
-             <div className="flex items-center gap-4">
-               <div className="bg-white/10 p-3 rounded-2xl"><ShieldCheck className="h-6 w-6" /></div>
-               <p className="font-bold text-sm">Verified Security Handover</p>
-             </div>
-             <div className="flex items-center gap-4">
-               <div className="bg-white/10 p-3 rounded-2xl"><Zap className="h-6 w-6" /></div>
-               <p className="font-bold text-sm">AI Detail Extraction</p>
-             </div>
-             <div className="flex items-center gap-4">
-               <div className="bg-white/10 p-3 rounded-2xl"><Package className="h-6 w-6" /></div>
-               <p className="font-bold text-sm">30-Day Custody Logic</p>
-             </div>
-             <div className="flex items-center gap-4">
-               <div className="bg-white/10 p-3 rounded-2xl"><CreditCard className="h-6 w-6" /></div>
-               <p className="font-bold text-sm">Secure Shop Payments</p>
-             </div>
           </div>
         </div>
       </div>
@@ -198,20 +177,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="hidden lg:block mb-8">
-             <h2 className="text-3xl font-headline font-bold">Portal Access</h2>
-             <p className="text-muted-foreground mt-2">Sign in using your official campus credentials.</p>
-          </div>
-
           <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-xl lg:border lg:border-border/50">
             <CardHeader className="pb-2 pt-6">
-              <div className="flex justify-center mb-4 lg:hidden">
-                 <h2 className="text-xl font-headline font-bold">
-                   {isSignup ? "Create Account" : "Welcome Back"}
-                 </h2>
-              </div>
-              
-              <Tabs defaultValue="email" className="w-full" onValueChange={(v) => setIsSignup(v === 'signup')}>
+              <Tabs value={isSignup ? "signup" : "email"} className="w-full" onValueChange={(v) => setIsSignup(v === 'signup')}>
                 <TabsList className="grid w-full grid-cols-2 rounded-xl p-1 bg-muted h-10">
                   <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Login</TabsTrigger>
                   <TabsTrigger value="signup" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Signup</TabsTrigger>
@@ -269,9 +237,7 @@ export default function LoginPage() {
                     </div>
                     
                     <div className="space-y-1">
-                      <div className="flex justify-between items-center px-1">
-                        <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Password</Label>
-                      </div>
+                      <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Password</Label>
                       <div className="relative group">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input 
@@ -327,22 +293,11 @@ export default function LoginPage() {
                 </svg>
                 Continue with Google
               </Button>
-              
-              <div className="flex flex-col items-center">
-                <button 
-                  type="button"
-                  onClick={() => setIsSignup(!isSignup)}
-                  className="text-xs font-bold text-primary hover:opacity-80 transition-all underline decoration-primary/30 underline-offset-4"
-                >
-                  {isSignup ? "Already have an account? Log In" : "New here? Register Now"}
-                </button>
-              </div>
             </CardContent>
           </Card>
 
           <div className="pt-4 text-center space-y-1 opacity-40">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Made with Love ❤️ Lostify</p>
-            <p className="text-[9px] font-medium">Powered by Igloo Enterprises</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Lostify Recovery Network</p>
           </div>
         </div>
       </div>

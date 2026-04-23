@@ -5,7 +5,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithRedirect,
+  signInWithPopup,
 } from 'firebase/auth';
 
 /** Initiate anonymous sign-in (non-blocking). */
@@ -23,9 +23,9 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
   signInWithEmailAndPassword(authInstance, email, password);
 }
 
-/** Initiate Google Sign-In via Redirect (non-blocking). */
+/** Initiate Google Sign-In via Popup (same page). */
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
-  // Using redirect as requested for full-browser process handling
-  signInWithRedirect(authInstance, provider);
+  // Using popup to keep the user on the same page
+  signInWithPopup(authInstance, provider);
 }
