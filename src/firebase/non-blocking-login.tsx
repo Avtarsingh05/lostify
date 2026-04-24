@@ -6,6 +6,9 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithRedirect,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult
 } from 'firebase/auth';
 
 /** Initiate anonymous sign-in (non-blocking). */
@@ -30,4 +33,27 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
   signInWithRedirect(authInstance, provider);
+}
+
+/**
+ * Setup Recaptcha for Phone Auth
+ */
+export function setUpRecaptcha(authInstance: Auth, containerId: string): RecaptchaVerifier {
+  return new RecaptchaVerifier(authInstance, containerId, {
+    size: 'invisible',
+    callback: () => {
+      // reCAPTCHA solved, allow signInWithPhoneNumber.
+    }
+  });
+}
+
+/**
+ * Send OTP to Phone Number
+ */
+export async function sendOtpToPhone(
+  authInstance: Auth, 
+  phoneNumber: string, 
+  appVerifier: RecaptchaVerifier
+): Promise<ConfirmationResult> {
+  return signInWithPhoneNumber(authInstance, phoneNumber, appVerifier);
 }

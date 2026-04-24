@@ -3,7 +3,23 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mail, Lock, ArrowRight, Sparkles, UserIcon, Loader2, Info, CreditCard, ShieldCheck, Zap, Package, Globe } from "lucide-react"
+import { 
+  Mail, 
+  Lock, 
+  ArrowRight, 
+  Sparkles, 
+  UserIcon, 
+  Loader2, 
+  Info, 
+  CreditCard, 
+  ShieldCheck, 
+  Zap, 
+  Package, 
+  Globe,
+  Phone,
+  Smartphone,
+  CheckCircle2
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,11 +35,14 @@ import {
   errorEmitter, 
   useFirestore, 
   useDoc, 
-  useMemoFirebase 
+  useMemoFirebase,
+  setUpRecaptcha,
+  sendOtpToPhone
 } from "@/firebase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { doc } from "firebase/firestore"
 import Image from "next/image"
+import { ConfirmationResult } from "firebase/auth"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -33,7 +52,16 @@ export default function LoginPage() {
   const { toast } = useToast()
   
   const [isLoading, setIsLoading] = useState(false)
+  const [loginMethod, setLoginMode] = useState<"phone" | "email">("phone")
   const [isSignup, setIsSignup] = useState(false)
+  
+  // Phone Auth State
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [verificationCode, setVerificationCode] = useState("")
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
+  const [isOtpSent, setIsOtpSent] = useState(false)
+
+  // Email Auth State
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [nickname, setNickname] = useState("")
@@ -71,6 +99,47 @@ export default function LoginPage() {
     errorEmitter.on('auth-error', handleAuthError)
     return () => errorEmitter.off('auth-error', handleAuthError)
   }, [toast])
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!auth) return
+
+    if (!isOtpSent) {
+      // Step 1: Send OTP
+      if (phoneNumber.length < 10) {
+        toast({ variant: "destructive", title: "Invalid Number", description: "Enter a valid 10-digit mobile number." })
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        const fullPhone = `+91${phoneNumber}`
+        const verifier = setUpRecaptcha(auth, 'recaptcha-container')
+        const result = await sendOtpToPhone(auth, fullPhone, verifier)
+        setConfirmationResult(result)
+        setIsOtpSent(true)
+        toast({ title: "OTP Dispatched", description: `Sent to ${fullPhone}` })
+      } catch (err: any) {
+        console.error(err)
+        toast({ variant: "destructive", title: "OTP Failed", description: err.message })
+      } finally {
+        setIsLoading(false)
+      }
+    } else {
+      // Step 2: Verify OTP
+      if (!confirmationResult || verificationCode.length < 6) return
+      setIsLoading(true)
+      try {
+        await confirmationResult.confirm(verificationCode)
+        toast({ title: "Verified", description: "Login successful!" })
+        router.push("/dashboard")
+      } catch (err: any) {
+        toast({ variant: "destructive", title: "Invalid OTP", description: "The code you entered is incorrect." })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+  }
 
   const handleEmailAuth = (e: React.FormEvent) => {
     e.preventDefault()
@@ -168,84 +237,119 @@ export default function LoginPage() {
 
           <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-xl lg:border lg:border-border/50">
             <CardHeader className="pb-2 pt-6">
-              <Tabs value={isSignup ? "signup" : "email"} className="w-full" onValueChange={(v) => setIsSignup(v === 'signup')}>
-                <TabsList className="grid w-full grid-cols-2 rounded-xl p-1 bg-muted h-10">
-                  <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Login</TabsTrigger>
-                  <TabsTrigger value="signup" className="rounded-lg font-bold text-[10px] uppercase tracking-tight">Signup</TabsTrigger>
+              <Tabs value={loginMethod} className="w-full" onValueChange={(v: any) => setLoginMode(v)}>
+                <TabsList className="grid w-full grid-cols-2 rounded-xl p-1 bg-muted h-12">
+                  <TabsTrigger value="phone" className="rounded-lg font-bold text-[10px] uppercase tracking-tight gap-2">
+                    <Smartphone className="h-3 w-3" /> Mobile OTP
+                  </TabsTrigger>
+                  <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight gap-2">
+                    <Mail className="h-3 w-3" /> Email
+                  </TabsTrigger>
                 </TabsList>
                 
-                <div className="pt-4 space-y-4">
-                  <form onSubmit={handleEmailAuth} className="space-y-4">
-                    {isSignup && (
-                      <>
-                      <div className="space-y-1">
-                        <Label htmlFor="nickname" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Full Name</Label>
-                        <div className="relative group">
-                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                          <Input 
-                            id="nickname" 
-                            placeholder="Your campus name" 
-                            className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
-                            value={nickname}
-                            onChange={(e) => setNickname(e.target.value)}
-                            required 
-                          />
-                        </div>
+                <div className="pt-6">
+                  {loginMethod === "phone" ? (
+                    <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                          {isOtpSent ? "Verification Code" : "Mobile Number"}
+                        </Label>
+                        {!isOtpSent ? (
+                          <div className="relative group">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-sm font-bold text-primary">
+                              <Smartphone className="h-4 w-4" />
+                              <span>+91</span>
+                            </div>
+                            <Input 
+                              placeholder="9876543210" 
+                              className="pl-16 rounded-xl h-14 bg-muted/20 border-none shadow-none text-lg font-bold tracking-widest"
+                              value={phoneNumber}
+                              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                              maxLength={10}
+                              required 
+                            />
+                          </div>
+                        ) : (
+                          <div className="relative group">
+                            <Input 
+                              placeholder="000000" 
+                              className="rounded-xl h-14 bg-muted/20 border-none shadow-none text-center text-3xl font-mono font-black tracking-[0.5em]"
+                              value={verificationCode}
+                              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                              maxLength={6}
+                              autoFocus
+                              required 
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="regno" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Registration No.</Label>
-                        <div className="relative group">
-                          <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                          <Input 
-                            id="regno" 
-                            placeholder="e.g. 12200000" 
-                            className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
-                            value={registrationNumber}
-                            onChange={(e) => setRegistrationNumber(e.target.value)}
-                            required 
-                          />
-                        </div>
-                      </div>
-                      </>
-                    )}
 
-                    <div className="space-y-1">
-                      <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Gmail Address</Label>
-                      <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <Input 
-                          id="email" 
-                          type="email" 
-                          placeholder="user@gmail.com" 
-                          className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required 
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Password</Label>
-                      <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <Input 
-                          id="password" 
-                          type="password" 
-                          placeholder="••••••••"
-                          className="pl-10 rounded-xl h-12 bg-muted/20 border-none shadow-none focus-visible:ring-1" 
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required 
-                        />
-                      </div>
-                    </div>
+                      <Button type="submit" className="w-full h-14 rounded-xl gradient-header font-bold text-sm shadow-lg active:scale-95 transition-all" disabled={isLoading}>
+                        {isLoading ? (
+                          <Loader2 className="animate-spin h-5 w-5" />
+                        ) : isOtpSent ? (
+                          "Verify Identity"
+                        ) : (
+                          "Send OTP Code"
+                        )}
+                        {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+                      </Button>
 
-                    <Button type="submit" className="w-full h-12 lg:h-14 rounded-xl gradient-header font-bold text-sm shadow-lg hover:scale-[1.02] active:scale-[0.99] transition-all" disabled={isLoading}>
-                      {isLoading ? "Working..." : (isSignup ? "Join Now" : "Sign In")} 
-                      {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
-                    </Button>
-                  </form>
+                      {isOtpSent && (
+                        <button 
+                          type="button" 
+                          onClick={() => { setIsOtpSent(false); setVerificationCode(""); }}
+                          className="w-full text-[10px] font-bold uppercase text-primary hover:underline"
+                        >
+                          Change Mobile Number
+                        </button>
+                      )}
+                    </form>
+                  ) : (
+                    <div className="space-y-4">
+                       <Tabs value={isSignup ? "signup" : "signin"} onValueChange={(v) => setIsSignup(v === 'signup')}>
+                          <TabsList className="grid w-full grid-cols-2 rounded-lg p-0.5 bg-muted/50 h-8 mb-4">
+                             <TabsTrigger value="signin" className="text-[8px] uppercase font-bold">Login</TabsTrigger>
+                             <TabsTrigger value="signup" className="text-[8px] uppercase font-bold">Register</TabsTrigger>
+                          </TabsList>
+                          
+                          <form onSubmit={handleEmailAuth} className="space-y-4">
+                            {isSignup && (
+                              <>
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Full Name</Label>
+                                <div className="relative group">
+                                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input placeholder="Campus Name" className="pl-10 rounded-xl h-12 bg-muted/20 border-none" value={nickname} onChange={(e) => setNickname(e.target.value)} required />
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Registration No.</Label>
+                                <div className="relative group">
+                                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input placeholder="e.g. 12200000" className="pl-10 rounded-xl h-12 bg-muted/20 border-none" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} required />
+                                </div>
+                              </div>
+                              </>
+                            )}
+
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase tracking-wider ml-1 text-muted-foreground">Gmail Address</Label>
+                              <Input type="email" placeholder="user@gmail.com" className="rounded-xl h-12 bg-muted/20 border-none" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Password</Label>
+                              <Input type="password" placeholder="••••••••" className="rounded-xl h-12 bg-muted/20 border-none" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                            </div>
+
+                            <Button type="submit" className="w-full h-14 rounded-xl gradient-header font-bold text-sm shadow-lg" disabled={isLoading}>
+                              {isLoading ? "Working..." : (isSignup ? "Join Now" : "Sign In")} 
+                              {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+                            </Button>
+                          </form>
+                       </Tabs>
+                    </div>
+                  )}
                 </div>
               </Tabs>
             </CardHeader>
@@ -284,6 +388,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      <div id="recaptcha-container" />
     </div>
   )
 }
