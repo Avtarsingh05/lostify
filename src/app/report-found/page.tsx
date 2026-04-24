@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText, AlertTriangle, LayoutGrid, X } from "lucide-react"
+import { ArrowLeft, Camera, Sparkles, MapPin, Send, Loader2, ShieldCheck, User, Fingerprint, Info, CheckCircle2, FileText, AlertTriangle, LayoutGrid, X, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -24,7 +24,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
 import { compressImage, getDataUriSizeMB } from "@/lib/image-utils"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 export default function ReportFound() {
   const router = useRouter()
@@ -49,6 +49,9 @@ export default function ReportFound() {
   const [guardName, setGuardName] = useState("")
   const [badgeNumber, setBadgeNumber] = useState("")
   const [securityPost, setSecurityPost] = useState("")
+
+  // Verification Questions
+  const [vQuestions, setVQuestions] = useState([{ question: "", answer: "" }])
 
   // Camera States
   const [isCameraOpen, setIsCameraOpen] = useState(false)
@@ -153,9 +156,22 @@ export default function ReportFound() {
     }
   }
 
+  const addQuestion = () => setVQuestions([...vQuestions, { question: "", answer: "" }])
+  const removeQuestion = (idx: number) => setVQuestions(vQuestions.filter((_, i) => i !== idx))
+  const updateQuestion = (idx: number, field: 'question' | 'answer', val: string) => {
+    const newQs = [...vQuestions]
+    newQs[idx][field] = val
+    setVQuestions(newQs)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !db || !hasCompleteProfile) return
+    if (vQuestions.some(q => !q.question || !q.answer)) {
+      toast({ variant: "destructive", title: "Incomplete Questions", description: "All verification questions must have an answer." })
+      return
+    }
+
     setIsSubmitting(true)
     const itemsRef = collection(db, "items")
     const itemData = {
@@ -167,17 +183,19 @@ export default function ReportFound() {
       locationDescription: location,
       eventDate: new Date().toISOString(),
       type: "found",
-      status: "Pending Verification",
+      status: "In Custody",
       latitude: 0,
       longitude: 0,
       imageUrl: previewImage || "https://picsum.photos/seed/found/600/400",
-      storageInfo: `At ${securityPost} (Guard: ${guardName}, Badge: ${badgeNumber})`,
+      storageOffice: securityPost,
+      storageInfo: `Guard: ${guardName}, Badge: ${badgeNumber}`,
+      verificationQuestions: vQuestions,
       reportedAt: new Date().toISOString(),
       lastUpdatedAt: new Date().toISOString()
     }
     addDocumentNonBlocking(itemsRef, itemData)
       .then(() => {
-        toast({ title: "Report Submitted!", description: "Waiting for guard approval." })
+        toast({ title: "Report Submitted!", description: "Item is now live in the gallery." })
         router.push("/dashboard")
       })
       .finally(() => setIsSubmitting(false))
@@ -274,8 +292,34 @@ export default function ReportFound() {
             </CardContent>
           </Card>
 
+          <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none">
+            <CardHeader className="pb-0 pt-8 px-8"><CardTitle className="text-lg font-headline font-bold flex items-center gap-2"><Fingerprint className="h-5 w-5 text-accent" /> 2. Security Questions</CardTitle></CardHeader>
+            <CardContent className="p-8 space-y-6">
+               <p className="text-[10px] text-muted-foreground leading-relaxed italic">Set questions that only the real owner can answer. These will be used for automated identity verification.</p>
+               
+               <div className="space-y-4">
+                  {vQuestions.map((q, idx) => (
+                    <div key={idx} className="p-4 bg-muted/20 rounded-2xl border border-muted-foreground/10 space-y-3 relative">
+                       <div className="space-y-1.5">
+                         <Label className="text-[9px] font-bold uppercase text-muted-foreground">Question {idx + 1}</Label>
+                         <Input placeholder="e.g. What is written on the handle?" value={q.question} onChange={(e) => updateQuestion(idx, 'question', e.target.value)} className="h-10 rounded-xl bg-white border-none text-xs" required />
+                       </div>
+                       <div className="space-y-1.5">
+                         <Label className="text-[9px] font-bold uppercase text-muted-foreground">Correct Answer</Label>
+                         <Input placeholder="e.g. Red ribbon and name tag" value={q.answer} onChange={(e) => updateQuestion(idx, 'answer', e.target.value)} className="h-10 rounded-xl bg-white border-none text-xs" required />
+                       </div>
+                       {vQuestions.length > 1 && (
+                         <button type="button" onClick={() => removeQuestion(idx)} className="absolute top-2 right-2 text-destructive opacity-40 hover:opacity-100 transition-opacity"><Trash2 className="h-4 w-4" /></button>
+                       )}
+                    </div>
+                  ))}
+                  <Button type="button" onClick={addQuestion} variant="ghost" className="w-full h-10 rounded-xl border-2 border-dashed border-muted-foreground/20 text-[10px] font-bold uppercase gap-2 hover:bg-muted/50"><Plus className="h-4 w-4" /> Add Another Question</Button>
+               </div>
+            </CardContent>
+          </Card>
+
           <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none bg-white dark:bg-card">
-            <CardHeader className="pb-0 pt-8 px-8"><CardTitle className="text-lg font-headline font-bold flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> 2. Security Registry</CardTitle></CardHeader>
+            <CardHeader className="pb-0 pt-8 px-8"><CardTitle className="text-lg font-headline font-bold flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> 3. Security Registry</CardTitle></CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Guard Name *</Label>
