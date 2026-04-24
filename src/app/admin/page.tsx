@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef } from "react"
@@ -28,7 +29,11 @@ import {
   QrCode,
   ShieldAlert,
   Trophy,
-  Megaphone
+  Megaphone,
+  ShoppingBag,
+  DollarSign,
+  Zap,
+  LayoutGrid
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -37,6 +42,14 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { 
   Dialog,
   DialogContent,
@@ -94,6 +107,16 @@ export default function AdminDashboard() {
   const [bannerLink, setBannerLink] = useState("")
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
+  // Shop Management State
+  const [isUploadingShop, setIsUploadingShop] = useState(false)
+  const [shopFile, setShopFile] = useState<File | null>(null)
+  const [shopPreview, setShopPreview] = useState("")
+  const [shopName, setShopName] = useState("")
+  const [shopPrice, setShopPrice] = useState("")
+  const [shopCurrency, setShopCurrency] = useState("INR")
+  const [shopDesc, setShopDesc] = useState("")
+  const shopInputRef = useRef<HTMLInputElement>(null)
+
   const itemsQuery = useMemoFirebase(() => query(collection(db, "items")), [db])
   const { data: allItems } = useCollection(itemsQuery)
   
@@ -109,6 +132,10 @@ export default function AdminDashboard() {
   const bannersQuery = useMemoFirebase(() => 
     query(collection(db, "banners"), orderBy("position", "asc")), [db])
   const { data: banners } = useCollection(bannersQuery)
+
+  const shopQuery = useMemoFirebase(() => 
+    query(collection(db, "shopItems"), orderBy("createdAt", "desc")), [db])
+  const { data: shopItems } = useCollection(shopQuery)
 
   const handleVerifyTheft = async (reportId: string, reporterId: string, status: 'verified' | 'rejected') => {
     if (!db) return
@@ -206,10 +233,39 @@ export default function AdminDashboard() {
     } finally { setIsUploadingBanner(false) }
   }
 
+  const handleSaveShopItem = async () => {
+    if (!shopFile || !db || !shopName || !shopPrice) return
+    setIsUploadingShop(true)
+    try {
+      const formData = new FormData(); formData.append("file", shopFile); formData.append("upload_preset", "admin_banner_upload");
+      const res = await fetch(`https://api.cloudinary.com/v1_1/dian1nfyk/image/upload`, { method: "POST", body: formData })
+      if (!res.ok) throw new Error("Upload failed")
+      const data = await res.json()
+      addDocumentNonBlocking(collection(db, "shopItems"), { 
+        name: shopName, 
+        price: parseInt(shopPrice), 
+        paymentType: shopCurrency, 
+        description: shopDesc, 
+        imageUrl: data.secure_url, 
+        createdAt: new Date().toISOString() 
+      })
+      toast({ title: "Item Added to Shop" }); 
+      setShopFile(null); setShopPreview(""); setShopName(""); setShopPrice(""); setShopDesc("")
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Shop listing failed", description: error.message })
+    } finally { setIsUploadingShop(false) }
+  }
+
   const handleDeleteBanner = (bannerId: string) => {
     if (!db) return
     deleteDocumentNonBlocking(doc(db, "banners", bannerId))
     toast({ title: "Banner Removed" })
+  }
+
+  const handleDeleteShopItem = (itemId: string) => {
+    if (!db) return
+    deleteDocumentNonBlocking(doc(db, "shopItems", itemId))
+    toast({ title: "Item Removed from Shop" })
   }
 
   const filteredUsers = allUsers?.filter(u => 
@@ -243,13 +299,14 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-10 -mt-24 space-y-12">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 rounded-[32px] p-1 bg-card shadow-xl h-16 mb-10 border overflow-hidden">
-            <TabsTrigger value="overview" className="rounded-xl font-bold uppercase text-xs">Stats</TabsTrigger>
-            <TabsTrigger value="theft" className="rounded-xl font-bold uppercase text-xs text-destructive">Theft Alerts</TabsTrigger>
-            <TabsTrigger value="users" className="rounded-xl font-bold uppercase text-xs">Users</TabsTrigger>
-            <TabsTrigger value="push" className="rounded-xl font-bold uppercase text-xs">Push</TabsTrigger>
-            <TabsTrigger value="branding" className="rounded-xl font-bold uppercase text-xs">Branding</TabsTrigger>
-            <TabsTrigger value="banners" className="rounded-xl font-bold uppercase text-xs">Campaigns</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-7 rounded-[32px] p-1 bg-card shadow-xl h-16 mb-10 border overflow-hidden">
+            <TabsTrigger value="overview" className="rounded-xl font-bold uppercase text-[10px]">Stats</TabsTrigger>
+            <TabsTrigger value="theft" className="rounded-xl font-bold uppercase text-[10px] text-destructive">Theft Alerts</TabsTrigger>
+            <TabsTrigger value="users" className="rounded-xl font-bold uppercase text-[10px]">Users</TabsTrigger>
+            <TabsTrigger value="shop" className="rounded-xl font-bold uppercase text-[10px]">Inventory</TabsTrigger>
+            <TabsTrigger value="push" className="rounded-xl font-bold uppercase text-[10px]">Push</TabsTrigger>
+            <TabsTrigger value="branding" className="rounded-xl font-bold uppercase text-[10px]">Branding</TabsTrigger>
+            <TabsTrigger value="banners" className="rounded-xl font-bold uppercase text-[10px]">Campaigns</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="m-0">
@@ -325,6 +382,95 @@ export default function AdminDashboard() {
                   </Card>
                 ))}
              </div>
+          </TabsContent>
+
+          <TabsContent value="shop" className="m-0 space-y-10">
+            <div className="grid grid-cols-12 gap-10">
+              <div className="col-span-4">
+                <Card className="rounded-[40px] p-10 space-y-6 bg-card border-none shadow-xl sticky top-10">
+                  <h2 className="text-xl font-headline font-bold flex items-center gap-2"><ShoppingBag className="h-6 w-6 text-primary" /> Add Shop Item</h2>
+                  <div className="space-y-4">
+                    <div 
+                      onClick={() => shopInputRef.current?.click()}
+                      className="aspect-square w-full rounded-2xl border-2 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-all overflow-hidden relative"
+                    >
+                      {shopPreview ? <Image src={shopPreview} alt="Preview" fill className="object-cover" /> : (
+                        <>
+                          <ImageIcon className="h-8 w-8 text-primary/40" />
+                          <p className="text-[10px] font-bold uppercase mt-2">Product Photo</p>
+                        </>
+                      )}
+                    </div>
+                    <input type="file" ref={shopInputRef} className="hidden" onChange={e => { const f = e.target.files?.[0]; if(f){ setShopFile(f); setShopPreview(URL.createObjectURL(f)) } }} />
+                    
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Item Name</Label>
+                      <Input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="e.g. Uni Mall Hoodie" className="rounded-xl h-11" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Price</Label>
+                        <Input value={shopPrice} onChange={(e) => setShopPrice(e.target.value)} type="number" placeholder="100" className="rounded-xl h-11" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Currency</Label>
+                        <Select value={shopCurrency} onValueChange={setShopCurrency}>
+                          <SelectTrigger className="rounded-xl h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="INR">₹ (INR)</SelectItem>
+                            <SelectItem value="POINTS">⚡ (PTS)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Short Description</Label>
+                      <Textarea value={shopDesc} onChange={(e) => setShopDesc(e.target.value)} placeholder="Material, sizes, etc..." className="rounded-xl resize-none h-20" />
+                    </div>
+
+                    <Button onClick={handleSaveShopItem} disabled={!shopFile || isUploadingShop || !shopName || !shopPrice} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-xl">
+                      {isUploadingShop ? <Loader2 className="animate-spin" /> : "Deploy to Shop"}
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="col-span-8">
+                <div className="grid grid-cols-2 gap-6">
+                  {shopItems?.map((item) => (
+                    <Card key={item.id} className="rounded-[32px] overflow-hidden border-none shadow-lg bg-card/80 flex flex-col group">
+                      <div className="aspect-[4/3] relative overflow-hidden">
+                        <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                        <div className="absolute top-4 right-4">
+                           <Badge className={`${item.paymentType === 'POINTS' ? 'bg-accent' : 'bg-primary'} border-none shadow-xl font-black`}>
+                             {item.paymentType === 'POINTS' ? `${item.price} PTS` : `₹${item.price}`}
+                           </Badge>
+                        </div>
+                      </div>
+                      <div className="p-6 space-y-4 flex-1">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-bold text-base truncate">{item.name}</h3>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteShopItem(item.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground line-clamp-2 italic">"{item.description || "No description"}"</p>
+                      </div>
+                    </Card>
+                  ))}
+                  {(!shopItems || shopItems.length === 0) && (
+                    <div className="col-span-full py-20 text-center opacity-30 bg-muted/10 rounded-[40px] border-4 border-dashed">
+                      <ShoppingBag className="h-12 w-12 mx-auto mb-4" />
+                      <p className="font-bold uppercase tracking-widest">Shop is Empty</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="push" className="m-0">
