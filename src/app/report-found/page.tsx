@@ -227,7 +227,7 @@ export default function ReportFound() {
         </div>
       </div>
 
-      <main className="max-w-md lg:max-w-4xl mx-auto px-4 -mt-10 space-y-6">
+      <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none">
             <CardHeader className="pb-0 pt-8 px-8"><CardTitle className="text-lg font-headline font-bold flex items-center gap-2"><Camera className="h-5 w-5 text-secondary" /> 1. Visual Capture</CardTitle></CardHeader>
@@ -302,11 +302,11 @@ export default function ReportFound() {
                     <div key={idx} className="p-4 bg-muted/20 rounded-2xl border border-muted-foreground/10 space-y-3 relative">
                        <div className="space-y-1.5">
                          <Label className="text-[9px] font-bold uppercase text-muted-foreground">Question {idx + 1}</Label>
-                         <Input placeholder="e.g. What is written on the handle?" value={q.question} onChange={(e) => updateQuestion(idx, 'question', e.target.value)} className="h-10 rounded-xl bg-white border-none text-xs" required />
+                         <Input placeholder="e.g. What is written on the handle?" value={q.question} onChange={(e) => updateQuestion(idx, 'question', e.target.value)} className="h-10 rounded-xl bg-background border-none text-xs" required />
                        </div>
                        <div className="space-y-1.5">
                          <Label className="text-[9px] font-bold uppercase text-muted-foreground">Correct Answer</Label>
-                         <Input placeholder="e.g. Red ribbon and name tag" value={q.answer} onChange={(e) => updateQuestion(idx, 'answer', e.target.value)} className="h-10 rounded-xl bg-white border-none text-xs" required />
+                         <Input placeholder="e.g. Red ribbon and name tag" value={q.answer} onChange={(e) => updateQuestion(idx, 'answer', e.target.value)} className="h-10 rounded-xl bg-background border-none text-xs" required />
                        </div>
                        {vQuestions.length > 1 && (
                          <button type="button" onClick={() => removeQuestion(idx)} className="absolute top-2 right-2 text-destructive opacity-40 hover:opacity-100 transition-opacity"><Trash2 className="h-4 w-4" /></button>
@@ -318,7 +318,7 @@ export default function ReportFound() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none bg-white dark:bg-card">
+          <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none">
             <CardHeader className="pb-0 pt-8 px-8"><CardTitle className="text-lg font-headline font-bold flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> 3. Security Registry</CardTitle></CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="space-y-1.5">
