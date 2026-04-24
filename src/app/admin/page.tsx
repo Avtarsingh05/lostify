@@ -39,7 +39,8 @@ import {
   UploadCloud,
   Globe,
   Briefcase,
-  Filter
+  Filter,
+  MoreVertical
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -262,6 +263,12 @@ export default function AdminDashboard() {
     } finally { setIsSendingPush(false) }
   }
 
+  const handleDeleteHistory = (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this audit record? This cannot be undone.")) return
+    deleteDocumentNonBlocking(doc(db, "handoverHistory", id))
+    toast({ title: "Record Deleted", description: "Audit trail updated." })
+  }
+
   // Filters
   const filteredUsers = allUsers?.filter(u => 
     u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -284,10 +291,10 @@ export default function AdminDashboard() {
   }, [handoverHistory, historySearch, historySourceFilter])
 
   const stats = [
-    { label: "Lost Items", value: allItems?.filter(i => i.type === 'lost' && i.status !== 'Delivered').length.toString() || "0", icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
-    { label: "Found Items", value: allItems?.filter(i => i.type === 'found' && i.status !== 'Delivered').length.toString() || "0", icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
+    { label: "Lost Items", value: allItems?.filter(i => i.type === 'lost' && i.status !== 'Delivered' && i.status !== 'Resolved').length.toString() || "0", icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
+    { label: "Found Items", value: allItems?.filter(i => i.type === 'found' && i.status !== 'Delivered' && i.status !== 'Resolved').length.toString() || "0", icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
     { label: "Students", value: allUsers?.length.toString() || "0", icon: Users, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Handed Over", value: handoverHistory?.length.toString() || "0", icon: ShieldCheck, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Audit Records", value: handoverHistory?.length.toString() || "0", icon: ShieldCheck, color: "text-blue-500", bg: "bg-blue-500/10" },
   ]
 
   return (
@@ -312,9 +319,9 @@ export default function AdminDashboard() {
             <TabsList className="inline-flex w-full items-center justify-start bg-transparent p-1">
               <TabsTrigger value="overview" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Overview</TabsTrigger>
               <TabsTrigger value="theft" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16 text-destructive">Theft Reports</TabsTrigger>
-              <TabsTrigger value="inventory" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Inventory</TabsTrigger>
+              <TabsTrigger value="inventory" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Shop Gear</TabsTrigger>
               <TabsTrigger value="users" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Students</TabsTrigger>
-              <TabsTrigger value="history" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Audit Log</TabsTrigger>
+              <TabsTrigger value="history" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Audit Logs</TabsTrigger>
               <TabsTrigger value="campaign" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Campaign</TabsTrigger>
               <TabsTrigger value="push" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Push</TabsTrigger>
               <TabsTrigger value="branding" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Branding</TabsTrigger>
@@ -437,7 +444,7 @@ export default function AdminDashboard() {
                      </div>
                    </SelectTrigger>
                    <SelectContent className="rounded-xl">
-                     <SelectItem value="ALL">All Sources</SelectItem>
+                     <SelectItem value="ALL">All Records</SelectItem>
                      <SelectItem value="GALLERY">Item Recovery (L&F)</SelectItem>
                      <SelectItem value="CLOCK_ROOM">Luggage Retrival</SelectItem>
                    </SelectContent>
@@ -449,6 +456,18 @@ export default function AdminDashboard() {
                 {filteredHistory.length > 0 ? filteredHistory.map(h => (
                   <Card key={h.id} className="p-8 rounded-[40px] border-none shadow-xl flex items-center gap-10 bg-card/80 overflow-hidden relative group hover:translate-y-[-2px] transition-all">
                      <div className={`absolute top-0 right-0 w-3 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
+                     
+                     <div className="absolute top-6 right-6 flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteHistory(h.id)} 
+                          className="text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                     </div>
+
                      <div className="w-32 h-32 rounded-3xl relative overflow-hidden shrink-0 shadow-2xl border-4 border-white"><Image src={h.userPhoto} alt="Recipient" fill className="object-cover" /></div>
                      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-10">
                         <div className="space-y-3">
