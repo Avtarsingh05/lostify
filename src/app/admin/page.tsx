@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -77,7 +76,7 @@ import {
 import { collection, query, orderBy, doc, increment, where } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { format } from "date-fns"
 import { sendOneSignalNotification } from "@/app/actions/notifications"
@@ -298,21 +297,22 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-10 -mt-24 space-y-12">
         <Tabs defaultValue="overview" className="w-full">
-          <ScrollArea className="w-full">
-            <TabsList className="flex w-fit rounded-[32px] p-1 bg-card shadow-xl h-16 mb-10 border overflow-hidden">
-              <TabsTrigger value="overview" className="rounded-xl font-bold uppercase text-[10px] px-6">Overview</TabsTrigger>
-              <TabsTrigger value="theft" className="rounded-xl font-bold uppercase text-[10px] px-6 text-destructive">Theft Reports</TabsTrigger>
-              <TabsTrigger value="inventory" className="rounded-xl font-bold uppercase text-[10px] px-6">Inventory</TabsTrigger>
-              <TabsTrigger value="users" className="rounded-xl font-bold uppercase text-[10px] px-6">Students</TabsTrigger>
-              <TabsTrigger value="history" className="rounded-xl font-bold uppercase text-[10px] px-6">Audit Log</TabsTrigger>
-              <TabsTrigger value="campaign" className="rounded-xl font-bold uppercase text-[10px] px-6">Campaign</TabsTrigger>
-              <TabsTrigger value="push" className="rounded-xl font-bold uppercase text-[10px] px-6">Push</TabsTrigger>
-              <TabsTrigger value="branding" className="rounded-xl font-bold uppercase text-[10px] px-6">Branding</TabsTrigger>
+          <ScrollArea className="w-full whitespace-nowrap rounded-[32px] bg-card shadow-xl h-16 lg:h-20 mb-10 border">
+            <TabsList className="inline-flex w-full items-center justify-start bg-transparent p-1">
+              <TabsTrigger value="overview" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Overview</TabsTrigger>
+              <TabsTrigger value="theft" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16 text-destructive">Theft Reports</TabsTrigger>
+              <TabsTrigger value="inventory" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Inventory</TabsTrigger>
+              <TabsTrigger value="users" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Students</TabsTrigger>
+              <TabsTrigger value="history" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Audit Log</TabsTrigger>
+              <TabsTrigger value="campaign" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Campaign</TabsTrigger>
+              <TabsTrigger value="push" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Push</TabsTrigger>
+              <TabsTrigger value="branding" className="rounded-xl lg:rounded-2xl font-bold uppercase text-[10px] lg:text-xs px-6 h-10 lg:h-16">Branding</TabsTrigger>
             </TabsList>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
           <TabsContent value="overview" className="m-0">
-            <div className="grid grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {stats.map((stat, i) => (
                 <Card key={i} className="border-none shadow-xl rounded-[32px] overflow-hidden group hover:translate-y-[-4px] transition-all">
                   <CardContent className="p-10 flex items-center justify-between">
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="theft" className="m-0 space-y-6">
-             <div className="grid grid-cols-3 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {theftReports?.map(report => (
                   <Card key={report.id} className="border-none shadow-xl rounded-[24px] overflow-hidden bg-card/80 backdrop-blur-sm">
                     <div className="aspect-[16/9] relative overflow-hidden bg-muted">
@@ -357,8 +357,8 @@ export default function AdminDashboard() {
           <TabsContent value="inventory" className="m-0 space-y-10">
              <Card className="rounded-[40px] border-none shadow-xl p-10 space-y-8">
                 <div className="flex items-center gap-3"><ShoppingBag className="h-6 w-6 text-primary" /><h2 className="text-xl font-headline font-bold">Add New Gear</h2></div>
-                <div className="grid grid-cols-12 gap-8">
-                   <div className="col-span-4 space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                   <div className="lg:col-span-4 space-y-4">
                       <div 
                         onClick={() => shopInputRef.current?.click()}
                         className="aspect-square rounded-[32px] border-4 border-dashed border-muted-foreground/10 bg-muted/5 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/10 transition-all overflow-hidden relative"
@@ -369,8 +369,8 @@ export default function AdminDashboard() {
                          }} />
                       </div>
                    </div>
-                   <div className="col-span-8 space-y-6">
-                      <div className="grid grid-cols-2 gap-6">
+                   <div className="lg:col-span-8 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2"><Label className="text-[10px] font-bold uppercase">Item Name</Label><Input value={shopName} onChange={(e) => setShopName(e.target.value)} className="rounded-xl h-14" /></div>
                         <div className="space-y-2"><Label className="text-[10px] font-bold uppercase">Currency & Price</Label><div className="flex gap-2"><Select value={shopCurrency} onValueChange={setShopCurrency}><SelectTrigger className="w-32 h-14 rounded-xl"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="INR">INR (₹)</SelectItem><SelectItem value="POINTS">POINTS (PTS)</SelectItem></SelectContent></Select><Input value={shopPrice} onChange={(e) => setShopPrice(e.target.value)} type="number" className="rounded-xl h-14 flex-1" placeholder="0" /></div></div>
                       </div>
@@ -379,7 +379,7 @@ export default function AdminDashboard() {
                    </div>
                 </div>
              </Card>
-             <div className="grid grid-cols-4 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {shopItems?.map(item => (
                   <Card key={item.id} className="rounded-3xl border-none shadow-lg overflow-hidden group">
                      <div className="aspect-[4/3] relative"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /><div className="absolute top-3 left-3"><Badge className={`${item.paymentType === 'POINTS' ? 'bg-accent' : 'bg-primary'} border-none font-bold text-[8px]`}>{item.paymentType === 'POINTS' ? `${item.price} PTS` : `₹${item.price}`}</Badge></div></div>
@@ -397,7 +397,7 @@ export default function AdminDashboard() {
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                <Input placeholder="Search students..." className="pl-12 h-14 rounded-2xl shadow-lg border-none" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
              </div>
-             <div className="grid grid-cols-3 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredUsers?.map(u => (
                   <Card key={u.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-4">
                      <Avatar className="h-12 w-12"><AvatarImage src={u.photoURL} /><AvatarFallback className="bg-primary/10 text-primary font-bold">{u.username?.charAt(0)}</AvatarFallback></Avatar>
@@ -421,7 +421,7 @@ export default function AdminDashboard() {
                   <Card key={h.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-8 bg-card/80 overflow-hidden relative">
                      <div className={`absolute top-0 right-0 w-2 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
                      <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0 shadow-md"><Image src={h.userPhoto} alt="Recipient" fill className="object-cover" /></div>
-                     <div className="flex-1 grid grid-cols-3 gap-8">
+                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div>
                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Released Item</p>
                            <h3 className="font-headline font-bold text-lg mt-1">{h.itemName}</h3>
@@ -448,8 +448,8 @@ export default function AdminDashboard() {
           <TabsContent value="campaign" className="m-0 space-y-10">
              <Card className="rounded-[40px] border-none shadow-xl p-10 space-y-8">
                 <div className="flex items-center gap-3"><Megaphone className="h-6 w-6 text-primary" /><h2 className="text-xl font-headline font-bold">New Promotion</h2></div>
-                <div className="grid grid-cols-12 gap-10">
-                   <div className="col-span-5 space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                   <div className="lg:col-span-5 space-y-4">
                       <div 
                         onClick={() => bannerInputRef.current?.click()}
                         className="aspect-video rounded-[32px] border-4 border-dashed border-muted-foreground/10 bg-muted/5 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/10 transition-all relative overflow-hidden"
@@ -460,13 +460,13 @@ export default function AdminDashboard() {
                          {isUploadingBanner && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>}
                       </div>
                    </div>
-                   <div className="col-span-7 space-y-6">
+                   <div className="lg:col-span-7 space-y-6">
                       <div className="space-y-2"><Label className="text-[10px] font-bold uppercase">Destination Link (Optional)</Label><Input placeholder="https://..." value={bannerLink} onChange={(e) => setBannerLink(e.target.value)} className="rounded-xl h-14" /></div>
                       <p className="text-11px] text-muted-foreground italic">Banners are displayed on the student dashboard. Upload an image to publish instantly.</p>
                    </div>
                 </div>
              </Card>
-             <div className="grid grid-cols-2 gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {allBanners?.map(banner => (
                   <Card key={banner.id} className="rounded-[32px] overflow-hidden border-none shadow-xl relative group">
                      <div className="aspect-video relative"><Image src={banner.imageUrl} alt="Banner" fill className="object-cover" /></div>
@@ -489,7 +489,7 @@ export default function AdminDashboard() {
                    <div className="space-y-2"><Label className="text-[10px] font-bold uppercase">Heading</Label><Input value={pushTitle} onChange={(e) => setPushTitle(e.target.value)} className="rounded-xl h-14 text-lg font-bold" /></div>
                    <div className="space-y-2"><Label className="text-[10px] font-bold uppercase">Alert Message</Label><Textarea value={pushMessage} onChange={(e) => setPushMessage(e.target.value)} className="rounded-xl min-h-[120px]" /></div>
                    <div className="space-y-2"><Label className="text-[10px] font-bold uppercase">Specific User ID (Leave blank for all)</Label><Input value={pushTargetId} onChange={(e) => setPushTargetId(e.target.value)} className="rounded-xl h-12 font-mono text-xs" /></div>
-                   <div className="grid grid-cols-2 gap-4 pt-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                       <Button onClick={() => handleSendPush(false)} disabled={isSendingPush || !pushTargetId} variant="outline" className="h-16 rounded-2xl font-bold border-2"><User className="mr-2 h-5 w-5" /> Target ID</Button>
                       <Button onClick={() => handleSendPush(true)} disabled={isSendingPush} className="h-16 rounded-2xl font-bold gradient-header shadow-xl shadow-primary/20"><Megaphone className="mr-2 h-5 w-5" /> All Students</Button>
                    </div>
@@ -498,10 +498,10 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="branding" className="m-0">
-             <div className="grid grid-cols-2 gap-10">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <Card className="rounded-[40px] border-none shadow-xl p-10 space-y-8">
                    <div className="flex items-center gap-3"><ImageIcon className="h-6 w-6 text-primary" /><h2 className="text-xl font-headline font-bold">App Identity</h2></div>
-                   <div className="flex items-center gap-8">
+                   <div className="flex flex-col md:flex-row items-center gap-8">
                       <div className="w-32 h-32 rounded-[32px] bg-muted relative overflow-hidden flex items-center justify-center border-4 border-white shadow-xl">
                          {systemConfig?.appLogo ? <Image src={systemConfig.appLogo} alt="Logo" fill className="object-contain p-2" /> : <Sparkles className="h-10 w-10 text-muted-foreground/30" />}
                          {isUploadingLogo && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>}
@@ -515,7 +515,7 @@ export default function AdminDashboard() {
                 </Card>
                 <Card className="rounded-[40px] border-none shadow-xl p-10 space-y-8">
                    <div className="flex items-center gap-3"><QrCode className="h-6 w-6 text-primary" /><h2 className="text-xl font-headline font-bold">Onboarding</h2></div>
-                   <div className="flex items-center gap-8">
+                   <div className="flex flex-col md:flex-row items-center gap-8">
                       <div className="w-32 h-32 rounded-[32px] bg-white relative overflow-hidden flex items-center justify-center border-4 border-muted/5 shadow-xl">
                          {systemConfig?.downloadQR ? <Image src={systemConfig.downloadQR} alt="QR" fill className="object-contain p-2" /> : <div className="h-8 w-8 bg-muted rounded-full" />}
                          {isUploadingQR && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>}

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
@@ -63,7 +62,7 @@ import {
 import { collection, query, doc, orderBy, limit, where, getDocs } from "firebase/firestore"
 import Image from "next/image"
 import { format, formatDistanceToNow } from "date-fns"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 export default function GuardDashboard() {
   const router = useRouter()
@@ -346,14 +345,15 @@ export default function GuardDashboard() {
             </div>
 
             <Tabs defaultValue="office" className="w-full" onValueChange={setActiveTab}>
-              <ScrollArea className="w-full">
-                <TabsList className="flex w-fit lg:w-full rounded-[24px] lg:rounded-[32px] p-1 bg-card shadow-xl h-14 lg:h-20 mb-6 border overflow-hidden">
-                  <TabsTrigger value="office" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-full"><Archive className="h-4 w-4" /> In-Office</TabsTrigger>
-                  <TabsTrigger value="clock" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-full"><Briefcase className="h-4 w-4" /> Clock Room</TabsTrigger>
-                  <TabsTrigger value="lost" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-full"><Search className="h-4 w-4" /> Active Lost</TabsTrigger>
-                  <TabsTrigger value="reports" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-full text-destructive"><ShieldAlert className="h-4 w-4" /> Theft Reports</TabsTrigger>
-                  <TabsTrigger value="history" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-full"><HistoryIcon className="h-4 w-4" /> Audit Log</TabsTrigger>
+              <ScrollArea className="w-full whitespace-nowrap rounded-[24px] lg:rounded-[32px] bg-card shadow-xl h-14 lg:h-20 mb-6 border">
+                <TabsList className="inline-flex w-full items-center justify-start bg-transparent p-1">
+                  <TabsTrigger value="office" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Archive className="h-4 w-4" /> Office</TabsTrigger>
+                  <TabsTrigger value="clock" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Briefcase className="h-4 w-4" /> Clock Room</TabsTrigger>
+                  <TabsTrigger value="lost" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Search className="h-4 w-4" /> Lost</TabsTrigger>
+                  <TabsTrigger value="reports" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6 text-destructive"><ShieldAlert className="h-4 w-4" /> Theft</TabsTrigger>
+                  <TabsTrigger value="history" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><HistoryIcon className="h-4 w-4" /> History</TabsTrigger>
                 </TabsList>
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
 
               <TabsContent value="office" className="m-0 space-y-4">
