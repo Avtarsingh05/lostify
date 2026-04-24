@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -37,7 +38,8 @@ import {
   Archive,
   UploadCloud,
   Globe,
-  Briefcase
+  Briefcase,
+  Filter
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -90,6 +92,7 @@ export default function AdminDashboard() {
   
   const [userSearch, setUserSearch] = useState("")
   const [historySearch, setHistorySearch] = useState("")
+  const [historySourceFilter, setHistorySourceFilter] = useState("ALL")
   const [viewingUser, setViewingUser] = useState<any | null>(null)
 
   // System Config State
@@ -266,11 +269,19 @@ export default function AdminDashboard() {
     u.registrationNumber?.toLowerCase().includes(userSearch.toLowerCase())
   )
 
-  const filteredHistory = handoverHistory?.filter(h => 
-    h.itemName?.toLowerCase().includes(historySearch.toLowerCase()) ||
-    h.recipientReg?.toLowerCase().includes(historySearch.toLowerCase()) ||
-    h.recipientPhone?.toLowerCase().includes(historySearch.toLowerCase())
-  )
+  const filteredHistory = useMemo(() => {
+    if (!handoverHistory) return []
+    return handoverHistory.filter(h => {
+      const matchesSearch = 
+        h.itemName?.toLowerCase().includes(historySearch.toLowerCase()) ||
+        h.recipientReg?.toLowerCase().includes(historySearch.toLowerCase()) ||
+        h.recipientPhone?.toLowerCase().includes(historySearch.toLowerCase())
+      
+      const matchesSource = historySourceFilter === "ALL" || h.itemSource === historySourceFilter
+
+      return matchesSearch && matchesSource
+    })
+  }, [handoverHistory, historySearch, historySourceFilter])
 
   const stats = [
     { label: "Lost Items", value: allItems?.filter(i => i.type === 'lost' && i.status !== 'Delivered').length.toString() || "0", icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
@@ -411,37 +422,66 @@ export default function AdminDashboard() {
              </div>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-6 m-0">
-             <div className="relative max-w-2xl mx-auto">
-               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-               <Input placeholder="Search items, student IDs, or phones..." className="pl-12 h-14 rounded-2xl shadow-lg border-none" value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} />
+          <TabsContent value="history" className="space-y-8 m-0">
+             <div className="flex flex-col lg:flex-row gap-6 max-w-5xl mx-auto">
+               <div className="relative flex-1">
+                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                 <Input placeholder="Search released items, IDs, or phones..." className="pl-12 h-14 rounded-2xl shadow-lg border-none" value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} />
+               </div>
+               <div className="w-full lg:w-64">
+                 <Select value={historySourceFilter} onValueChange={setHistorySourceFilter}>
+                   <SelectTrigger className="h-14 rounded-2xl shadow-lg border-none bg-card px-6">
+                     <div className="flex items-center gap-2">
+                       <Filter className="h-4 w-4 text-primary" />
+                       <SelectValue placeholder="All Categories" />
+                     </div>
+                   </SelectTrigger>
+                   <SelectContent className="rounded-xl">
+                     <SelectItem value="ALL">All Sources</SelectItem>
+                     <SelectItem value="GALLERY">Item Recovery (L&F)</SelectItem>
+                     <SelectItem value="CLOCK_ROOM">Luggage Retrival</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
              </div>
-             <div className="grid grid-cols-1 gap-4">
-                {filteredHistory?.map(h => (
-                  <Card key={h.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-8 bg-card/80 overflow-hidden relative">
-                     <div className={`absolute top-0 right-0 w-2 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
-                     <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0 shadow-md"><Image src={h.userPhoto} alt="Recipient" fill className="object-cover" /></div>
-                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div>
-                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Released Item</p>
-                           <h3 className="font-headline font-bold text-lg mt-1">{h.itemName}</h3>
-                           <Badge variant="outline" className={`mt-2 h-5 text-[8px] font-bold border-none ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
-                             {h.itemSource === 'CLOCK_ROOM' ? 'LUGGAGE RETRIEVAL' : 'ITEM RECOVERY'}
-                           </Badge>
+
+             <div className="grid grid-cols-1 gap-6 max-w-5xl mx-auto">
+                {filteredHistory.length > 0 ? filteredHistory.map(h => (
+                  <Card key={h.id} className="p-8 rounded-[40px] border-none shadow-xl flex items-center gap-10 bg-card/80 overflow-hidden relative group hover:translate-y-[-2px] transition-all">
+                     <div className={`absolute top-0 right-0 w-3 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
+                     <div className="w-32 h-32 rounded-3xl relative overflow-hidden shrink-0 shadow-2xl border-4 border-white"><Image src={h.userPhoto} alt="Recipient" fill className="object-cover" /></div>
+                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-10">
+                        <div className="space-y-3">
+                           <div className="flex flex-col">
+                              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Released Item</p>
+                              <h3 className="font-headline font-bold text-xl mt-1 leading-tight">{h.itemName}</h3>
+                           </div>
+                           <div className="flex flex-wrap gap-2">
+                             <Badge variant="outline" className={`h-6 text-[8px] font-black border-none px-3 rounded-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
+                               {h.itemSource === 'CLOCK_ROOM' ? 'LUGGAGE' : 'RECOVERY'}
+                             </Badge>
+                             <Badge variant="outline" className="h-6 text-[8px] font-black bg-muted text-muted-foreground border-none px-3 rounded-full uppercase tracking-tighter">
+                               {h.itemCategory || 'General'}
+                             </Badge>
+                           </div>
                         </div>
-                        <div>
-                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Recipient Registry</p>
-                           <p className="text-sm font-bold mt-1">ID: {h.recipientReg}</p>
-                           <p className="text-xs text-muted-foreground mt-1">{h.recipientPhone}</p>
+                        <div className="space-y-4 border-l border-dashed pl-10">
+                           <div className="flex flex-col">
+                              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Recipient Registry</p>
+                              <p className="text-base font-bold mt-1 flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary/40" /> {h.recipientReg}</p>
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2"><Phone className="h-3 w-3 text-primary/40" /> {h.recipientPhone}</p>
+                           </div>
                         </div>
-                        <div>
-                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Auth Protocol</p>
-                           <p className="text-sm font-bold mt-1 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-secondary" /> {h.guardName}</p>
-                           <p className="text-xs text-muted-foreground mt-1">{format(new Date(h.timestamp), 'MMM dd, HH:mm')}</p>
+                        <div className="space-y-4 border-l border-dashed pl-10">
+                           <div className="flex flex-col">
+                              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Auth Protocol</p>
+                              <p className="text-base font-bold mt-1 flex items-center gap-2 text-secondary"><ShieldCheck className="h-4 w-4" /> {h.guardName}</p>
+                              <p className="text-[10px] text-muted-foreground font-medium mt-1 flex items-center gap-2"><Clock className="h-3 w-3" /> {h.timestamp ? format(new Date(h.timestamp), 'MMM dd, HH:mm') : 'N/A'}</p>
+                           </div>
                         </div>
                      </div>
                   </Card>
-                ))}
+                )) : <EmptyState message="No matching audit logs found." />}
              </div>
           </TabsContent>
 
@@ -554,6 +594,15 @@ export default function AdminDashboard() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="text-center py-32 bg-muted/20 rounded-[48px] border-4 border-dashed border-muted-foreground/10 px-6 opacity-30 flex flex-col items-center">
+      <Archive className="h-16 w-16 text-muted-foreground/20 mb-4" />
+      <p className="text-lg font-bold text-muted-foreground uppercase tracking-[0.2em]">{message}</p>
     </div>
   )
 }

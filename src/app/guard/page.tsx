@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
@@ -235,6 +236,7 @@ export default function GuardDashboard() {
           itemName: handoverItem.name || handoverItem.itemType,
           itemImageUrl: handoverItem.imageUrl,
           itemSource: handoverItem.isClock ? 'CLOCK_ROOM' : 'GALLERY',
+          itemCategory: (handoverItem.isClock ? handoverItem.itemType : handoverItem.category) || 'General',
           recipientPhone,
           recipientReg,
           userPhoto: capturedUserPhoto,
@@ -463,9 +465,14 @@ export default function GuardDashboard() {
                             <div className="col-span-1 lg:col-span-1 min-w-0">
                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Released Item</p>
                                <h4 className="font-bold text-sm truncate mt-1">{h.itemName}</h4>
-                               <Badge className={`mt-1 text-[7px] border-none h-4 ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
-                                 {h.itemSource === 'CLOCK_ROOM' ? 'LUGGAGE RETRIEVAL' : 'ITEM RECOVERY'}
-                               </Badge>
+                               <div className="flex gap-1.5 mt-1">
+                                 <Badge className={`text-[7px] border-none h-4 ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
+                                   {h.itemSource === 'CLOCK_ROOM' ? 'LUGGAGE' : 'RECOVERY'}
+                                 </Badge>
+                                 <Badge variant="outline" className="text-[7px] h-4 font-bold border-none bg-muted text-muted-foreground uppercase tracking-tighter">
+                                   {h.itemCategory || 'General'}
+                                 </Badge>
+                               </div>
                             </div>
                             <div className="hidden lg:block">
                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Recipient</p>
