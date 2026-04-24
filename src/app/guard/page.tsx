@@ -34,7 +34,9 @@ import {
   Zap,
   ShieldAlert,
   AlertTriangle,
-  ClipboardList
+  ClipboardList,
+  Eye,
+  FileText
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -75,6 +77,9 @@ export default function GuardDashboard() {
   const [tokenInput, setTokenInput] = useState("")
   const [isProcessingToken, setIsProcessingToken] = useState(false)
   const [activeTab, setActiveTab] = useState("office")
+
+  // Detail Modal State
+  const [viewingDetail, setViewingDetail] = useState<any | null>(null)
 
   // Handover Logic
   const [handoverItem, setHandoverItem] = useState<any | null>(null)
@@ -361,7 +366,11 @@ export default function GuardDashboard() {
               <TabsContent value="office" className="m-0 space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {inOfficeFound.length > 0 ? inOfficeFound.map(item => (
-                      <Card key={item.id} className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50">
+                      <Card 
+                        key={item.id} 
+                        onClick={() => setViewingDetail({...item, _source: 'OFFICE'})}
+                        className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 cursor-pointer hover:translate-y-[-2px] transition-all group"
+                      >
                          <div className="flex gap-4">
                             <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0 shadow-sm"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -381,7 +390,11 @@ export default function GuardDashboard() {
               <TabsContent value="clock" className="m-0 space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {activeClock.length > 0 ? activeClock.map(item => (
-                      <Card key={item.id} className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 group">
+                      <Card 
+                        key={item.id} 
+                        onClick={() => setViewingDetail({...item, _source: 'CLOCK'})}
+                        className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 group cursor-pointer hover:translate-y-[-2px] transition-all"
+                      >
                          <div className="flex gap-4">
                             <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0"><Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" /></div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -407,7 +420,11 @@ export default function GuardDashboard() {
               <TabsContent value="lost" className="m-0 space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {activeLost.length > 0 ? activeLost.map(item => (
-                      <Card key={item.id} className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50">
+                      <Card 
+                        key={item.id} 
+                        onClick={() => setViewingDetail({...item, _source: 'LOST'})}
+                        className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 cursor-pointer hover:translate-y-[-2px] transition-all"
+                      >
                          <div className="flex gap-4">
                             <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -432,7 +449,11 @@ export default function GuardDashboard() {
               <TabsContent value="reports" className="m-0 space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {theftReports?.map(report => (
-                      <Card key={report.id} className="p-4 rounded-[32px] border-none shadow-md bg-destructive/5 border border-destructive/10">
+                      <Card 
+                        key={report.id} 
+                        onClick={() => setViewingDetail({...report, _source: 'THEFT'})}
+                        className="p-4 rounded-[32px] border-none shadow-md bg-destructive/5 border border-destructive/10 cursor-pointer hover:translate-y-[-2px] transition-all"
+                      >
                          <div className="flex gap-4">
                             <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0 border border-destructive/20 shadow-sm"><Image src={report.mediaUrl} alt="Evidence" fill className="object-cover" /></div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -458,7 +479,11 @@ export default function GuardDashboard() {
               <TabsContent value="history" className="m-0 space-y-4">
                  <div className="space-y-3">
                     {recentHandovers.length > 0 ? recentHandovers.map(h => (
-                      <Card key={h.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-6 bg-white dark:bg-card/80 overflow-hidden relative">
+                      <Card 
+                        key={h.id} 
+                        onClick={() => setViewingDetail({...h, _source: 'HISTORY'})}
+                        className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-6 bg-white dark:bg-card/80 overflow-hidden relative cursor-pointer hover:translate-y-[-2px] transition-all"
+                      >
                          <div className={`absolute top-0 right-0 w-2 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
                          <div className="w-16 h-16 rounded-2xl relative overflow-hidden shrink-0 border shadow-sm"><Image src={h.userPhoto} alt="User" fill className="object-cover" /></div>
                          <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -574,6 +599,118 @@ export default function GuardDashboard() {
           <DialogFooter>
              <Button onClick={handleFinalizeHandover} disabled={!capturedUserPhoto || !recipientReg || !recipientPhone} className="w-full h-16 rounded-3xl gradient-success font-bold text-lg shadow-xl active:scale-95 transition-transform">Complete Delivery</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* GENERAL DETAIL DIALOG */}
+      <Dialog open={!!viewingDetail} onOpenChange={() => setViewingDetail(null)}>
+        <DialogContent className="max-w-[92%] sm:max-w-[540px] rounded-[40px] p-0 border-none shadow-3xl overflow-hidden bg-background">
+           {viewingDetail && (
+             <ScrollArea className="max-h-[85vh]">
+                <div className="relative aspect-video w-full bg-muted">
+                   <Image src={viewingDetail.imageUrl || viewingDetail.mediaUrl || viewingDetail.itemImageUrl || viewingDetail.userPhoto} alt="Item Preview" fill className="object-cover" />
+                   <div className="absolute top-4 left-4 flex gap-2">
+                      <Badge className="bg-black/60 backdrop-blur-md border-none font-bold text-[10px] h-6 px-3">{viewingDetail._source}</Badge>
+                      <Badge className={`${viewingDetail.status === 'collected' || viewingDetail.status === 'Delivered' ? 'bg-secondary' : 'bg-primary'} border-none font-bold text-[10px] h-6 px-3 uppercase tracking-tighter`}>{viewingDetail.status || 'Active'}</Badge>
+                   </div>
+                </div>
+                
+                <div className="p-8 space-y-8">
+                   <div className="space-y-2">
+                      <div className="flex justify-between items-start gap-4">
+                        <h2 className="text-2xl font-headline font-bold leading-tight">{viewingDetail.name || viewingDetail.itemType || viewingDetail.itemName || "Item Details"}</h2>
+                        {viewingDetail.color && <div className="w-6 h-6 rounded-full border shadow-sm shrink-0" style={{ backgroundColor: viewingDetail.color }} />}
+                      </div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{viewingDetail.category || 'Standard Entry'}</p>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-muted/30 p-5 rounded-3xl space-y-1">
+                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Logged On</p>
+                         <p className="text-xs font-bold flex items-center gap-1.5"><Calendar className="h-3 w-3 text-primary" /> {viewingDetail.reportedAt || viewingDetail.timestamp || viewingDetail.createdAt ? format(new Date(viewingDetail.reportedAt || viewingDetail.timestamp || viewingDetail.createdAt), 'MMM dd, yyyy') : 'N/A'}</p>
+                      </div>
+                      <div className="bg-muted/30 p-5 rounded-3xl space-y-1">
+                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Location</p>
+                         <p className="text-xs font-bold flex items-center gap-1.5 truncate"><MapPin className="h-3 w-3 text-primary" /> {viewingDetail.locationDescription || viewingDetail.locationName || viewingDetail.storageOffice || 'Campus'}</p>
+                      </div>
+                   </div>
+
+                   {/* SOURCE SPECIFIC DATA */}
+                   {viewingDetail._source === 'OFFICE' && viewingDetail.verificationQuestions && (
+                     <div className="space-y-4">
+                        <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] px-1 flex items-center gap-2"><Lock className="h-3 w-3" /> Hidden Verification</h3>
+                        <div className="space-y-3">
+                           {viewingDetail.verificationQuestions.map((q: any, i: number) => (
+                             <div key={i} className="p-4 bg-primary/5 rounded-2xl border border-primary/10 space-y-1">
+                                <p className="text-[10px] font-bold text-primary italic">Q: {q.question}</p>
+                                <p className="text-xs font-bold text-foreground">A: {q.answer}</p>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                   )}
+
+                   {viewingDetail._source === 'CLOCK' && (
+                     <div className="space-y-6">
+                        <div className="bg-orange-500/5 p-6 rounded-3xl border border-orange-500/10 space-y-4">
+                           <div className="flex justify-between items-center">
+                              <h3 className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Rack Identity</h3>
+                              <Badge className="bg-orange-500 text-white border-none font-bold">Rack {viewingDetail.rackNumber}</Badge>
+                           </div>
+                           <div className="grid grid-cols-1 gap-3">
+                              <div className="space-y-1"><p className="text-[9px] font-bold text-muted-foreground uppercase">Internal Audit</p><p className="text-xs italic leading-relaxed">"{viewingDetail.contentsVerification}"</p></div>
+                              <div className="space-y-1"><p className="text-[9px] font-bold text-muted-foreground uppercase">Owner Registry</p><p className="text-xs font-bold">{viewingDetail.studentName} ({viewingDetail.registrationNumber})</p></div>
+                           </div>
+                        </div>
+                     </div>
+                   )}
+
+                   {viewingDetail._source === 'THEFT' && (
+                     <div className="space-y-4">
+                        <div className="bg-destructive/5 p-6 rounded-3xl border border-destructive/10 space-y-4">
+                           <h3 className="text-[10px] font-bold text-destructive uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> Incident Narrative</h3>
+                           <p className="text-xs leading-relaxed italic text-destructive/80 font-medium">"{viewingDetail.description}"</p>
+                           {viewingDetail.suspectDetails && (
+                             <div className="pt-4 border-t border-destructive/10">
+                                <p className="text-[9px] font-bold text-destructive uppercase">Suspect Metadata</p>
+                                <p className="text-xs font-bold mt-1">{viewingDetail.suspectDetails}</p>
+                             </div>
+                           )}
+                        </div>
+                     </div>
+                   )}
+
+                   {viewingDetail._source === 'HISTORY' && (
+                     <div className="space-y-6">
+                        <div className="bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10 space-y-6">
+                           <h3 className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Handover Confirmation</h3>
+                           <div className="flex items-center gap-4">
+                              <div className="w-20 h-20 relative rounded-2xl overflow-hidden border-2 border-emerald-500/20 shadow-sm"><Image src={viewingDetail.userPhoto} alt="Identity Photo" fill className="object-cover" /></div>
+                              <div className="space-y-1">
+                                 <p className="text-[9px] font-bold text-muted-foreground uppercase">Recipient Verification</p>
+                                 <p className="text-sm font-bold">{viewingDetail.recipientReg}</p>
+                                 <p className="text-xs font-medium text-muted-foreground">{viewingDetail.recipientPhone}</p>
+                              </div>
+                           </div>
+                           <div className="pt-4 border-t border-emerald-500/10 flex justify-between items-end">
+                              <div><p className="text-[9px] font-bold text-muted-foreground uppercase">Authorized Guard</p><p className="text-xs font-bold text-emerald-700">{viewingDetail.guardName}</p></div>
+                              <div className="text-right"><p className="text-[9px] font-bold text-muted-foreground uppercase">Final Delivery</p><p className="text-[10px] font-medium opacity-60">{format(new Date(viewingDetail.timestamp), 'HH:mm | MMM dd')}</p></div>
+                           </div>
+                        </div>
+                     </div>
+                   )}
+
+                   <div className="space-y-3">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Log Narrative</p>
+                      <div className="bg-muted/20 p-5 rounded-[24px]">
+                         <p className="text-xs text-muted-foreground leading-relaxed leading-relaxed">{viewingDetail.description || viewingDetail.lockReason || "Standard security log entry with no specific description provided."}</p>
+                      </div>
+                   </div>
+
+                   <Button onClick={() => setViewingDetail(null)} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-xl">Close Archive</Button>
+                </div>
+             </ScrollArea>
+           )}
         </DialogContent>
       </Dialog>
 
