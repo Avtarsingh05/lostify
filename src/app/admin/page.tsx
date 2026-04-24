@@ -76,6 +76,7 @@ import {
 import { collection, query, orderBy, doc, increment, where } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { format } from "date-fns"
 import { sendOneSignalNotification } from "@/app/actions/notifications"
@@ -341,7 +342,7 @@ export default function AdminDashboard() {
                     </div>
                     <CardContent className="p-4 space-y-3">
                        <h3 className="font-bold text-xs leading-tight">{report.locationName || "No Location"}</h3>
-                       <p className="text-[8px] text-muted-foreground italic line-clamp-2">"{report.description}"</p>
+                       <p className="text-[10px] text-muted-foreground italic line-clamp-2">"{report.description}"</p>
                        <div className="flex gap-2">
                           <Button onClick={() => handleVerifyTheft(report.id, report.reporterId, 'verified')} disabled={report.status !== 'pending'} className="flex-1 rounded-lg h-8 bg-secondary text-[9px] font-bold">Verify & Reward</Button>
                           <Button onClick={() => handleVerifyTheft(report.id, report.reporterId, 'rejected')} disabled={report.status !== 'pending'} variant="outline" className="flex-1 rounded-lg h-8 text-[9px] font-bold">Reject</Button>

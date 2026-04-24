@@ -19,7 +19,8 @@ import {
   CheckCircle2,
   Lock,
   X,
-  LayoutGrid
+  LayoutGrid,
+  CreditCard
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -52,6 +53,19 @@ function TheftReportForm() {
   const [description, setDescription] = useState("")
   const [suspectDetails, setSuspectDetails] = useState("")
   const [locationName, setLocationName] = useState("")
+  const [registrationNumber, setRegistrationNumber] = useState("")
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, "users", user.uid)
+  }, [db, user])
+  const { data: userData } = useDoc(userDocRef)
+
+  useEffect(() => {
+    if (userData?.registrationNumber) {
+      setRegistrationNumber(userData.registrationNumber)
+    }
+  }, [userData])
 
   // Camera States
   const [isCameraOpen, setIsCameraOpen] = useState(false)
@@ -132,7 +146,10 @@ function TheftReportForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !db) return
+    if (!user || !db || !registrationNumber) {
+      toast({ variant: "destructive", title: "Registration ID Required", description: "Please enter your campus registration number." });
+      return
+    }
     if (!previewMedia) {
       toast({ variant: "destructive", title: "Proof Required", description: "Mandatory visual proof required." });
       return
@@ -142,6 +159,7 @@ function TheftReportForm() {
     const reportData = {
       reporterId: user.uid,
       reporterName: user.displayName || user.email,
+      reporterRegNo: registrationNumber,
       itemId: itemId || null,
       itemType: itemType,
       description,
@@ -186,21 +204,44 @@ function TheftReportForm() {
       <main className="max-w-md mx-auto px-4 -mt-10 space-y-6">
         <Card className="rounded-[32px] overflow-hidden shadow-2xl border-none">
           <CardContent className="p-6 space-y-6">
-            <div className="bg-destructive/5 border border-destructive/20 p-4 rounded-2xl flex items-start gap-3">
-               <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-               <p className="text-[10px] text-destructive font-bold uppercase tracking-wider leading-relaxed">Mandatory proof required for reward eligibility.</p>
+            <div className="bg-destructive/5 border border-destructive/20 p-4 rounded-2xl flex flex-col gap-2">
+               <div className="flex items-start gap-3">
+                  <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-destructive font-bold uppercase tracking-wider leading-relaxed">
+                    Mandatory proof required for reward eligibility.
+                  </p>
+               </div>
+               <div className="bg-destructive/10 p-3 rounded-xl">
+                  <p className="text-[11px] font-bold text-destructive uppercase tracking-widest text-center">Your identity will remain secret</p>
+               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <Button type="button" onClick={startCamera} variant="outline" className="rounded-xl h-14 border-destructive/20 text-destructive flex flex-col items-center justify-center gap-1">
-                  <Camera className="h-5 w-5" />
-                  <span className="text-[10px] font-bold uppercase">Evidence Cam</span>
-                </Button>
-                <Button type="button" onClick={() => fileInputRef.current?.click()} variant="outline" className="rounded-xl h-14 border-dashed border-2 flex flex-col items-center justify-center gap-1">
-                  <LayoutGrid className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-[10px] font-bold uppercase">Attach Media</span>
-                </Button>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Your Registration ID *</Label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="e.g. 12200000" 
+                      className="rounded-xl h-12 pl-10 bg-muted/20 border-none" 
+                      value={registrationNumber} 
+                      onChange={(e) => setRegistrationNumber(e.target.value)} 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Button type="button" onClick={startCamera} variant="outline" className="rounded-xl h-14 border-destructive/20 text-destructive flex flex-col items-center justify-center gap-1">
+                    <Camera className="h-5 w-5" />
+                    <span className="text-[10px] font-bold uppercase">Evidence Cam</span>
+                  </Button>
+                  <Button type="button" onClick={() => fileInputRef.current?.click()} variant="outline" className="rounded-xl h-14 border-dashed border-2 flex flex-col items-center justify-center gap-1">
+                    <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-[10px] font-bold uppercase">Attach Media</span>
+                  </Button>
+                </div>
               </div>
 
               <div className="relative w-full aspect-video rounded-2xl border-4 border-dashed border-destructive/20 overflow-hidden flex flex-col items-center justify-center bg-muted/30">
