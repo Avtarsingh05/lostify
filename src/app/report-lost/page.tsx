@@ -24,7 +24,13 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { compressImage, getDataUriSizeMB } from "@/lib/image-utils"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from "@/components/ui/dialog"
 
 export default function ReportLost() {
   const router = useRouter()
@@ -288,6 +294,10 @@ export default function ReportLost() {
 
       <Dialog open={isCameraOpen} onOpenChange={(open) => !open && stopCamera()}>
         <DialogContent className="max-w-md rounded-[32px] p-0 overflow-hidden bg-black border-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Lost Item Reference Cam</DialogTitle>
+            <DialogDescription>Snapshot your lost item to help guards identify it better.</DialogDescription>
+          </DialogHeader>
           <div className="relative aspect-[3/4] w-full">
             <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
             <div className="absolute top-4 right-4 z-20"><Button variant="ghost" size="icon" onClick={stopCamera} className="text-white bg-black/20 rounded-full"><X className="h-6 w-6" /></Button></div>

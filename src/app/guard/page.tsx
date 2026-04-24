@@ -605,6 +605,10 @@ export default function GuardDashboard() {
       {/* GENERAL DETAIL DIALOG */}
       <Dialog open={!!viewingDetail} onOpenChange={() => setViewingDetail(null)}>
         <DialogContent className="max-w-[92%] sm:max-w-[540px] rounded-[40px] p-0 border-none shadow-3xl overflow-hidden bg-background">
+           <DialogHeader className="sr-only">
+              <DialogTitle>Item Registry Details</DialogTitle>
+              <DialogDescription>Detailed security and handover information for the selected record.</DialogDescription>
+           </DialogHeader>
            {viewingDetail && (
              <ScrollArea className="max-h-[85vh]">
                 <div className="relative aspect-video w-full bg-muted">
