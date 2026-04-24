@@ -37,7 +37,8 @@ import {
   History,
   Archive,
   UploadCloud,
-  Globe
+  Globe,
+  Briefcase
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -417,13 +418,16 @@ export default function AdminDashboard() {
              </div>
              <div className="grid grid-cols-1 gap-4">
                 {filteredHistory?.map(h => (
-                  <Card key={h.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-8 bg-card/80">
+                  <Card key={h.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-8 bg-card/80 overflow-hidden relative">
+                     <div className={`absolute top-0 right-0 w-2 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
                      <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0 shadow-md"><Image src={h.userPhoto} alt="Recipient" fill className="object-cover" /></div>
                      <div className="flex-1 grid grid-cols-3 gap-8">
                         <div>
-                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Item Recovered</p>
+                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Released Item</p>
                            <h3 className="font-headline font-bold text-lg mt-1">{h.itemName}</h3>
-                           <Badge variant="outline" className="mt-2 h-5 text-[8px] border-blue-500/20 text-blue-500 bg-blue-500/5">DELIVERED</Badge>
+                           <Badge variant="outline" className={`mt-2 h-5 text-[8px] font-bold border-none ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
+                             {h.itemSource === 'CLOCK_ROOM' ? 'LUGGAGE RETRIEVAL' : 'ITEM RECOVERY'}
+                           </Badge>
                         </div>
                         <div>
                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Recipient Registry</p>
@@ -458,7 +462,7 @@ export default function AdminDashboard() {
                    </div>
                    <div className="col-span-7 space-y-6">
                       <div className="space-y-2"><Label className="text-[10px] font-bold uppercase">Destination Link (Optional)</Label><Input placeholder="https://..." value={bannerLink} onChange={(e) => setBannerLink(e.target.value)} className="rounded-xl h-14" /></div>
-                      <p className="text-[11px] text-muted-foreground italic">Banners are displayed on the student dashboard. Upload an image to publish instantly.</p>
+                      <p className="text-11px] text-muted-foreground italic">Banners are displayed on the student dashboard. Upload an image to publish instantly.</p>
                    </div>
                 </div>
              </Card>

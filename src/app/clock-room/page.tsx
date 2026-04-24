@@ -14,7 +14,8 @@ import {
   Archive,
   History as HistoryIcon,
   ShieldCheck,
-  Building
+  Building,
+  CheckCircle2
 } from "lucide-react"
 import { ThreeDCard } from "@/components/ui/three-d-card-wrapper"
 import { Button } from "@/components/ui/button"
@@ -66,8 +67,6 @@ export default function ClockRoomMain() {
   if (isUserLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
   }
-
-  const isAdminOrGuard = userData?.role === "ADMIN" || userData?.role === "GUARD";
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -189,12 +188,14 @@ export default function ClockRoomMain() {
 
 function MobileLuggageCard({ item, router, isHistory }: { item: any, router: any, isHistory?: boolean }) {
   return (
-    <ThreeDCard onClick={() => router.push(`/clock-room/${item.id}`)} className="p-0 overflow-hidden mb-3 shadow-lg bg-card/80 backdrop-blur-sm">
+    <ThreeDCard onClick={() => router.push(`/clock-room/${item.id}`)} className={`p-0 overflow-hidden mb-3 shadow-lg bg-card/80 backdrop-blur-sm ${isHistory ? 'opacity-70' : ''}`}>
       <div className="flex h-32">
         <div className="w-28 relative overflow-hidden shrink-0">
           <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" />
           <div className="absolute top-2 left-2">
-            <Badge className={`text-[7px] border-none shadow-md ${item.status === 'stored' ? 'bg-primary' : 'bg-accent'}`}>{item.status.toUpperCase()}</Badge>
+            <Badge className={`text-[7px] border-none shadow-md ${item.status === 'collected' ? 'bg-secondary' : item.status === 'stored' ? 'bg-primary' : 'bg-accent'}`}>
+              {item.status.toUpperCase()}
+            </Badge>
           </div>
         </div>
         <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
@@ -203,7 +204,12 @@ function MobileLuggageCard({ item, router, isHistory }: { item: any, router: any
             <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="h-3 w-3" /> Rack {item.rackNumber}</p>
           </div>
           <div className="flex justify-between items-end">
-            <span className="text-[8px] font-bold opacity-40">{isHistory ? 'COLLECTED' : formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</span>
+            <div className="flex flex-col">
+               <span className="text-[7px] font-bold text-muted-foreground uppercase">{isHistory ? 'COLLECTED AT' : 'LOGGED'}</span>
+               <span className="text-[8px] font-bold opacity-60">
+                 {isHistory && item.collectedAt ? format(new Date(item.collectedAt), 'MMM dd, HH:mm') : formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+               </span>
+            </div>
             <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
           </div>
         </div>
@@ -214,15 +220,22 @@ function MobileLuggageCard({ item, router, isHistory }: { item: any, router: any
 
 function WebLuggageCard({ item, router, isHistory }: { item: any, router: any, isHistory?: boolean }) {
   return (
-    <ThreeDCard onClick={() => router.push(`/clock-room/${item.id}`)} className="p-0 overflow-hidden border-none shadow-2xl bg-card/80 backdrop-blur-xl group cursor-pointer h-64">
+    <ThreeDCard onClick={() => router.push(`/clock-room/${item.id}`)} className={`p-0 overflow-hidden border-none shadow-2xl bg-card/80 backdrop-blur-xl group cursor-pointer h-64 ${isHistory ? 'opacity-75' : ''}`}>
       <div className="flex h-full">
         <div className="w-1/2 relative overflow-hidden">
           <Image src={item.imageUrl} alt={item.itemType} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
           <div className="absolute top-6 left-6">
-             <Badge className={`h-8 px-4 text-xs font-bold border-none shadow-2xl ${item.status === 'stored' ? 'bg-primary' : item.status === 'collected' ? 'bg-secondary' : 'bg-accent'}`}>
+             <Badge className={`h-8 px-4 text-xs font-bold border-none shadow-2xl ${item.status === 'collected' ? 'bg-secondary' : item.status === 'stored' ? 'bg-primary' : 'bg-accent'}`}>
                {item.status.replace('_', ' ').toUpperCase()}
              </Badge>
           </div>
+          {isHistory && (
+             <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                <div className="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-2xl">
+                   <CheckCircle2 className="h-8 w-8 text-secondary" />
+                </div>
+             </div>
+          )}
         </div>
         <div className="flex-1 p-10 flex flex-col justify-between min-w-0">
           <div className="space-y-4">
@@ -238,15 +251,17 @@ function WebLuggageCard({ item, router, isHistory }: { item: any, router: any, i
                </div>
                <div className="flex items-center gap-3 text-muted-foreground">
                   <Clock className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">Logged {format(new Date(item.createdAt), 'MMM dd, HH:mm')}</span>
+                  <span className="text-sm font-medium">
+                    {isHistory && item.collectedAt ? `Collected ${format(new Date(item.collectedAt), 'MMM dd, HH:mm')}` : `Logged ${format(new Date(item.createdAt), 'MMM dd, HH:mm')}`}
+                  </span>
                </div>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-6 border-t border-dashed">
              <div className="flex flex-col">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">Storage Lead</p>
-                <p className="text-xs font-bold">{item.storedBy || "Authorized Guard"}</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">{isHistory ? 'COLLECTED BY' : 'STORAGE LEAD'}</p>
+                <p className="text-xs font-bold">{isHistory ? (item.studentName || "Verified Owner") : (item.storedBy || "Authorized Guard")}</p>
              </div>
              <ChevronRight className="h-6 w-6 text-primary group-hover:translate-x-2 transition-transform" />
           </div>

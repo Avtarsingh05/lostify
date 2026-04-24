@@ -193,7 +193,7 @@ export default function GuardDashboard() {
          const claim = snapClaim.docs[0].data();
          const itemDoc = await getDocs(query(collection(db, "items"), where("__name__", "==", claim.itemId)));
          if (!itemDoc.empty) {
-            setHandoverItem({ ...itemDoc.docs[0].data(), id: claim.itemId, claimId: snapClaim.docs[0].id })
+            setHandoverItem({ ...itemDoc.docs[0].data(), id: claim.itemId, claimId: snapClaim.docs[0].id, isClock: false })
             setTokenInput("")
             return
          }
@@ -235,6 +235,7 @@ export default function GuardDashboard() {
           itemId: handoverItem.id,
           itemName: handoverItem.name || handoverItem.itemType,
           itemImageUrl: handoverItem.imageUrl,
+          itemSource: handoverItem.isClock ? 'CLOCK_ROOM' : 'GALLERY',
           recipientPhone,
           recipientReg,
           userPhoto: capturedUserPhoto,
@@ -455,16 +456,21 @@ export default function GuardDashboard() {
               <TabsContent value="history" className="m-0 space-y-4">
                  <div className="space-y-3">
                     {recentHandovers.length > 0 ? recentHandovers.map(h => (
-                      <Card key={h.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-6 bg-white dark:bg-card/80">
+                      <Card key={h.id} className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-6 bg-white dark:bg-card/80 overflow-hidden relative">
+                         <div className={`absolute top-0 right-0 w-2 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
                          <div className="w-16 h-16 rounded-2xl relative overflow-hidden shrink-0 border shadow-sm"><Image src={h.userPhoto} alt="User" fill className="object-cover" /></div>
                          <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="col-span-1 lg:col-span-1 min-w-0">
                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Released Item</p>
                                <h4 className="font-bold text-sm truncate mt-1">{h.itemName}</h4>
+                               <Badge className={`mt-1 text-[7px] border-none h-4 ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
+                                 {h.itemSource === 'CLOCK_ROOM' ? 'LUGGAGE RETRIEVAL' : 'ITEM RECOVERY'}
+                               </Badge>
                             </div>
                             <div className="hidden lg:block">
                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Recipient</p>
                                <p className="text-xs font-bold mt-1">ID: {h.recipientReg}</p>
+                               <p className="text-[9px] text-muted-foreground truncate">{h.recipientPhone}</p>
                             </div>
                             <div className="hidden lg:block">
                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Processed By</p>
