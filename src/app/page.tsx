@@ -131,6 +131,7 @@ export default function LoginPage() {
       setIsLoading(true)
       try {
         const fullPhone = `+91${phoneNumber}`
+        // Use standard Invisible reCAPTCHA
         const verifier = setUpRecaptcha(auth, 'recaptcha-container')
         const result = await sendOtpToPhone(auth, fullPhone, verifier)
         setConfirmationResult(result)
@@ -334,13 +335,13 @@ export default function LoginPage() {
                         </Label>
                         {!isOtpSent ? (
                           <div className="relative group">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-4 text-sm font-bold text-primary">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-sm font-bold text-primary">
                               <Smartphone className="h-4 w-4" />
-                              <span>+91</span>
+                              <span className="ml-1 tracking-widest">+91 </span>
                             </div>
                             <Input 
                               placeholder="9876543210" 
-                              className="pl-24 rounded-xl h-14 bg-muted/20 border-none shadow-none text-lg font-bold tracking-widest"
+                              className="pl-28 rounded-xl h-14 bg-muted/20 border-none shadow-none text-lg font-bold tracking-widest"
                               value={phoneNumber}
                               onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
                               maxLength={10}
