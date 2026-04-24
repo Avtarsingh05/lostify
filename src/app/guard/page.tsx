@@ -299,7 +299,7 @@ export default function GuardDashboard() {
       </div>
 
       {/* MOBILE HEADER */}
-      <div className="lg:hidden gradient-header pt-12 pb-20 px-6 rounded-b-[40px] shadow-xl text-white flex justify-between items-center">
+      <div className="lg:hidden gradient-header pt-10 pb-20 px-6 rounded-b-[32px] shadow-xl text-white flex justify-between items-center">
          <div className="flex items-center gap-3">
             <button onClick={() => router.back()} className="bg-white/20 p-2 rounded-full"><ArrowLeft className="h-5 w-5" /></button>
             <h1 className="text-xl font-headline font-bold">Guard Station</h1>
@@ -312,26 +312,26 @@ export default function GuardDashboard() {
           
           {/* VERIFICATION CONSOLE */}
           <div className="lg:col-span-4 space-y-6">
-            <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-xl sticky top-32">
+            <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-card/95 backdrop-blur-xl lg:sticky lg:top-32">
               <CardContent className="p-6 lg:p-10 flex flex-col items-center gap-6">
                  <div className="flex w-full items-center justify-between">
-                   <div className="flex items-center gap-2"><div className="bg-primary/10 p-3 rounded-2xl"><Key className="h-5 w-5 text-primary" /></div><h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Verify Token</h2></div>
-                   <button onClick={() => toast({ title: "Scanner Coming Soon", description: "Use keypad verification for now." })} className="bg-secondary/10 p-3 rounded-2xl text-secondary hover:bg-secondary/20 transition-all"><Camera className="h-5 w-5" /></button>
+                   <div className="flex items-center gap-2"><div className="bg-primary/10 p-3 rounded-2xl"><Key className="h-5 w-5 text-primary" /></div><h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Verify Token</h2></div>
+                   <button onClick={() => toast({ title: "Scanner Coming Soon", description: "Use keypad verification for now." })} className="bg-secondary/10 p-2 lg:p-3 rounded-xl lg:rounded-2xl text-secondary hover:bg-secondary/20 transition-all"><Camera className="h-5 w-5" /></button>
                  </div>
                  <div className="w-full flex flex-col gap-4">
                     <Input 
-                      placeholder="ENTER CODE" 
+                      placeholder="CODE" 
                       value={tokenInput} 
                       onChange={(e) => setTokenInput(e.target.value.replace(/\D/g, ''))} 
                       maxLength={4} 
-                      className="h-20 rounded-[24px] text-center text-5xl font-mono font-black tracking-[0.4em] bg-muted/30 border-none shadow-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all" 
+                      className="h-16 lg:h-20 rounded-[20px] lg:rounded-[24px] text-center text-4xl lg:text-5xl font-mono font-black tracking-[0.4em] bg-muted/30 border-none shadow-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all" 
                     />
-                    <Button onClick={handleProcessToken} disabled={isProcessingToken || tokenInput.length < 4} className="h-16 rounded-[24px] gradient-header font-bold text-lg shadow-xl shadow-primary/20">
+                    <Button onClick={handleProcessToken} disabled={isProcessingToken || tokenInput.length < 4} className="h-14 lg:h-16 rounded-[20px] lg:rounded-[24px] gradient-header font-bold text-base lg:text-lg shadow-xl shadow-primary/20">
                       {isProcessingToken ? <Loader2 className="animate-spin h-6 w-6" /> : "Verify Identity"}
                     </Button>
                  </div>
                  <div className="bg-primary/5 p-4 rounded-2xl w-full border border-primary/10">
-                    <p className="text-[10px] text-primary font-bold uppercase tracking-widest text-center leading-relaxed">
+                    <p className="text-[9px] lg:text-[10px] text-primary font-bold uppercase tracking-widest text-center leading-relaxed">
                       Verification requires recipient visual capture after token match
                     </p>
                  </div>
@@ -352,13 +352,13 @@ export default function GuardDashboard() {
             </div>
 
             <Tabs defaultValue="office" className="w-full" onValueChange={setActiveTab}>
-              <ScrollArea className="w-full whitespace-nowrap rounded-[24px] lg:rounded-[32px] bg-card shadow-xl h-14 lg:h-20 mb-6 border">
+              <ScrollArea className="w-full whitespace-nowrap rounded-[20px] lg:rounded-[32px] bg-card shadow-xl h-14 lg:h-20 mb-4 lg:mb-6 border">
                 <TabsList className="inline-flex w-full items-center justify-start bg-transparent p-1">
-                  <TabsTrigger value="office" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Archive className="h-4 w-4" /> Office</TabsTrigger>
-                  <TabsTrigger value="clock" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Briefcase className="h-4 w-4" /> Clock Room</TabsTrigger>
-                  <TabsTrigger value="lost" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Search className="h-4 w-4" /> Lost</TabsTrigger>
-                  <TabsTrigger value="reports" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6 text-destructive"><ShieldAlert className="h-4 w-4" /> Theft</TabsTrigger>
-                  <TabsTrigger value="history" className="rounded-xl lg:rounded-2xl font-bold text-[10px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><HistoryIcon className="h-4 w-4" /> History</TabsTrigger>
+                  <TabsTrigger value="office" className="rounded-xl lg:rounded-2xl font-bold text-[9px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Archive className="h-3.5 w-3.5 lg:h-4 lg:w-4" /> Office</TabsTrigger>
+                  <TabsTrigger value="clock" className="rounded-xl lg:rounded-2xl font-bold text-[9px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Briefcase className="h-3.5 w-3.5 lg:h-4 lg:w-4" /> Clock Room</TabsTrigger>
+                  <TabsTrigger value="lost" className="rounded-xl lg:rounded-2xl font-bold text-[9px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><Search className="h-3.5 w-3.5 lg:h-4 lg:w-4" /> Lost</TabsTrigger>
+                  <TabsTrigger value="reports" className="rounded-xl lg:rounded-2xl font-bold text-[9px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6 text-destructive"><ShieldAlert className="h-3.5 w-3.5 lg:h-4 lg:w-4" /> Theft</TabsTrigger>
+                  <TabsTrigger value="history" className="rounded-xl lg:rounded-2xl font-bold text-[9px] lg:text-sm gap-2 h-10 lg:h-16 px-4 lg:px-6"><HistoryIcon className="h-3.5 w-3.5 lg:h-4 lg:w-4" /> History</TabsTrigger>
                 </TabsList>
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
@@ -369,21 +369,21 @@ export default function GuardDashboard() {
                       <Card 
                         key={item.id} 
                         onClick={() => setViewingDetail({...item, _source: 'OFFICE'})}
-                        className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 cursor-pointer hover:translate-y-[-2px] transition-all group"
+                        className="p-4 rounded-[24px] lg:rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 cursor-pointer hover:translate-y-[-2px] transition-all group"
                       >
                          <div className="flex gap-4">
-                            <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0 shadow-sm"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
+                            <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-2xl relative overflow-hidden shrink-0 shadow-sm"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
                                <div>
-                                  <h3 className="font-headline font-bold text-sm truncate">{item.name}</h3>
-                                  <p className="text-[10px] text-primary font-bold uppercase mt-0.5">{item.storageOffice}</p>
-                                  <p className="text-[9px] text-muted-foreground mt-1 line-clamp-2">By: {item.storageInfo}</p>
+                                  <h3 className="font-headline font-bold text-xs lg:text-sm truncate">{item.name}</h3>
+                                  <p className="text-[9px] lg:text-[10px] text-primary font-bold uppercase mt-0.5">{item.storageOffice}</p>
+                                  <p className="text-[8px] lg:text-[9px] text-muted-foreground mt-1 line-clamp-2">By: {item.storageInfo}</p>
                                </div>
-                               <Badge className="w-fit bg-secondary/10 text-secondary border-none text-[8px] h-4">IN CUSTODY</Badge>
+                               <Badge className="w-fit bg-secondary/10 text-secondary border-none text-[7px] lg:text-[8px] h-4">IN CUSTODY</Badge>
                             </div>
                          </div>
                       </Card>
-                    )) : <EmptyState icon={Archive} message="No office inventory matches." />}
+                    )) : <EmptyState icon={Archive} message="No inventory match." />}
                  </div>
               </TabsContent>
 
@@ -393,27 +393,27 @@ export default function GuardDashboard() {
                       <Card 
                         key={item.id} 
                         onClick={() => setViewingDetail({...item, _source: 'CLOCK'})}
-                        className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 group cursor-pointer hover:translate-y-[-2px] transition-all"
+                        className="p-4 rounded-[24px] lg:rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 group cursor-pointer hover:translate-y-[-2px] transition-all"
                       >
                          <div className="flex gap-4">
-                            <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0"><Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" /></div>
+                            <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-2xl relative overflow-hidden shrink-0"><Image src={item.imageUrl} alt={item.itemType} fill className="object-cover" /></div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
                                <div>
                                   <div className="flex justify-between items-start">
-                                    <h3 className="font-headline font-bold text-sm truncate pr-2">{item.itemType}</h3>
+                                    <h3 className="font-headline font-bold text-xs lg:text-sm truncate pr-2">{item.itemType}</h3>
                                     <div className="h-3 w-3 rounded-full border" style={{ backgroundColor: item.color }} />
                                   </div>
-                                  <p className="text-[10px] font-bold text-muted-foreground mt-1 truncate">{item.studentName}</p>
-                                  <p className="text-[9px] text-muted-foreground">ID: {item.registrationNumber}</p>
+                                  <p className="text-[9px] lg:text-[10px] font-bold text-muted-foreground mt-1 truncate">{item.studentName}</p>
+                                  <p className="text-[8px] lg:text-[9px] text-muted-foreground">ID: {item.registrationNumber}</p>
                                </div>
                                <div className="flex justify-between items-center">
-                                  <Badge className="bg-primary/10 text-primary border-none text-[8px] h-4">Rack {item.rackNumber}</Badge>
-                                  <span className="text-[7px] font-bold opacity-40">{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</span>
+                                  <Badge className="bg-primary/10 text-primary border-none text-[7px] lg:text-[8px] h-4">Rack {item.rackNumber}</Badge>
+                                  <span className="text-[6px] lg:text-[7px] font-bold opacity-40">{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</span>
                                </div>
                             </div>
                          </div>
                       </Card>
-                    )) : <EmptyState icon={Briefcase} message="No luggage in storage." />}
+                    )) : <EmptyState icon={Briefcase} message="No luggage found." />}
                  </div>
               </TabsContent>
 
@@ -423,26 +423,26 @@ export default function GuardDashboard() {
                       <Card 
                         key={item.id} 
                         onClick={() => setViewingDetail({...item, _source: 'LOST'})}
-                        className="p-4 rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 cursor-pointer hover:translate-y-[-2px] transition-all"
+                        className="p-4 rounded-[24px] lg:rounded-[32px] border-none shadow-md bg-white dark:bg-card/50 cursor-pointer hover:translate-y-[-2px] transition-all"
                       >
                          <div className="flex gap-4">
-                            <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
+                            <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-2xl relative overflow-hidden shrink-0"><Image src={item.imageUrl} alt={item.name} fill className="object-cover" /></div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
                                <div>
-                                  <h3 className="font-headline font-bold text-sm truncate">{item.name}</h3>
+                                  <h3 className="font-headline font-bold text-xs lg:text-sm truncate">{item.name}</h3>
                                   <div className="flex items-center gap-1.5 mt-1">
                                      <MapPin className="h-3 w-3 text-accent" />
-                                     <p className="text-[9px] font-medium text-muted-foreground truncate">{item.locationDescription}</p>
+                                     <p className="text-[8px] lg:text-[9px] font-medium text-muted-foreground truncate">{item.locationDescription}</p>
                                   </div>
                                </div>
                                <div className="flex justify-between items-center mt-2">
-                                  <Badge className="bg-accent/10 text-accent border-none text-[8px] h-4 uppercase">Searching</Badge>
-                                  <span className="text-[7px] font-bold opacity-40">{formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true })}</span>
+                                  <Badge className="bg-accent/10 text-accent border-none text-[7px] lg:text-[8px] h-4 uppercase">Searching</Badge>
+                                  <span className="text-[6px] lg:text-[7px] font-bold opacity-40">{formatDistanceToNow(new Date(item.reportedAt), { addSuffix: true })}</span>
                                </div>
                             </div>
                          </div>
                       </Card>
-                    )) : <EmptyState icon={Search} message="No active lost reports." />}
+                    )) : <EmptyState icon={Search} message="No reports found." />}
                  </div>
               </TabsContent>
 
@@ -452,22 +452,22 @@ export default function GuardDashboard() {
                       <Card 
                         key={report.id} 
                         onClick={() => setViewingDetail({...report, _source: 'THEFT'})}
-                        className="p-4 rounded-[32px] border-none shadow-md bg-destructive/5 border border-destructive/10 cursor-pointer hover:translate-y-[-2px] transition-all"
+                        className="p-4 rounded-[24px] lg:rounded-[32px] border-none shadow-md bg-destructive/5 border border-destructive/10 cursor-pointer hover:translate-y-[-2px] transition-all"
                       >
                          <div className="flex gap-4">
-                            <div className="w-24 h-24 rounded-2xl relative overflow-hidden shrink-0 border border-destructive/20 shadow-sm"><Image src={report.mediaUrl} alt="Evidence" fill className="object-cover" /></div>
+                            <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-2xl relative overflow-hidden shrink-0 border border-destructive/20 shadow-sm"><Image src={report.mediaUrl} alt="Evidence" fill className="object-cover" /></div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
                                <div>
                                   <div className="flex items-center gap-2">
-                                    <ShieldAlert className="h-4 w-4 text-destructive" />
-                                    <h3 className="font-headline font-bold text-sm truncate uppercase text-destructive">Theft Alert</h3>
+                                    <ShieldAlert className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-destructive" />
+                                    <h3 className="font-headline font-bold text-xs lg:text-sm truncate uppercase text-destructive">Theft Alert</h3>
                                   </div>
-                                  <p className="text-[10px] font-bold text-muted-foreground mt-1 truncate">{report.locationName}</p>
-                                  <p className="text-[9px] text-muted-foreground italic line-clamp-2 mt-1">"{report.description}"</p>
+                                  <p className="text-[9px] lg:text-[10px] font-bold text-muted-foreground mt-1 truncate">{report.locationName}</p>
+                                  <p className="text-[8px] lg:text-[9px] text-muted-foreground italic line-clamp-2 mt-1">"{report.description}"</p>
                                </div>
                                <div className="flex justify-between items-center mt-2">
-                                  <Badge className="bg-destructive text-white border-none text-[8px] h-4">{report.status?.toUpperCase()}</Badge>
-                                  <span className="text-[7px] font-bold opacity-40">{formatDistanceToNow(new Date(report.timestamp), { addSuffix: true })}</span>
+                                  <Badge className="bg-destructive text-white border-none text-[7px] lg:text-[8px] h-4">{report.status?.toUpperCase()}</Badge>
+                                  <span className="text-[6px] lg:text-[7px] font-bold opacity-40">{formatDistanceToNow(new Date(report.timestamp), { addSuffix: true })}</span>
                                </div>
                             </div>
                          </div>
@@ -482,39 +482,35 @@ export default function GuardDashboard() {
                       <Card 
                         key={h.id} 
                         onClick={() => setViewingDetail({...h, _source: 'HISTORY'})}
-                        className="p-6 rounded-[32px] border-none shadow-lg flex items-center gap-6 bg-white dark:bg-card/80 overflow-hidden relative cursor-pointer hover:translate-y-[-2px] transition-all"
+                        className="p-4 lg:p-6 rounded-[24px] lg:rounded-[32px] border-none shadow-lg flex items-center gap-4 lg:gap-6 bg-white dark:bg-card/80 overflow-hidden relative cursor-pointer hover:translate-y-[-2px] transition-all"
                       >
-                         <div className={`absolute top-0 right-0 w-2 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
-                         <div className="w-16 h-16 rounded-2xl relative overflow-hidden shrink-0 border shadow-sm"><Image src={h.userPhoto} alt="User" fill className="object-cover" /></div>
-                         <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                         <div className={`absolute top-0 right-0 w-1.5 lg:w-2 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
+                         <div className="w-12 lg:w-16 h-12 lg:h-16 rounded-xl lg:rounded-2xl relative overflow-hidden shrink-0 border shadow-sm"><Image src={h.userPhoto} alt="User" fill className="object-cover" /></div>
+                         <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
                             <div className="col-span-1 lg:col-span-1 min-w-0">
-                               <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Released Item</p>
-                               <h4 className="font-bold text-sm truncate mt-1">{h.itemName}</h4>
-                               <div className="flex gap-1.5 mt-1">
-                                 <Badge className={`text-[7px] border-none h-4 ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
-                                   {h.itemSource === 'CLOCK_ROOM' ? 'LUGGAGE' : 'RECOVERY'}
-                                 </Badge>
-                                 <Badge variant="outline" className="text-[7px] h-4 font-bold border-none bg-muted text-muted-foreground uppercase tracking-tighter">
-                                   {h.itemCategory || 'General'}
+                               <p className="text-[7px] lg:text-[9px] font-black text-muted-foreground uppercase tracking-widest">Released Item</p>
+                               <h4 className="font-bold text-[10px] lg:text-sm truncate mt-0.5 lg:mt-1">{h.itemName}</h4>
+                               <div className="flex gap-1 mt-1">
+                                 <Badge className={`text-[6px] lg:text-[7px] border-none h-3.5 lg:h-4 ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
+                                   {h.itemSource === 'CLOCK_ROOM' ? 'LUGG' : 'RECOV'}
                                  </Badge>
                                </div>
                             </div>
                             <div className="hidden lg:block">
                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Recipient</p>
                                <p className="text-xs font-bold mt-1">ID: {h.recipientReg}</p>
-                               <p className="text-[9px] text-muted-foreground truncate">{h.recipientPhone}</p>
                             </div>
                             <div className="hidden lg:block">
                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Processed By</p>
                                <p className="text-xs font-bold mt-1">{h.guardName}</p>
                             </div>
                             <div className="text-right">
-                               <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Timestamp</p>
-                               <p className="text-[10px] font-medium mt-1 opacity-60">{h.timestamp ? format(new Date(h.timestamp), 'MMM dd, HH:mm') : 'N/A'}</p>
+                               <p className="text-[7px] lg:text-[9px] font-black text-muted-foreground uppercase tracking-widest">Logged</p>
+                               <p className="text-[8px] lg:text-[10px] font-medium mt-0.5 lg:mt-1 opacity-60">{h.timestamp ? format(new Date(h.timestamp), 'HH:mm | MMM dd') : 'N/A'}</p>
                             </div>
                          </div>
                       </Card>
-                    )) : <EmptyState icon={HistoryIcon} message="No handover history found." />}
+                    )) : <EmptyState icon={HistoryIcon} message="No logs found." />}
                  </div>
               </TabsContent>
             </Tabs>
@@ -524,87 +520,87 @@ export default function GuardDashboard() {
 
       {/* STORAGE ASSIGNMENT DIALOG */}
       <Dialog open={!!processingLuggage} onOpenChange={() => setProcessingLuggage(null)}>
-        <DialogContent className="max-w-[420px] rounded-[40px] p-8 border-none shadow-2xl">
+        <DialogContent className="max-w-[420px] rounded-[32px] lg:rounded-[40px] p-6 lg:p-8 border-none shadow-2xl">
            <DialogHeader className="text-center">
-              <DialogTitle className="text-2xl font-headline font-bold">Physical Intake</DialogTitle>
-              <DialogDescription className="text-xs uppercase font-bold tracking-widest text-primary">Assign Storage Rack & Slot</DialogDescription>
+              <DialogTitle className="text-xl lg:text-2xl font-headline font-bold">Physical Intake</DialogTitle>
+              <DialogDescription className="text-[10px] uppercase font-bold tracking-widest text-primary">Assign Storage Rack & Slot</DialogDescription>
            </DialogHeader>
            {processingLuggage && (
-             <div className="space-y-6 py-4">
-                <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-3xl">
-                   <div className="w-16 h-16 relative rounded-2xl overflow-hidden shadow-sm"><Image src={processingLuggage.imageUrl} alt="Luggage" fill className="object-cover" /></div>
+             <div className="space-y-4 lg:space-y-6 py-4">
+                <div className="flex items-center gap-4 bg-muted/30 p-3 lg:p-4 rounded-2xl lg:rounded-3xl">
+                   <div className="w-14 lg:w-16 h-14 lg:h-16 relative rounded-xl lg:rounded-2xl overflow-hidden shadow-sm"><Image src={processingLuggage.imageUrl} alt="Luggage" fill className="object-cover" /></div>
                    <div className="min-w-0">
-                      <p className="font-bold text-sm truncate">{processingLuggage.itemType}</p>
-                      <p className="text-[10px] text-muted-foreground">Owner: {processingLuggage.studentName}</p>
+                      <p className="font-bold text-xs lg:text-sm truncate">{processingLuggage.itemType}</p>
+                      <p className="text-[9px] lg:text-[10px] text-muted-foreground">Owner: {processingLuggage.studentName}</p>
                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2"><Label className="text-[10px] font-bold uppercase ml-1">Rack Number</Label><Input value={rackInput} onChange={(e) => setRackInput(e.target.value)} placeholder="e.g. A-4" className="h-12 rounded-xl bg-muted/20 border-none shadow-none font-bold" /></div>
-                   <div className="space-y-2"><Label className="text-[10px] font-bold uppercase ml-1">Slot Identifier</Label><Input value={slotInput} onChange={(e) => setSlotInput(e.target.value)} placeholder="e.g. TOP-2" className="h-12 rounded-xl bg-muted/20 border-none shadow-none font-bold" /></div>
+                   <div className="space-y-1.5 lg:space-y-2"><Label className="text-[9px] lg:text-[10px] font-bold uppercase ml-1">Rack</Label><Input value={rackInput} onChange={(e) => setRackInput(e.target.value)} placeholder="e.g. A-4" className="h-10 lg:h-12 rounded-xl bg-muted/20 border-none font-bold" /></div>
+                   <div className="space-y-1.5 lg:space-y-2"><Label className="text-[9px] lg:text-[10px] font-bold uppercase ml-1">Slot</Label><Input value={slotInput} onChange={(e) => setSlotInput(e.target.value)} placeholder="e.g. TOP-2" className="h-10 lg:h-12 rounded-xl bg-muted/20 border-none font-bold" /></div>
                 </div>
              </div>
            )}
-           <DialogFooter><Button onClick={handleConfirmStorage} disabled={!rackInput || !slotInput} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-xl">Assign to Inventory</Button></DialogFooter>
+           <DialogFooter><Button onClick={handleConfirmStorage} disabled={!rackInput || !slotInput} className="w-full h-12 lg:h-14 rounded-2xl gradient-header font-bold shadow-xl">Assign to Inventory</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* HANDOVER DIALOG */}
       <Dialog open={!!handoverItem} onOpenChange={() => { if(!isCapturingUser) setHandoverItem(null) }}>
-        <DialogContent className="max-w-[92%] sm:max-w-[480px] rounded-[40px] p-8 border-none shadow-2xl overflow-hidden">
+        <DialogContent className="max-w-[92%] sm:max-w-[480px] rounded-[32px] lg:rounded-[40px] p-6 lg:p-8 border-none shadow-2xl overflow-hidden">
           <DialogHeader className="text-center">
-             <DialogTitle className="text-2xl font-headline font-bold">Secure Delivery</DialogTitle>
-             <DialogDescription className="text-xs uppercase font-bold tracking-widest text-secondary">Final Step: Visual & ID Proof</DialogDescription>
+             <DialogTitle className="text-xl lg:text-2xl font-headline font-bold">Secure Delivery</DialogTitle>
+             <DialogDescription className="text-[10px] uppercase font-bold tracking-widest text-secondary">Final Step: Visual & ID Proof</DialogDescription>
           </DialogHeader>
           
           {handoverItem && (
-            <div className="space-y-6 py-4">
-               <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-3xl">
-                  <div className="w-16 h-16 relative rounded-2xl overflow-hidden shadow-sm"><Image src={handoverItem.imageUrl} alt="Item" fill className="object-cover" /></div>
+            <div className="space-y-4 lg:space-y-6 py-4">
+               <div className="flex items-center gap-4 bg-muted/30 p-3 lg:p-4 rounded-2xl lg:rounded-3xl">
+                  <div className="w-14 lg:w-16 h-14 lg:h-16 relative rounded-xl lg:rounded-2xl overflow-hidden shadow-sm"><Image src={handoverItem.imageUrl} alt="Item" fill className="object-cover" /></div>
                   <div className="min-w-0">
-                     <p className="font-bold text-sm truncate">{handoverItem.name || handoverItem.itemType}</p>
-                     <Badge className="bg-secondary/10 text-secondary border-none text-[8px] h-4 mt-1">TOKEN VERIFIED</Badge>
+                     <p className="font-bold text-xs lg:text-sm truncate">{handoverItem.name || handoverItem.itemType}</p>
+                     <Badge className="bg-secondary/10 text-secondary border-none text-[7px] lg:text-[8px] h-4 mt-1">TOKEN VERIFIED</Badge>
                   </div>
                </div>
 
                <div className="space-y-4">
                   <div className="flex flex-col items-center gap-4">
-                     <div className="w-full aspect-video bg-black rounded-3xl overflow-hidden relative border-4 border-muted">
+                     <div className="w-full aspect-video bg-black rounded-2xl lg:rounded-3xl overflow-hidden relative border-4 border-muted">
                         {capturedUserPhoto ? (
                           <Image src={capturedUserPhoto} alt="User" fill className="object-cover" />
                         ) : isCapturingUser ? (
                           <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center text-white/30 gap-2">
-                             <User className="h-10 w-10" />
-                             <p className="text-[10px] font-bold uppercase">Recipient Photo Required</p>
+                             <User className="h-8 lg:h-10 w-8 lg:w-10" />
+                             <p className="text-[9px] font-bold uppercase">Visual Proof Required</p>
                           </div>
                         )}
-                        {capturedUserPhoto && <button onClick={() => setCapturedUserPhoto(null)} className="absolute top-2 right-2 bg-black/50 p-2 rounded-full text-white"><X className="h-4 w-4" /></button>}
+                        {capturedUserPhoto && <button onClick={() => setCapturedUserPhoto(null)} className="absolute top-2 right-2 bg-black/50 p-1.5 rounded-full text-white"><X className="h-4 w-4" /></button>}
                      </div>
                      {!capturedUserPhoto && (
-                       <Button onClick={isCapturingUser ? captureUserPhoto : startUserCamera} className="w-full rounded-2xl h-12 bg-secondary text-white font-bold text-xs gap-2 shadow-lg shadow-secondary/20">
+                       <Button onClick={isCapturingUser ? captureUserPhoto : startUserCamera} className="w-full rounded-xl lg:rounded-2xl h-10 lg:h-12 bg-secondary text-white font-bold text-[10px] lg:text-xs gap-2 shadow-lg shadow-secondary/20">
                           <Camera className="h-4 w-4" /> {isCapturingUser ? "Snap Identity" : "Launch Evidence Cam"}
                        </Button>
                      )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-1.5"><Label className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Registration ID</Label><Input value={recipientReg} onChange={(e) => setRecipientReg(e.target.value)} placeholder="12200000" className="h-11 rounded-xl bg-muted/20 border-none text-xs font-bold" /></div>
-                     <div className="space-y-1.5"><Label className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Phone Number</Label><Input value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} placeholder="+91..." className="h-11 rounded-xl bg-muted/20 border-none text-xs font-bold" /></div>
+                  <div className="grid grid-cols-2 gap-3 lg:gap-4">
+                     <div className="space-y-1.5"><Label className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase ml-1">Registration ID</Label><Input value={recipientReg} onChange={(e) => setRecipientReg(e.target.value)} placeholder="12200000" className="h-10 lg:h-11 rounded-xl bg-muted/20 border-none text-[10px] lg:text-xs font-bold" /></div>
+                     <div className="space-y-1.5"><Label className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase ml-1">Phone Number</Label><Input value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} placeholder="+91..." className="h-10 lg:h-11 rounded-xl bg-muted/20 border-none text-[10px] lg:text-xs font-bold" /></div>
                   </div>
                </div>
             </div>
           )}
 
           <DialogFooter>
-             <Button onClick={handleFinalizeHandover} disabled={!capturedUserPhoto || !recipientReg || !recipientPhone} className="w-full h-16 rounded-3xl gradient-success font-bold text-lg shadow-xl active:scale-95 transition-transform">Complete Delivery</Button>
+             <Button onClick={handleFinalizeHandover} disabled={!capturedUserPhoto || !recipientReg || !recipientPhone} className="w-full h-14 lg:h-16 rounded-2xl lg:rounded-3xl gradient-success font-bold text-base lg:text-lg shadow-xl active:scale-95 transition-transform">Complete Delivery</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* GENERAL DETAIL DIALOG */}
       <Dialog open={!!viewingDetail} onOpenChange={() => setViewingDetail(null)}>
-        <DialogContent className="max-w-[92%] sm:max-w-[540px] rounded-[40px] p-0 border-none shadow-3xl overflow-hidden bg-background">
+        <DialogContent className="max-w-[92%] sm:max-w-[540px] rounded-[32px] lg:rounded-[40px] p-0 border-none shadow-3xl overflow-hidden bg-background">
            <DialogHeader className="sr-only">
               <DialogTitle>Item Registry Details</DialogTitle>
               <DialogDescription>Detailed security and handover information for the selected record.</DialogDescription>
@@ -614,40 +610,40 @@ export default function GuardDashboard() {
                 <div className="relative aspect-video w-full bg-muted">
                    <Image src={viewingDetail.imageUrl || viewingDetail.mediaUrl || viewingDetail.itemImageUrl || viewingDetail.userPhoto} alt="Item Preview" fill className="object-cover" />
                    <div className="absolute top-4 left-4 flex gap-2">
-                      <Badge className="bg-black/60 backdrop-blur-md border-none font-bold text-[10px] h-6 px-3">{viewingDetail._source}</Badge>
-                      <Badge className={`${viewingDetail.status === 'collected' || viewingDetail.status === 'Delivered' ? 'bg-secondary' : 'bg-primary'} border-none font-bold text-[10px] h-6 px-3 uppercase tracking-tighter`}>{viewingDetail.status || 'Active'}</Badge>
+                      <Badge className="bg-black/60 backdrop-blur-md border-none font-bold text-[9px] lg:text-[10px] h-6 px-3">{viewingDetail._source}</Badge>
+                      <Badge className={`${viewingDetail.status === 'collected' || viewingDetail.status === 'Delivered' ? 'bg-secondary' : 'bg-primary'} border-none font-bold text-[9px] lg:text-[10px] h-6 px-3 uppercase tracking-tighter`}>{viewingDetail.status || 'Active'}</Badge>
                    </div>
                 </div>
                 
-                <div className="p-8 space-y-8">
-                   <div className="space-y-2">
+                <div className="p-6 lg:p-8 space-y-6 lg:space-y-8">
+                   <div className="space-y-1 lg:space-y-2">
                       <div className="flex justify-between items-start gap-4">
-                        <h2 className="text-2xl font-headline font-bold leading-tight">{viewingDetail.name || viewingDetail.itemType || viewingDetail.itemName || "Item Details"}</h2>
-                        {viewingDetail.color && <div className="w-6 h-6 rounded-full border shadow-sm shrink-0" style={{ backgroundColor: viewingDetail.color }} />}
+                        <h2 className="text-xl lg:text-2xl font-headline font-bold leading-tight">{viewingDetail.name || viewingDetail.itemType || viewingDetail.itemName || "Item Details"}</h2>
+                        {viewingDetail.color && <div className="w-5 lg:w-6 h-5 lg:h-6 rounded-full border shadow-sm shrink-0" style={{ backgroundColor: viewingDetail.color }} />}
                       </div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{viewingDetail.category || 'Standard Entry'}</p>
+                      <p className="text-[9px] lg:text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{viewingDetail.category || 'Standard Entry'}</p>
                    </div>
 
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-muted/30 p-5 rounded-3xl space-y-1">
-                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Logged On</p>
-                         <p className="text-xs font-bold flex items-center gap-1.5"><Calendar className="h-3 w-3 text-primary" /> {viewingDetail.reportedAt || viewingDetail.timestamp || viewingDetail.createdAt ? format(new Date(viewingDetail.reportedAt || viewingDetail.timestamp || viewingDetail.createdAt), 'MMM dd, yyyy') : 'N/A'}</p>
+                   <div className="grid grid-cols-2 gap-3 lg:gap-4">
+                      <div className="bg-muted/30 p-4 lg:p-5 rounded-2xl lg:rounded-3xl space-y-1">
+                         <p className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Logged On</p>
+                         <p className="text-[10px] lg:text-xs font-bold flex items-center gap-1.5"><Calendar className="h-3 w-3 text-primary" /> {viewingDetail.reportedAt || viewingDetail.timestamp || viewingDetail.createdAt ? format(new Date(viewingDetail.reportedAt || viewingDetail.timestamp || viewingDetail.createdAt), 'MMM dd, yyyy') : 'N/A'}</p>
                       </div>
-                      <div className="bg-muted/30 p-5 rounded-3xl space-y-1">
-                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Location</p>
-                         <p className="text-xs font-bold flex items-center gap-1.5 truncate"><MapPin className="h-3 w-3 text-primary" /> {viewingDetail.locationDescription || viewingDetail.locationName || viewingDetail.storageOffice || 'Campus'}</p>
+                      <div className="bg-muted/30 p-4 lg:p-5 rounded-2xl lg:rounded-3xl space-y-1">
+                         <p className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Location</p>
+                         <p className="text-[10px] lg:text-xs font-bold flex items-center gap-1.5 truncate"><MapPin className="h-3 w-3 text-primary" /> {viewingDetail.locationDescription || viewingDetail.locationName || viewingDetail.storageOffice || 'Campus'}</p>
                       </div>
                    </div>
 
                    {/* SOURCE SPECIFIC DATA */}
                    {viewingDetail._source === 'OFFICE' && viewingDetail.verificationQuestions && (
-                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] px-1 flex items-center gap-2"><Lock className="h-3 w-3" /> Hidden Verification</h3>
-                        <div className="space-y-3">
+                     <div className="space-y-3 lg:space-y-4">
+                        <h3 className="text-[9px] lg:text-[10px] font-bold text-primary uppercase tracking-[0.2em] px-1 flex items-center gap-2"><Lock className="h-3 w-3" /> Verification Q&A</h3>
+                        <div className="space-y-2 lg:space-y-3">
                            {viewingDetail.verificationQuestions.map((q: any, i: number) => (
-                             <div key={i} className="p-4 bg-primary/5 rounded-2xl border border-primary/10 space-y-1">
-                                <p className="text-[10px] font-bold text-primary italic">Q: {q.question}</p>
-                                <p className="text-xs font-bold text-foreground">A: {q.answer}</p>
+                             <div key={i} className="p-3 lg:p-4 bg-primary/5 rounded-xl lg:rounded-2xl border border-primary/10 space-y-1">
+                                <p className="text-[9px] lg:text-[10px] font-bold text-primary italic">Q: {q.question}</p>
+                                <p className="text-[10px] lg:text-xs font-bold text-foreground">A: {q.answer}</p>
                              </div>
                            ))}
                         </div>
@@ -655,29 +651,29 @@ export default function GuardDashboard() {
                    )}
 
                    {viewingDetail._source === 'CLOCK' && (
-                     <div className="space-y-6">
-                        <div className="bg-orange-500/5 p-6 rounded-3xl border border-orange-500/10 space-y-4">
+                     <div className="space-y-4 lg:space-y-6">
+                        <div className="bg-orange-500/5 p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-orange-500/10 space-y-3 lg:space-y-4">
                            <div className="flex justify-between items-center">
-                              <h3 className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Rack Identity</h3>
-                              <Badge className="bg-orange-500 text-white border-none font-bold">Rack {viewingDetail.rackNumber}</Badge>
+                              <h3 className="text-[9px] lg:text-[10px] font-bold text-orange-600 uppercase tracking-widest">Rack Identity</h3>
+                              <Badge className="bg-orange-500 text-white border-none font-bold text-[10px]">Rack {viewingDetail.rackNumber}</Badge>
                            </div>
                            <div className="grid grid-cols-1 gap-3">
-                              <div className="space-y-1"><p className="text-[9px] font-bold text-muted-foreground uppercase">Internal Audit</p><p className="text-xs italic leading-relaxed">"{viewingDetail.contentsVerification}"</p></div>
-                              <div className="space-y-1"><p className="text-[9px] font-bold text-muted-foreground uppercase">Owner Registry</p><p className="text-xs font-bold">{viewingDetail.studentName} ({viewingDetail.registrationNumber})</p></div>
+                              <div className="space-y-1"><p className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase">Internal Audit</p><p className="text-[10px] lg:text-xs italic leading-relaxed">"{viewingDetail.contentsVerification}"</p></div>
+                              <div className="space-y-1"><p className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase">Owner Registry</p><p className="text-[10px] lg:text-xs font-bold">{viewingDetail.studentName} ({viewingDetail.registrationNumber})</p></div>
                            </div>
                         </div>
                      </div>
                    )}
 
                    {viewingDetail._source === 'THEFT' && (
-                     <div className="space-y-4">
-                        <div className="bg-destructive/5 p-6 rounded-3xl border border-destructive/10 space-y-4">
-                           <h3 className="text-[10px] font-bold text-destructive uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> Incident Narrative</h3>
-                           <p className="text-xs leading-relaxed italic text-destructive/80 font-medium">"{viewingDetail.description}"</p>
+                     <div className="space-y-3 lg:space-y-4">
+                        <div className="bg-destructive/5 p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-destructive/10 space-y-3 lg:space-y-4">
+                           <h3 className="text-[9px] lg:text-[10px] font-bold text-destructive uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-3.5 w-3.5 lg:h-4 lg:w-4" /> Incident Narrative</h3>
+                           <p className="text-[10px] lg:text-xs leading-relaxed italic text-destructive/80 font-medium">"{viewingDetail.description}"</p>
                            {viewingDetail.suspectDetails && (
-                             <div className="pt-4 border-t border-destructive/10">
-                                <p className="text-[9px] font-bold text-destructive uppercase">Suspect Metadata</p>
-                                <p className="text-xs font-bold mt-1">{viewingDetail.suspectDetails}</p>
+                             <div className="pt-3 lg:pt-4 border-t border-destructive/10">
+                                <p className="text-[8px] lg:text-[9px] font-bold text-destructive uppercase">Suspect Details</p>
+                                <p className="text-[10px] lg:text-xs font-bold mt-1">{viewingDetail.suspectDetails}</p>
                              </div>
                            )}
                         </div>
@@ -685,33 +681,33 @@ export default function GuardDashboard() {
                    )}
 
                    {viewingDetail._source === 'HISTORY' && (
-                     <div className="space-y-6">
-                        <div className="bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10 space-y-6">
-                           <h3 className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Handover Confirmation</h3>
-                           <div className="flex items-center gap-4">
-                              <div className="w-20 h-20 relative rounded-2xl overflow-hidden border-2 border-emerald-500/20 shadow-sm"><Image src={viewingDetail.userPhoto} alt="Identity Photo" fill className="object-cover" /></div>
-                              <div className="space-y-1">
-                                 <p className="text-[9px] font-bold text-muted-foreground uppercase">Recipient Verification</p>
-                                 <p className="text-sm font-bold">{viewingDetail.recipientReg}</p>
-                                 <p className="text-xs font-medium text-muted-foreground">{viewingDetail.recipientPhone}</p>
+                     <div className="space-y-4 lg:space-y-6">
+                        <div className="bg-emerald-500/5 p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-emerald-500/10 space-y-4 lg:space-y-6">
+                           <h3 className="text-[9px] lg:text-[10px] font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 lg:h-4 lg:w-4" /> Handover Confirmation</h3>
+                           <div className="flex items-center gap-3 lg:gap-4">
+                              <div className="w-16 lg:w-20 h-16 lg:h-20 relative rounded-xl lg:rounded-2xl overflow-hidden border-2 border-emerald-500/20 shadow-sm"><Image src={viewingDetail.userPhoto} alt="Identity Photo" fill className="object-cover" /></div>
+                              <div className="space-y-0.5 lg:space-y-1">
+                                 <p className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase">Recipient Registry</p>
+                                 <p className="text-xs lg:text-sm font-bold">{viewingDetail.recipientReg}</p>
+                                 <p className="text-[10px] lg:text-xs font-medium text-muted-foreground">{viewingDetail.recipientPhone}</p>
                               </div>
                            </div>
-                           <div className="pt-4 border-t border-emerald-500/10 flex justify-between items-end">
-                              <div><p className="text-[9px] font-bold text-muted-foreground uppercase">Authorized Guard</p><p className="text-xs font-bold text-emerald-700">{viewingDetail.guardName}</p></div>
-                              <div className="text-right"><p className="text-[9px] font-bold text-muted-foreground uppercase">Final Delivery</p><p className="text-[10px] font-medium opacity-60">{format(new Date(viewingDetail.timestamp), 'HH:mm | MMM dd')}</p></div>
+                           <div className="pt-3 lg:pt-4 border-t border-emerald-500/10 flex justify-between items-end">
+                              <div><p className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase">Verified By</p><p className="text-[10px] lg:text-xs font-bold text-emerald-700">{viewingDetail.guardName}</p></div>
+                              <div className="text-right"><p className="text-[8px] lg:text-[9px] font-bold text-muted-foreground uppercase">Final Delivery</p><p className="text-[9px] lg:text-[10px] font-medium opacity-60">{format(new Date(viewingDetail.timestamp), 'HH:mm | MMM dd')}</p></div>
                            </div>
                         </div>
                      </div>
                    )}
 
-                   <div className="space-y-3">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Log Narrative</p>
-                      <div className="bg-muted/20 p-5 rounded-[24px]">
-                         <p className="text-xs text-muted-foreground leading-relaxed leading-relaxed">{viewingDetail.description || viewingDetail.lockReason || "Standard security log entry with no specific description provided."}</p>
+                   <div className="space-y-2 lg:space-y-3">
+                      <p className="text-[9px] lg:text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Log Narrative</p>
+                      <div className="bg-muted/20 p-4 lg:p-5 rounded-[20px] lg:rounded-[24px]">
+                         <p className="text-[10px] lg:text-xs text-muted-foreground leading-relaxed">{viewingDetail.description || viewingDetail.lockReason || "Standard security log entry with no specific description provided."}</p>
                       </div>
                    </div>
 
-                   <Button onClick={() => setViewingDetail(null)} className="w-full h-14 rounded-2xl gradient-header font-bold shadow-xl">Close Archive</Button>
+                   <Button onClick={() => setViewingDetail(null)} className="w-full h-12 lg:h-14 rounded-2xl gradient-header font-bold shadow-xl text-xs lg:text-sm">Close Registry</Button>
                 </div>
              </ScrollArea>
            )}
@@ -725,9 +721,9 @@ export default function GuardDashboard() {
 
 function EmptyState({ icon: Icon, message }: { icon: any, message: string }) {
   return (
-    <div className="text-center py-20 bg-muted/10 rounded-[48px] border-4 border-dashed border-muted-foreground/10 px-6 opacity-30">
-      <Icon className="h-16 w-16 mx-auto text-muted-foreground/20 mb-4" />
-      <p className="text-lg font-bold text-muted-foreground uppercase tracking-[0.2em]">{message}</p>
+    <div className="text-center py-16 lg:py-20 bg-muted/10 rounded-[32px] lg:rounded-[48px] border-4 border-dashed border-muted-foreground/10 px-6 opacity-30">
+      <Icon className="h-12 lg:h-16 w-12 lg:w-16 mx-auto text-muted-foreground/20 mb-4" />
+      <p className="text-base lg:text-lg font-bold text-muted-foreground uppercase tracking-[0.2em]">{message}</p>
     </div>
   )
 }
