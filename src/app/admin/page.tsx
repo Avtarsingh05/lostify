@@ -279,11 +279,12 @@ export default function AdminDashboard() {
   const filteredHistory = useMemo(() => {
     if (!handoverHistory) return []
     return handoverHistory.filter(h => {
-      const matchesSearch = 
-        h.itemName?.toLowerCase().includes(historySearch.toLowerCase()) ||
-        h.recipientReg?.toLowerCase().includes(historySearch.toLowerCase()) ||
-        h.recipientPhone?.toLowerCase().includes(historySearch.toLowerCase())
-      
+      const itemName = (h.itemName || h.itemType || "Unknown").toLowerCase()
+      const recipientReg = (h.recipientReg || "").toLowerCase()
+      const recipientPhone = (h.recipientPhone || "").toLowerCase()
+      const search = historySearch.toLowerCase().trim()
+
+      const matchesSearch = itemName.includes(search) || recipientReg.includes(search) || recipientPhone.includes(search)
       const matchesSource = historySourceFilter === "ALL" || h.itemSource === historySourceFilter
 
       return matchesSearch && matchesSource
@@ -294,7 +295,7 @@ export default function AdminDashboard() {
     { label: "Lost Items", value: allItems?.filter(i => i.type === 'lost' && i.status !== 'Delivered' && i.status !== 'Resolved').length.toString() || "0", icon: AlertTriangle, color: "text-accent", bg: "bg-accent/10" },
     { label: "Found Items", value: allItems?.filter(i => i.type === 'found' && i.status !== 'Delivered' && i.status !== 'Resolved').length.toString() || "0", icon: CheckCircle, color: "text-secondary", bg: "bg-secondary/10" },
     { label: "Students", value: allUsers?.length.toString() || "0", icon: Users, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Audit Records", value: handoverHistory?.length.toString() || "0", icon: ShieldCheck, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Total Handovers", value: handoverHistory?.length.toString() || "0", icon: ShieldCheck, color: "text-blue-500", bg: "bg-blue-500/10" },
   ]
 
   return (
@@ -455,7 +456,7 @@ export default function AdminDashboard() {
              <div className="grid grid-cols-1 gap-6 max-w-5xl mx-auto">
                 {filteredHistory.length > 0 ? filteredHistory.map(h => (
                   <Card key={h.id} className="p-8 rounded-[40px] border-none shadow-xl flex items-center gap-10 bg-card/80 overflow-hidden relative group hover:translate-y-[-2px] transition-all">
-                     <div className={`absolute top-0 right-0 w-3 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
+                     <div className={`absolute top-0 left-0 w-3 h-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500' : 'bg-primary'}`} />
                      
                      <div className="absolute top-6 right-6 flex gap-2">
                         <Button 
@@ -473,7 +474,7 @@ export default function AdminDashboard() {
                         <div className="space-y-3">
                            <div className="flex flex-col">
                               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Released Item</p>
-                              <h3 className="font-headline font-bold text-xl mt-1 leading-tight">{h.itemName}</h3>
+                              <h3 className="font-headline font-bold text-xl mt-1 leading-tight">{h.itemName || h.itemType || "Verified Asset"}</h3>
                            </div>
                            <div className="flex flex-wrap gap-2">
                              <Badge variant="outline" className={`h-6 text-[8px] font-black border-none px-3 rounded-full ${h.itemSource === 'CLOCK_ROOM' ? 'bg-orange-500/10 text-orange-600' : 'bg-primary/10 text-primary'}`}>
@@ -487,14 +488,14 @@ export default function AdminDashboard() {
                         <div className="space-y-4 border-l border-dashed pl-10">
                            <div className="flex flex-col">
                               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Recipient Registry</p>
-                              <p className="text-base font-bold mt-1 flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary/40" /> {h.recipientReg}</p>
-                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2"><Phone className="h-3 w-3 text-primary/40" /> {h.recipientPhone}</p>
+                              <p className="text-base font-bold mt-1 flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary/40" /> {h.recipientReg || "Unknown ID"}</p>
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2"><Phone className="h-3 w-3 text-primary/40" /> {h.recipientPhone || "No Phone"}</p>
                            </div>
                         </div>
                         <div className="space-y-4 border-l border-dashed pl-10">
                            <div className="flex flex-col">
                               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Auth Protocol</p>
-                              <p className="text-base font-bold mt-1 flex items-center gap-2 text-secondary"><ShieldCheck className="h-4 w-4" /> {h.guardName}</p>
+                              <p className="text-base font-bold mt-1 flex items-center gap-2 text-secondary"><ShieldCheck className="h-4 w-4" /> {h.guardName || "Security"}</p>
                               <p className="text-[10px] text-muted-foreground font-medium mt-1 flex items-center gap-2"><Clock className="h-3 w-3" /> {h.timestamp ? format(new Date(h.timestamp), 'MMM dd, HH:mm') : 'N/A'}</p>
                            </div>
                         </div>
