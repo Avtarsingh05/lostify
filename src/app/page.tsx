@@ -231,7 +231,8 @@ export default function LoginPage() {
     }
   }
 
-  if (isUserLoading) {
+  // Prevent flash by showing loader if user is detected and redirection/onboarding is still processing
+  if (isUserLoading || (user && !isOnboarding)) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
   }
 
@@ -252,7 +253,10 @@ export default function LoginPage() {
                  <Sparkles className="h-12 w-12" />
                )}
              </div>
-             <h1 className="text-6xl font-headline font-bold leading-tight">Campus Recovery <br/> Redefined.</h1>
+             <h1 className="text-6xl font-headline font-bold leading-tight">
+               Campus Recovery <br/> 
+               <span className="text-[#F37021]">Redefined.</span>
+             </h1>
              <p className="text-xl text-white/80 font-medium leading-relaxed">
                Lostify leverages artificial intelligence to reconnect students with their missing belongings instantly. Secure, verified, and community-driven.
              </p>
@@ -273,7 +277,9 @@ export default function LoginPage() {
               )}
             </div>
             <div>
-              <h1 className="text-3xl font-headline font-bold text-primary">Lostify</h1>
+              <h1 className="text-3xl font-headline font-bold">
+                Lost<span className="text-[#F37021]">ify</span>
+              </h1>
               <p className="text-muted-foreground font-medium text-[10px] uppercase tracking-widest">Premium Lost & Found</p>
             </div>
           </div>
@@ -283,7 +289,7 @@ export default function LoginPage() {
               {isOnboarding ? (
                 <div className="text-center space-y-2">
                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto text-primary">
-                      <UserIconLucide className="h-6 w-6" />
+                      <UserIconLucide className="h-6 w-6 text-[#F37021]" />
                    </div>
                    <h2 className="text-xl font-headline font-bold">Profile Setup</h2>
                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Help us identify you for secure handovers</p>
@@ -291,10 +297,10 @@ export default function LoginPage() {
               ) : (
                 <Tabs value={loginMethod} className="w-full" onValueChange={(v: any) => setLoginMode(v)}>
                   <TabsList className="grid w-full grid-cols-2 rounded-xl p-1 bg-muted h-12">
-                    <TabsTrigger value="phone" className="rounded-lg font-bold text-[10px] uppercase tracking-tight gap-2">
+                    <TabsTrigger value="phone" className="rounded-lg font-bold text-[10px] uppercase tracking-tight gap-2 data-[state=active]:text-[#F37021]">
                       <Smartphone className="h-3 w-3" /> Mobile OTP
                     </TabsTrigger>
-                    <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight gap-2">
+                    <TabsTrigger value="email" className="rounded-lg font-bold text-[10px] uppercase tracking-tight gap-2 data-[state=active]:text-[#F37021]">
                       <Mail className="h-3 w-3" /> Email
                     </TabsTrigger>
                   </TabsList>
@@ -321,7 +327,7 @@ export default function LoginPage() {
                         </div>
                       </div>
                    </div>
-                   <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-xl gradient-header font-bold shadow-xl">
+                   <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-xl gradient-header font-bold shadow-xl hover:shadow-[#F37021]/20 transition-all">
                       {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Complete Profile"}
                    </Button>
                 </form>
@@ -336,7 +342,7 @@ export default function LoginPage() {
                         {!isOtpSent ? (
                           <div className="relative group">
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-sm font-bold text-primary">
-                              <Smartphone className="h-4 w-4" />
+                              <Smartphone className="h-4 w-4 text-[#F37021]" />
                               <span className="ml-1 tracking-widest">+91 </span>
                             </div>
                             <Input 
@@ -363,7 +369,7 @@ export default function LoginPage() {
                         )}
                       </div>
 
-                      <Button type="submit" className="w-full h-14 rounded-xl gradient-header font-bold text-sm shadow-lg active:scale-95 transition-all" disabled={isLoading}>
+                      <Button type="submit" className="w-full h-14 rounded-xl gradient-header font-bold text-sm shadow-lg active:scale-95 transition-all hover:shadow-[#F37021]/20" disabled={isLoading}>
                         {isLoading ? (
                           <Loader2 className="animate-spin h-5 w-5" />
                         ) : isOtpSent ? (
@@ -378,7 +384,7 @@ export default function LoginPage() {
                         <button 
                           type="button" 
                           onClick={() => { setIsOtpSent(false); setVerificationCode(""); }}
-                          className="w-full text-[10px] font-bold uppercase text-primary hover:underline"
+                          className="w-full text-[10px] font-bold uppercase text-primary hover:underline hover:text-[#F37021]"
                         >
                           Change Mobile Number
                         </button>
@@ -388,8 +394,8 @@ export default function LoginPage() {
                     <div className="space-y-4">
                        <Tabs value={isSignup ? "signup" : "signin"} onValueChange={(v) => setIsSignup(v === 'signup')}>
                           <TabsList className="grid w-full grid-cols-2 rounded-lg p-0.5 bg-muted/50 h-8 mb-4">
-                             <TabsTrigger value="signin" className="text-[8px] uppercase font-bold">Login</TabsTrigger>
-                             <TabsTrigger value="signup" className="text-[8px] uppercase font-bold">Register</TabsTrigger>
+                             <TabsTrigger value="signin" className="text-[8px] uppercase font-bold data-[state=active]:text-[#F37021]">Login</TabsTrigger>
+                             <TabsTrigger value="signup" className="text-[8px] uppercase font-bold data-[state=active]:text-[#F37021]">Register</TabsTrigger>
                           </TabsList>
                           
                           <form onSubmit={handleEmailAuth} className="space-y-4">
@@ -421,7 +427,7 @@ export default function LoginPage() {
                               <Input type="password" placeholder="••••••••" className="rounded-xl h-12 bg-muted/20 border-none" value={password} onChange={(e) => setPassword(e.target.value)} required />
                             </div>
 
-                            <Button type="submit" className="w-full h-14 rounded-xl gradient-header font-bold text-sm shadow-lg" disabled={isLoading}>
+                            <Button type="submit" className="w-full h-14 rounded-xl gradient-header font-bold text-sm shadow-lg hover:shadow-[#F37021]/20 transition-all" disabled={isLoading}>
                               {isLoading ? "Working..." : (isSignup ? "Join Now" : "Sign In")} 
                               {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                             </Button>
