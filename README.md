@@ -1,6 +1,6 @@
 # Lostify – A Lost and Found Solution for Campus
 
-## Lostify is a smart campus Lost and Found management platform designed to help students and campus staff report, discover, track and recover misplaced belongings. It provides a centralized digital solution connecting people who have lost items with those who have found them.
+Lostify is a smart campus Lost and Found management platform designed to help students and campus staff report, discover, track and recover misplaced belongings. It provides a centralized digital solution connecting people who have lost items with those who have found them.
 
 Overview
 
